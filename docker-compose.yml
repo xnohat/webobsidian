@@ -13,6 +13,10 @@ services:
       WEBOBSIDIAN_PASSWORD: ${WEBOBSIDIAN_PASSWORD:-}
       # File-watch mode: auto (native + polling fallback) | polling. See .env.example.
       WEBOBSIDIAN_WATCH: ${WEBOBSIDIAN_WATCH:-auto}
+      # Proxy trust. Keep "false" when exposed directly (don't trust X-Forwarded-For,
+      # which could be spoofed to bypass the login rate limit). Set to "true"/hop
+      # count/subnet list ONLY behind a real reverse proxy. See .env.example.
+      TRUST_PROXY: ${TRUST_PROXY:-false}
       VAULT_PATH: /vault
       DATA_DIR: /data
       ALLOWED_ROOTS: /vault
