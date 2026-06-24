@@ -11,8 +11,12 @@ const MAX_ATTEMPTS = 10; // per window per IP
 const attempts = new Map<string, number[]>();
 
 function clientIp(req: Request): string {
-  // `trust proxy` is set, so req.ip honours X-Forwarded-For from the trusted proxy.
-  return req.ip || req.socket.remoteAddress || 'unknown';
+  // Key on the real TCP peer address, NOT req.ip. req.ip derives from
+  // X-Forwarded-For when `trust proxy` is enabled, which a directly-connected
+  // attacker can spoof per request to get a fresh bucket and bypass the limit
+  // (security report F-03). The socket address can't be forged at this layer,
+  // so the throttle holds regardless of how `trust proxy` is configured.
+  return req.socket.remoteAddress || 'unknown';
 }
 
 export function loginRateLimit(req: Request, res: Response, next: NextFunction): void {

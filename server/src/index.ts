@@ -50,7 +50,11 @@ async function main() {
   await ensureVault();
 
   const app = express();
-  app.set('trust proxy', 1);
+  // Only honour X-Forwarded-* when explicitly configured for the deployment's
+  // proxy topology (TRUST_PROXY). Default false: a directly-exposed instance must
+  // NOT trust client-supplied X-Forwarded-For, or attackers could spoof it to get
+  // a fresh login rate-limit bucket per request (security report F-03).
+  app.set('trust proxy', config.trustProxy);
   app.use(express.json({ limit: '32mb' }));
   app.use(cookieParser());
 

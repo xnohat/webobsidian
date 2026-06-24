@@ -4,7 +4,7 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-06-23 (fix — internal link tới file `.canvas` mở đúng canvas thay vì tạo `*.canvas.md`)
+Cập nhật lần cuối: 2026-06-24 (security fix F-03 — vá bypass rate-limit login qua `X-Forwarded-For`)
 
 ---
 
@@ -430,6 +430,15 @@ Cập nhật lần cuối: 2026-06-23 (fix — internal link tới file `.canvas
       `desktop/release`.
 
 ### Nhật ký tiến độ
+- 2026-06-24 (security fix F-03 — bypass rate-limit login qua `X-Forwarded-For`): trước đây
+  `app.set('trust proxy', 1)` luôn bật ⇒ `req.ip` lấy từ `X-Forwarded-For`; instance lộ trực tiếp
+  (bind `0.0.0.0`) cho phép attacker tự đặt XFF mỗi request → mỗi "IP" một bucket → vượt giới hạn
+  10 lần/15 phút (brute-force pass mặc định 6 ký tự). **Sửa 3 chỗ:** (1) `server/src/config.ts` —
+  thêm `trustProxy` parse từ env `TRUST_PROXY`, **mặc định `false`** (không tin XFF khi không có proxy);
+  nhận `true`/số hop/danh sách subnet. (2) `server/src/index.ts` — `app.set('trust proxy', config.trustProxy)`
+  thay cho giá trị cứng `1`. (3) `server/src/middleware/ratelimit.ts` — limiter khóa theo
+  `req.socket.remoteAddress` (địa chỉ TCP peer **không thể giả mạo**) thay cho `req.ip`, nên throttle
+  giữ vững bất kể cấu hình `trust proxy`. Cập nhật PRD (FR-9 env `TRUST_PROXY` + NFR bảo mật). Typecheck sạch.
 - 2026-06-23 (fix — internal link tới file `.canvas`): click wikilink trỏ tới `Foo.canvas` bị điều hướng sang
   note markdown mới `Foo.canvas.md`. Nguyên nhân: link graph (`keyToPath`) chỉ index file markdown nên
   `/api/.../resolve` trả `null` cho target có đuôi `.canvas` → client rơi vào nhánh tạo note & nối thêm `.md`.

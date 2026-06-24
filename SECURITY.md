@@ -31,7 +31,11 @@ safely. Key points:
 - Secrets (git token, API keys) live in `data/settings.json` on the server — mount `/data`
   as a private volume and keep it out of version control.
 - Run behind a TLS-terminating reverse proxy (set `HTTP_BIND=127.0.0.1`) for any
-  internet-facing deployment.
+  internet-facing deployment. When you do, set `TRUST_PROXY` to match your proxy
+  topology (e.g. `true` or a subnet list) so `X-Forwarded-Proto` is honoured.
+  Leave `TRUST_PROXY=false` (default) for directly-exposed instances — the login
+  rate limit is keyed on the real TCP socket address regardless, so it cannot be
+  bypassed by rotating `X-Forwarded-For`.
 
 ## Supported versions
 
