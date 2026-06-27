@@ -44,6 +44,12 @@ function num(v: unknown, fallback = 0): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
+/** Only allow safe URL schemes for hrefs taken from untrusted .canvas link nodes.
+ *  CSP blocks javascript: execution, but drop the scheme rather than render it. */
+function safeHref(url: string): string {
+  return /^(?:https?:|mailto:)/i.test(url.trim()) ? url.trim() : '';
+}
+
 function sideAnchor(n: Rect, side: Side): { x: number; y: number } {
   switch (side) {
     case 'top': return { x: n.x + n.width / 2, y: n.y };
@@ -103,7 +109,7 @@ async function renderNode(n: CNode, fileUrl: (p: string) => string): Promise<str
   }
   if (n.type === 'link') {
     const url = n.url ?? '';
-    return `<div class="canvas-node canvas-link" style="${style}"><a class="canvas-link-body" href="${escapeHtml(url)}" target="_blank" rel="noopener nofollow"><span class="url">${escapeHtml(url)}</span></a></div>`;
+    return `<div class="canvas-node canvas-link" style="${style}"><a class="canvas-link-body" href="${escapeHtml(safeHref(url))}" target="_blank" rel="noopener nofollow"><span class="url">${escapeHtml(url)}</span></a></div>`;
   }
   // file node
   const file = n.file ?? '';
