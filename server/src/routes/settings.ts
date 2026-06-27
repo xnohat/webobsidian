@@ -65,27 +65,31 @@ function sanitizeVault(v: any) {
   return out;
 }
 
-/** The roots a new vault path may live under — mirrors GET /browse. */
-async function effectiveRoots(newAllowed?: unknown): Promise<string[]> {
-  const s = await getSettings();
-  const fromBody = Array.isArray(newAllowed)
-    ? (newAllowed as unknown[]).filter((r): r is string => typeof r === 'string')
-    : [];
-  const roots = fromBody.length
-    ? fromBody
-    : s.vault.allowedRoots.length
-      ? s.vault.allowedRoots
-      : config.allowedRoots.length
-        ? config.allowedRoots
-        : [os.homedir()];
+/**
+ * The hard boundary for where the vault may live. Comes ONLY from operator-
+ * controlled configuration — the env ALLOWED_ROOTS, else the home directory — and
+ * NEVER from the request body or from mutable settings. Otherwise the new path was
+ * validated against `allowedRoots` taken from the same request, so a request could
+ * authorize its own path (e.g. {"path":"/","allowedRoots":["/"]}) and repoint the
+ * whole files API at the host filesystem.
+ */
+function authorizedRoots(): string[] {
+  const roots = config.allowedRoots.length ? config.allowedRoots : [os.homedir()];
   return roots.map((r) => path.resolve(r));
 }
 
-async function assertVaultPathAllowed(v: any): Promise<void> {
+/** True iff `target` resolves to, or inside, one of `roots`. */
+export function isWithinRoots(target: string, roots: string[]): boolean {
+  const t = path.resolve(target);
+  return roots.some((r) => {
+    const rr = path.resolve(r);
+    return t === rr || t.startsWith(rr + path.sep);
+  });
+}
+
+async function assertVaultPathAllowed(v: { path: unknown }): Promise<void> {
   const target = path.resolve(String(v.path));
-  const roots = await effectiveRoots(v.allowedRoots);
-  const within = roots.some((r) => target === r || target.startsWith(r + path.sep));
-  if (!within) {
+  if (!isWithinRoots(target, authorizedRoots())) {
     throw Object.assign(new Error('Vault path is outside the allowed roots'), { status: 403 });
   }
   const st = await fs.stat(target).catch(() => null);
@@ -99,19 +103,11 @@ async function assertVaultPathAllowed(v: any): Promise<void> {
 settingsRouter.get(
   '/browse',
   asyncHandler(async (req, res) => {
-    const s = await getSettings();
-    const roots = s.vault.allowedRoots.length
-      ? s.vault.allowedRoots
-      : config.allowedRoots.length
-        ? config.allowedRoots
-        : [os.homedir()];
+    // Bound the picker to the same hard roots that authorize a vault path — never
+    // to mutable settings, which a prior request could have widened.
+    const roots = authorizedRoots();
     const dir = req.query.dir ? path.resolve(String(req.query.dir)) : roots[0];
-
-    const allowed = roots.some((r) => {
-      const rr = path.resolve(r);
-      return dir === rr || dir.startsWith(rr + path.sep);
-    });
-    if (!allowed) {
+    if (!isWithinRoots(dir, roots)) {
       res.status(403).json({ error: 'Path outside allowed roots', roots });
       return;
     }
