@@ -17,6 +17,7 @@ import FolderPicker from './components/FolderPicker';
 import { loadPlugins } from './lib/plugins';
 import { initUrlSync } from './lib/urlsync';
 import { useIsMobile } from './lib/useIsMobile';
+import { themeClass } from './lib/theme';
 
 export default function App() {
   const authed = useStore((s) => s.authed);
@@ -34,7 +35,8 @@ export default function App() {
   const save = useStore((s) => s.save);
   const toast = useStore((s) => s.toast);
   const [checking, setChecking] = useState(true);
-  const [theme, setTheme] = useState<'theme-dark' | 'theme-light'>('theme-light');
+  const theme = useStore((s) => s.theme);
+  const setTheme = useStore((s) => s.setTheme);
 
   useEffect(() => {
     api
@@ -65,7 +67,7 @@ export default function App() {
       .catch(() => {});
     api
       .getSettings()
-      .then((s) => setTheme(s?.ui?.theme === 'obsidian-dark' ? 'theme-dark' : 'theme-light'))
+      .then((s) => setTheme(themeClass(s?.ui?.theme)))
       .catch(() => {});
     useStore.getState().loadShares(); // badge shared notes in the file tree
     loadPlugins().catch(() => {});
@@ -174,7 +176,7 @@ export default function App() {
   return (
     <div className={theme}>
       <div className={appCls}>
-        <Ribbon onTheme={() => setTheme((t) => (t === 'theme-dark' ? 'theme-light' : 'theme-dark'))} />
+        <Ribbon onTheme={() => setTheme(theme === 'theme-dark' ? 'theme-light' : 'theme-dark')} />
         {showLeft && <Sidebar />}
         <Workspace />
         {showRight && <RightSidebar />}

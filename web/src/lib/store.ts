@@ -86,6 +86,10 @@ interface AppState {
   mustChangePassword: boolean;
   setMustChangePassword: (v: boolean) => void;
 
+  /** Active theme wrapper class (e.g. 'theme-dark', 'theme-ctp-mocha'). */
+  theme: string;
+  setTheme: (t: string) => void;
+
   tree: TreeNode | null;
   loadTree: () => Promise<void>;
 
@@ -303,6 +307,8 @@ export const useStore = create<AppState>()(
       setAuthed: (v) => set({ authed: v }),
       mustChangePassword: false,
       setMustChangePassword: (v) => set({ mustChangePassword: v }),
+      theme: 'theme-light',
+      setTheme: (t) => set({ theme: t }),
 
       tree: null,
       loadTree: async () => {
