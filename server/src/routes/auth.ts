@@ -4,6 +4,7 @@ import { COOKIE_NAME, requireAuth } from '../middleware/auth.js';
 import {
   isPasswordSet,
   hasCustomPassword,
+  hasOverridePassword,
   setUserPassword,
   checkPassword,
   changePassword,
@@ -86,7 +87,12 @@ authRouter.post(
   loginRateLimit,
   asyncHandler(async (req, res) => {
     const { password } = req.body ?? {};
-    if (typeof password !== 'string' || !(await checkPassword(password))) {
+    // The well-known default (123456) is only accepted at login when no operator
+    // override is configured. Once WEBOBSIDIAN_PASSWORD / auth.passwordHash exists,
+    // login requires it (or the user's own password). change-password stays lenient
+    // so the first-run "set a password" flow still works under an override.
+    const allowDefault = !(await hasOverridePassword());
+    if (typeof password !== 'string' || !(await checkPassword(password, { allowDefault }))) {
       res.status(401).json({ error: 'Invalid password' });
       return;
     }
