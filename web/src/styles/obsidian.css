@@ -228,7 +228,16 @@
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
-.theme-light, .theme-dark { height: 100%; }
+/* The palette vars (--text-normal, --background-primary, …) are defined on these
+   theme classes, but `body` (their parent) can't see them, so anything relying on
+   inherited color/background fell back to an unthemed default — e.g. setting-row
+   labels rendered dark-on-dark. Establish the themed base here, in the scope where
+   the vars actually resolve, so every descendant inherits correctly. */
+.theme-light, .theme-dark {
+  height: 100%;
+  color: var(--text-normal);
+  background-color: var(--background-primary);
+}
 body {
   font-family: var(--font-ui);
   color: var(--text-normal);
