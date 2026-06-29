@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../lib/store';
 import { api } from '../lib/api';
+import { themeClass } from '../lib/theme';
 import Icon from './Icon';
 
 type Section = 'vault' | 'git' | 'api' | 'sharing' | 'plugins' | 'appearance' | 'account' | 'about';
@@ -392,14 +393,27 @@ function Plugins() {
 
 function Appearance({ s }: { s: any }) {
   const [theme, setTheme] = useState(s.ui.theme);
-  const save = async (t: string) => { setTheme(t); await api.putSettings({ ui: { theme: t } }); location.reload(); };
+  // Apply the theme live (no reload — keeps the Settings dialog open), then persist.
+  const save = async (t: string) => {
+    setTheme(t);
+    useStore.getState().setTheme(themeClass(t));
+    await api.putSettings({ ui: { theme: t } });
+  };
   return (
     <div>
       <h2>Appearance</h2>
       <Row name="Theme">
         <select className="text-input" value={theme} onChange={(e) => save(e.target.value)}>
-          <option value="obsidian-dark">Obsidian Dark</option>
-          <option value="obsidian-light">Obsidian Light</option>
+          <optgroup label="Obsidian">
+            <option value="obsidian-dark">Obsidian Dark</option>
+            <option value="obsidian-light">Obsidian Light</option>
+          </optgroup>
+          <optgroup label="Catppuccin">
+            <option value="catppuccin-mocha">Catppuccin Mocha</option>
+            <option value="catppuccin-macchiato">Catppuccin Macchiato</option>
+            <option value="catppuccin-frappe">Catppuccin Frappé</option>
+            <option value="catppuccin-latte">Catppuccin Latte</option>
+          </optgroup>
         </select>
       </Row>
     </div>

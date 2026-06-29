@@ -69,7 +69,16 @@ const SettingsSchema = z.object({
     .default({}),
   ui: z
     .object({
-      theme: z.enum(['obsidian-dark', 'obsidian-light']).default('obsidian-light'),
+      theme: z
+        .enum([
+          'obsidian-dark',
+          'obsidian-light',
+          'catppuccin-mocha',
+          'catppuccin-macchiato',
+          'catppuccin-frappe',
+          'catppuccin-latte',
+        ])
+        .default('obsidian-light'),
       defaultView: z.enum(['live', 'source', 'reading']).default('live'),
     })
     .default({}),

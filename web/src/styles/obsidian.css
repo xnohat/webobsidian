@@ -226,6 +226,122 @@
   --shadow: 0px 1.8px 7.3px rgba(0, 0, 0, 0.071), 0px 6.3px 24.7px rgba(0, 0, 0, 0.112), 0px 30px 90px rgba(0, 0, 0, 0.2);
 }
 
+/* ---------- Catppuccin flavors ----------
+   Each flavor sets only its base-colour ramp + accent + light/dark bits below;
+   the semantic mapping (text/background/interactive → the ramp) is shared here so
+   it mirrors .theme-dark/.theme-light without being duplicated four times. */
+.theme-ctp-mocha, .theme-ctp-macchiato, .theme-ctp-frappe, .theme-ctp-latte {
+  --color-accent: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
+  --color-accent-1: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
+  --color-accent-2: hsl(var(--accent-h), var(--accent-s), calc(var(--accent-l) * 0.9));
+
+  --color-red: #fb464c;     --color-red-rgb: 251, 70, 76;
+  --color-orange: #e9973f;  --color-orange-rgb: 233, 151, 63;
+  --color-yellow: #e0de71;  --color-yellow-rgb: 224, 222, 113;
+  --color-green: #44cf6e;   --color-green-rgb: 68, 207, 110;
+  --color-cyan: #53dfdd;    --color-cyan-rgb: 83, 223, 221;
+  --color-blue: #027aff;    --color-blue-rgb: 2, 122, 255;
+  --color-purple: #a882ff;  --color-purple-rgb: 168, 130, 255;
+  --color-pink: #fa99cd;    --color-pink-rgb: 250, 153, 205;
+
+  --callout-default: var(--color-blue-rgb);  --callout-summary: var(--color-cyan-rgb);
+  --callout-info: var(--color-blue-rgb);     --callout-todo: var(--color-blue-rgb);
+  --callout-important: var(--color-cyan-rgb);--callout-tip: var(--color-cyan-rgb);
+  --callout-success: var(--color-green-rgb); --callout-question: var(--color-orange-rgb);
+  --callout-warning: var(--color-orange-rgb);--callout-fail: var(--color-red-rgb);
+  --callout-error: var(--color-red-rgb);     --callout-bug: var(--color-red-rgb);
+  --callout-example: var(--color-purple-rgb);--callout-quote: 158, 158, 158;
+
+  /* base steps follow the official catppuccin/obsidian mapping:
+     00 crust · 10 mantle · 20 base · 25 surface0 · 30 surface1 · 35 surface2
+     40 overlay0 · 50 overlay1 · 60 overlay2 · 70 subtext0 · 100 text */
+  --background-primary: var(--color-base-20);        /* base */
+  --background-primary-alt: var(--color-base-25);    /* surface0 */
+  --background-secondary: var(--color-base-10);      /* mantle (sidebar, darker) */
+  --background-secondary-alt: var(--color-base-00);  /* crust */
+  --background-modifier-border: var(--color-base-25);
+  --background-modifier-border-hover: var(--color-base-30);
+  --background-modifier-border-focus: var(--color-base-35);
+  --background-modifier-hover: rgba(var(--mono-rgb-100), 0.067);
+  --background-modifier-form-field: var(--color-base-25);
+  --text-normal: var(--color-base-100);              /* text */
+  --text-muted: var(--color-base-70);                /* subtext0 */
+  --text-faint: var(--color-base-50);                /* overlay1 */
+  --text-accent: var(--color-accent-1);
+  --text-accent-hover: var(--color-accent-2);
+  --text-on-accent: var(--color-base-00);
+  --text-selection: hsla(var(--accent-h), var(--accent-s), var(--accent-l), 0.33);
+  --text-highlight-bg: rgba(255, 208, 0, 0.4);
+  --interactive-normal: var(--color-base-25);
+  --interactive-hover: var(--color-base-30);
+  --interactive-accent: var(--color-accent);
+  --interactive-accent-hover: var(--color-accent-1);
+
+  --base-00: var(--color-base-00); --base-05: var(--color-base-05); --base-10: var(--color-base-10);
+  --base-20: var(--color-base-20); --base-25: var(--color-base-25); --base-30: var(--color-base-30);
+  --base-35: var(--color-base-35); --base-40: var(--color-base-40); --base-50: var(--color-base-50);
+  --base-60: var(--color-base-60); --base-70: var(--color-base-70); --base-100: var(--color-base-100);
+  --bg-primary: var(--background-primary);
+  --bg-primary-alt: var(--background-primary-alt);
+  --bg-secondary: var(--background-secondary);
+  --bg-secondary-alt: var(--background-secondary-alt);
+  --bg-modifier-border: var(--background-modifier-border);
+  --bg-modifier-border-focus: var(--background-modifier-border-focus);
+  --bg-modifier-hover: var(--background-modifier-hover);
+  --bg-modifier-active: hsla(var(--accent-h), var(--accent-s), var(--accent-l), 0.18);
+  --ribbon-bg: var(--background-secondary);
+  --header-bg: var(--background-secondary);
+  --tab-bg: var(--background-secondary);
+  --tab-active-bg: var(--background-primary);
+  --scrollbar: rgba(var(--mono-rgb-100), 0.1);
+  --tag-bg: hsla(var(--accent-h), var(--accent-s), var(--accent-l), 0.14);
+  --shadow: 0px 1.8px 7.3px rgba(0, 0, 0, 0.071), 0px 6.3px 24.7px rgba(0, 0, 0, 0.112), 0px 30px 90px rgba(0, 0, 0, 0.2);
+
+  /* The palette is scoped to this wrapper, so set the inherited base here (same
+     reason the .theme-light/.theme-dark rule does) — otherwise inherited text
+     would render unthemed (dark-on-dark). */
+  height: 100%;
+  color: var(--text-normal);
+  background-color: var(--background-primary);
+}
+
+.theme-ctp-mocha {  /* base #1e1e2e · accent lavender #b4befe */
+  --color-base-00:#11111b; --color-base-05:#14141f; --color-base-10:#181825;
+  --color-base-20:#1e1e2e; --color-base-25:#313244; --color-base-30:#45475a;
+  --color-base-35:#585b70; --color-base-40:#6c7086; --color-base-50:#7f849c;
+  --color-base-60:#9399b2; --color-base-70:#a6adc8; --color-base-100:#cdd6f4;
+  --accent-h:232; --accent-s:97%; --accent-l:85%;
+  --mono-rgb-0:0,0,0; --mono-rgb-100:255,255,255;
+  --highlight-mix-blend-mode:lighten; color-scheme:dark;
+}
+.theme-ctp-macchiato {  /* base #24273a · accent lavender #b7bdf8 */
+  --color-base-00:#181926; --color-base-05:#1b1d2b; --color-base-10:#1e2030;
+  --color-base-20:#24273a; --color-base-25:#363a4f; --color-base-30:#494d64;
+  --color-base-35:#5b6078; --color-base-40:#6e738d; --color-base-50:#8087a2;
+  --color-base-60:#939ab7; --color-base-70:#a5adcb; --color-base-100:#cad3f5;
+  --accent-h:234; --accent-s:82%; --accent-l:85%;
+  --mono-rgb-0:0,0,0; --mono-rgb-100:255,255,255;
+  --highlight-mix-blend-mode:lighten; color-scheme:dark;
+}
+.theme-ctp-frappe {  /* base #303446 · accent lavender #babbf1 */
+  --color-base-00:#232634; --color-base-05:#282b3a; --color-base-10:#292c3c;
+  --color-base-20:#303446; --color-base-25:#414559; --color-base-30:#51576d;
+  --color-base-35:#626880; --color-base-40:#737994; --color-base-50:#838ba7;
+  --color-base-60:#949cbb; --color-base-70:#a5adce; --color-base-100:#c6d0f5;
+  --accent-h:239; --accent-s:66%; --accent-l:84%;
+  --mono-rgb-0:0,0,0; --mono-rgb-100:255,255,255;
+  --highlight-mix-blend-mode:lighten; color-scheme:dark;
+}
+.theme-ctp-latte {  /* base #eff1f5 · accent lavender #7287fd */
+  --color-base-00:#dce0e8; --color-base-05:#e3e6ec; --color-base-10:#e6e9ef;
+  --color-base-20:#eff1f5; --color-base-25:#ccd0da; --color-base-30:#bcc0cc;
+  --color-base-35:#acb0be; --color-base-40:#9ca0b0; --color-base-50:#8c8fa1;
+  --color-base-60:#7c7f93; --color-base-70:#6c6f85; --color-base-100:#4c4f69;
+  --accent-h:231; --accent-s:97%; --accent-l:72%;
+  --mono-rgb-0:255,255,255; --mono-rgb-100:0,0,0;
+  --highlight-mix-blend-mode:darken; color-scheme:light;
+}
+
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
 .theme-light, .theme-dark { height: 100%; }
