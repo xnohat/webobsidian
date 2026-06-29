@@ -419,23 +419,23 @@ function AccountSettings({ s, reload }: { s: any; reload: () => void }) {
     setErr('');
     setMsg('');
     if (next.length < 6) {
-      setErr('Mật khẩu mới phải có ít nhất 6 ký tự');
+      setErr('New password must be at least 6 characters');
       return;
     }
     if (next !== confirm) {
-      setErr('Mật khẩu xác nhận không khớp');
+      setErr('Passwords do not match');
       return;
     }
     setBusy(true);
     try {
       await api.changePassword(current, next);
-      setMsg('Đã đổi mật khẩu ✓');
+      setMsg('Password changed ✓');
       setCurrent('');
       setNext('');
       setConfirm('');
       await reload();
     } catch (e: any) {
-      setErr(e?.message ?? 'Đổi mật khẩu thất bại');
+      setErr(e?.message ?? 'Failed to change password');
     } finally {
       setBusy(false);
     }
@@ -445,35 +445,35 @@ function AccountSettings({ s, reload }: { s: any; reload: () => void }) {
     <div>
       <h2>Account</h2>
       <p style={{ color: 'var(--text-muted)' }}>
-        Mật khẩu đăng nhập vào WebObsidian.
+        Your WebObsidian login password.
         {usingDefault && (
           <>
-            {' '}Bạn đang dùng <b>mật khẩu mặc định <code>123456</code></b> — hãy đổi mật khẩu để
-            bảo mật vault.
+            {' '}You’re using the <b>default password <code>123456</code></b> — change it to secure
+            your vault.
           </>
         )}
       </p>
-      <Row name="Mật khẩu hiện tại" desc={usingDefault ? 'Mặc định là 123456' : undefined}>
+      <Row name="Current password" desc={usingDefault ? 'Defaults to 123456' : undefined}>
         <input className="text-input" type="password" style={{ width: 240 }} value={current}
           onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" />
       </Row>
-      <Row name="Mật khẩu mới" desc="Tối thiểu 6 ký tự">
+      <Row name="New password" desc="At least 6 characters">
         <input className="text-input" type="password" style={{ width: 240 }} value={next}
           onChange={(e) => setNext(e.target.value)} autoComplete="new-password" />
       </Row>
-      <Row name="Xác nhận mật khẩu mới">
+      <Row name="Confirm new password">
         <input className="text-input" type="password" style={{ width: 240 }} value={confirm}
           onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" />
       </Row>
       {err && <div style={{ color: '#e5534b', margin: '6px 0' }}>{err}</div>}
       {msg && <div style={{ color: 'var(--text-accent, #4caf50)', margin: '6px 0' }}>{msg}</div>}
       <button className="btn" onClick={save} disabled={busy || !current || !next}>
-        {busy ? 'Đang lưu…' : 'Đổi mật khẩu'}
+        {busy ? 'Saving…' : 'Change password'}
       </button>
       <p style={{ color: 'var(--text-faint)', fontSize: 12, marginTop: 16 }}>
-        Quên mật khẩu? Đặt <code>auth.passwordHash</code> trong <code>data/settings.json</code> hoặc
-        biến môi trường <code>WEBOBSIDIAN_PASSWORD</code> làm mật khẩu khôi phục (override) rồi đăng
-        nhập lại để đổi mật khẩu mới.
+        Forgot your password? Set <code>auth.passwordHash</code> in <code>data/settings.json</code>,
+        or the <code>WEBOBSIDIAN_PASSWORD</code> environment variable, as a recovery (override)
+        password, then log back in to set a new one.
       </p>
     </div>
   );
