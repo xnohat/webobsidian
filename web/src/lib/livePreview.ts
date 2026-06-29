@@ -2086,7 +2086,7 @@ function buildDecorations(view: EditorView): DecorationSet {
         continue;
       }
 
-      // Inline-HTML paragraph line (e.g. `<u>…</u> và <mark>…`): Lezer only marks
+      // Inline-HTML paragraph line (e.g. `<u>…</u> and <mark>…`): Lezer only marks
       // block-level openers as HTMLBlock, so render whole-line inline HTML here.
       if (/^<[a-zA-Z][^>]*>/.test(text) && !lineActive(line.from)) {
         pushReplace(line.from, line.to, Decoration.replace({ widget: new HtmlBlockWidget(text) }));
