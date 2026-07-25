@@ -878,8 +878,12 @@ function scanTables(doc: Text): TableBlock[] {
 
 // Lightweight inline renderer for table cells (code / bold / italic / links).
 // `<br>` is the only inline HTML Obsidian commonly renders inside table cells.
+//
+// The `_…_` branch carries CommonMark's delimiter rules — `_` may not open or
+// close inside a word — or a cell holding `DB_NAME_v2` renders `_NAME_` as italic
+// and swallows the underscores. `*` is legal intraword, so it keeps the loose form.
 const CELL_INLINE_RE =
-  /(<br\s*\/?>)|(`[^`]+`)|(\*\*[^*]+\*\*)|(\*[^*]+\*|_[^_]+_)|(!?\[\[[^\]]+?\]\])|(\[[^\]]+?\]\([^)]+\))/gi;
+  /(<br\s*\/?>)|(`[^`]+`)|(\*\*[^*]+\*\*)|(\*[^*]+\*|(?<![\w\\])_(?!\s)[^_\n]+?(?<!\s)_(?!\w))|(!?\[\[[^\]]+?\]\])|(\[[^\]]+?\]\([^)]+\))/gi;
 
 function appendInline(parent: HTMLElement, text: string) {
   CELL_INLINE_RE.lastIndex = 0;
