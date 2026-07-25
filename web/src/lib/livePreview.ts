@@ -1899,6 +1899,20 @@ function attachmentUrl(target: string): string {
   return `/api/files/content?path=${encodeURIComponent(target)}`;
 }
 
+/**
+ * Markdown link targets are percent-encoded (`![](My%20File.png)`) and
+ * attachmentUrl() encodes again, so decode once or `%20` becomes `%2520`.
+ * try/catch: a lone `%` makes decodeURIComponent throw; the raw name is right then.
+ * Only for `![](…)` — `![[wikilink]]` targets are literal, not encoded.
+ */
+function decodeLinkTarget(target: string): string {
+  try {
+    return decodeURIComponent(target);
+  } catch {
+    return target;
+  }
+}
+
 function buildDecorations(view: EditorView): DecorationSet {
   const all: Range<Decoration>[] = [];
   const sel = view.state.selection;
@@ -2413,7 +2427,7 @@ function buildDecorations(view: EditorView): DecorationSet {
         // Browser-loadable URLs load directly; anything else (a relative path or
         // any custom scheme) is resolved by basename via the vault file index.
         const webLoadable = /^(https?|data|blob|file):/i.test(url);
-        const src = webLoadable ? url : attachmentUrl(url.split('/').pop() || url);
+        const src = webLoadable ? url : attachmentUrl(decodeLinkTarget(url.split('/').pop() || url));
         pushReplace(s, e, Decoration.replace({ widget: new ImageWidget(src, alt, w, h) }));
       }
 
