@@ -416,8 +416,11 @@ Express + SPA hiện có (không fork code, không đổi kiến trúc) — nên
   (chặn `..`, segment `.git`, symlink thoát vault), CORS hạn chế, rate limiting (cả `/auth/login`:
   10 lần/15 phút — **khóa theo địa chỉ socket TCP thật, không theo `req.ip`/`X-Forwarded-For`** nên
   không thể bypass bằng cách xoay vòng XFF, **bất kể cấu hình `trust proxy`**; vì vậy `trust proxy` để
-  mặc định bật (`true`, qua `TRUST_PROXY`) cho `X-Forwarded-Proto`/Secure-cookie hoạt động sau proxy). Bắt buộc đổi mật khẩu mặc định (`123456`) ngay sau lần đăng nhập đầu
-  (`mustChangePassword`). Security headers qua `helmet` + CSP (script-src 'self'+nonce; không ép HTTPS
+  mặc định bật (`true`, qua `TRUST_PROXY`) cho `X-Forwarded-Proto`/Secure-cookie hoạt động sau proxy). The default password (`123456`) is **only accepted when no other credential has
+  been configured** (`auth.userPasswordHash`, `auth.passwordHash`, or the `WEBOBSIDIAN_PASSWORD` env
+  var); only then is changing it mandatory right after the first login (`mustChangePassword`). That flag
+  is **not** returned by `GET /auth/status` (an unauthenticated route), so it cannot be used to discover
+  which instances still accept the default; clients read it from `/auth/login` and `/auth/me`. Security headers qua `helmet` + CSP (script-src 'self'+nonce; không ép HTTPS
   để giữ self-host HTTP). Token git/PAT được redact khỏi mọi thông báo lỗi trả client + log. WebSocket
   `/ws` yêu cầu phiên đăng nhập hợp lệ. Plugin `id` được validate trước khi thành path segment; đổi
   `vault.path` qua API bị giới hạn trong `allowedRoots`.

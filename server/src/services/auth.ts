@@ -2,6 +2,7 @@ import { scrypt, randomBytes, timingSafeEqual, createHash } from 'node:crypto';
 import { promisify } from 'node:util';
 import jwt from 'jsonwebtoken';
 import { getSettings, updateSettings } from './settings.js';
+import { isDefaultPasswordActive } from './password-policy.js';
 import { config } from '../config.js';
 
 const scryptAsync = promisify(scrypt);
@@ -42,10 +43,16 @@ export async function isPasswordSet(): Promise<boolean> {
   return true;
 }
 
-/** Đã đổi pass khỏi mặc định chưa? */
+/**
+ * Has the instance moved off the default password yet? "Custom" here includes an
+ * operator-configured override (`auth.passwordHash` / `WEBOBSIDIAN_PASSWORD`), not
+ * just a password set through the UI: once an override exists, `123456` is no
+ * longer accepted (see `isDefaultPasswordActive`), so we must not force the user
+ * to go and change it.
+ */
 export async function hasCustomPassword(): Promise<boolean> {
   const s = await getSettings();
-  return Boolean(s.auth.userPasswordHash);
+  return !isDefaultPasswordActive(s.auth);
 }
 
 /** Lưu mật khẩu người dùng mới (ghi đè pass mặc định/pass cũ). */
@@ -68,10 +75,12 @@ export async function setUserPassword(password: string): Promise<void> {
 export async function checkPassword(password: string): Promise<boolean> {
   const s = await getSettings();
 
-  // (1) Mật khẩu đăng nhập hiệu dụng.
+  // (1) The effective login password. The default branch must go through
+  // isDefaultPasswordActive(): it previously tested `userPasswordHash` alone, so
+  // setting WEBOBSIDIAN_PASSWORD without ever opening the UI still let `123456` in.
   if (s.auth.userPasswordHash) {
     if (await verifyPassword(password, s.auth.userPasswordHash)) return true;
-  } else if (safeEqualStr(password, DEFAULT_PASSWORD)) {
+  } else if (isDefaultPasswordActive(s.auth) && safeEqualStr(password, DEFAULT_PASSWORD)) {
     return true;
   }
 

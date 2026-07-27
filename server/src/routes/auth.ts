@@ -35,8 +35,12 @@ function cookieOpts(req: Request) {
 authRouter.get(
   '/status',
   asyncHandler(async (_req, res) => {
-    // mustChangePassword=true ⇒ still on the default 123456; the UI forces a change.
-    res.json({ passwordSet: await isPasswordSet(), mustChangePassword: !(await hasCustomPassword()) });
+    // Do NOT report `mustChangePassword` here. This route needs no auth, so the
+    // flag was a public oracle for "this instance still accepts 123456": a port
+    // scan was enough to find every takeable deployment.
+    // The client only reads `passwordSet` from here (web/src/components/Login.tsx);
+    // the flag is available post-login on /auth/login and /auth/me.
+    res.json({ passwordSet: await isPasswordSet() });
   }),
 );
 

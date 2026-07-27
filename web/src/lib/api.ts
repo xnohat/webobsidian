@@ -89,7 +89,10 @@ export class ApiError extends Error {
 
 export const api = {
   // auth
-  authStatus: () => req<{ passwordSet: boolean; mustChangePassword: boolean }>('/auth/status'),
+  // /auth/status is unauthenticated, so it deliberately reports nothing about
+  // whether the default password is still in use. mustChangePassword comes from
+  // /auth/login and /auth/me instead.
+  authStatus: () => req<{ passwordSet: boolean }>('/auth/status'),
   setup: (password: string) =>
     req<{ ok: true }>('/auth/setup', { method: 'POST', body: JSON.stringify({ password }) }),
   login: (password: string) =>
