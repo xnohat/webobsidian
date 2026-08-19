@@ -77,6 +77,32 @@ curl.exe https://YOUR-WORKER.workers.dev/api/health
 
 The response should report both `githubConfigured` and `authConfigured` as `true`.
 
+## Automatic deployment from GitHub
+
+The `deploy-cloudflare.yml` workflow verifies and deploys the editor whenever the
+`cloudflare-production` branch changes. It can also be started manually from the
+GitHub Actions page. Neither `main` nor feature branches deploy automatically.
+
+Add these repository Actions secrets under **Settings → Secrets and variables →
+Actions**:
+
+- `CLOUDFLARE_API_TOKEN`: an API token created from Cloudflare's **Edit Cloudflare
+  Workers** template and restricted to the deployment account.
+- `CLOUDFLARE_ACCOUNT_ID`: the Cloudflare account ID that owns `usc-wiki-editor`.
+
+The application secrets (`GITHUB_TOKEN`, `EDITOR_PASSWORD`, and `SESSION_SECRET`) stay
+on the Worker and are preserved by deployments. Do not copy them into the GitHub
+workflow.
+
+After reviewing a release, promote the exact tested commit without merging it into
+`main`:
+
+```powershell
+git push origin codex/update-contribution-pr:cloudflare-production
+```
+
+That push starts verification and deploys only if every check succeeds.
+
 ## Routing and rate limits
 
 - `/api/*` and `/auth/*` run through `cloudflare/worker.ts` first.

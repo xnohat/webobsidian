@@ -1,0 +1,51 @@
+name: Deploy contribution editor to Cloudflare
+
+on:
+  push:
+    branches:
+      - cloudflare-production
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-production
+  cancel-in-progress: false
+
+jobs:
+  verify-and-deploy:
+    name: Verify and deploy Worker
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify contribution editor
+        run: |
+          npm run typecheck
+          npm run typecheck:netlify
+          npm run typecheck:cloudflare
+          npm run test:netlify
+          npm run test:cloudflare
+
+      - name: Build contribution frontend
+        run: npm run build:contribution
+
+      - name: Deploy Cloudflare Worker
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: 4.111.0
+          command: deploy --config wrangler.jsonc
