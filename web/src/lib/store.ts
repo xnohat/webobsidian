@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { api, type TreeNode, type ShareRecord } from './api';
 import { findNode } from './tree';
+import { loadDraft, saveDraft } from './drafts';
+import { contributionMode } from './mode';
 
 /** Per-tab id so we can ignore the echo of our own server-pushed state change. */
 export const CLIENT_ID = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -485,7 +487,8 @@ export const useStore = create<AppState>()(
         let content = '';
         if (!isFolder && TEXT_RE.test(path)) {
           const r = await api.read(path);
-          content = typeof r === 'string' ? r : r.content;
+          const remoteContent = typeof r === 'string' ? r : r.content;
+          content = contributionMode ? (loadDraft(path) ?? remoteContent) : remoteContent;
         }
         const title = path.split('/').pop() ?? path;
         set((s) => {
@@ -525,6 +528,12 @@ export const useStore = create<AppState>()(
         const { activePath, content, dirty } = get();
         if (!activePath || !dirty) return;
         if (!TEXT_RE.test(activePath)) return;
+        if (contributionMode) {
+          saveDraft(activePath, content);
+          set({ dirty: false });
+          get().notify('Draft saved in this browser');
+          return;
+        }
         await api.write(activePath, content);
         set({ dirty: false });
       },

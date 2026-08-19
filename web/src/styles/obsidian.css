@@ -935,6 +935,18 @@ body.wo-col-resizing .sidebar, body.wo-col-resizing .right-sidebar { transition:
 .btn.secondary { background: var(--bg-modifier-active); color: var(--text-normal); }
 .btn.danger { background: #d6453d; color: #fff; }
 
+/* Contribution review */
+.contribution-submit { color: var(--text-accent); font-weight: 600; }
+.contribution-dialog { width: 540px; }
+.contribution-dialog-body { display: flex; flex-direction: column; gap: 14px; padding: 24px; overflow-y: auto; }
+.contribution-dialog-body h2 { margin: 0; font-size: 20px; }
+.contribution-help { margin: 0; color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+.contribution-dialog-body label { display: flex; flex-direction: column; gap: 6px; color: var(--text-muted); font-size: 12px; }
+.contribution-dialog-body .text-input { width: 100%; box-sizing: border-box; }
+.contribution-success { border: 1px solid var(--interactive-accent); border-radius: var(--radius); padding: 10px 12px; color: var(--text-normal); background: var(--tag-bg); }
+.contribution-success a { color: var(--text-accent); }
+.contribution-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--bg-modifier-border); }
+
 /* Login */
 .login-screen { height: 100%; display: grid; place-items: center; background: var(--bg-secondary); }
 .login-card { width: 360px; background: var(--bg-primary); border: 1px solid var(--bg-modifier-border);

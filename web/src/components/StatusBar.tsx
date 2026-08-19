@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useStore } from '../lib/store';
 import { api } from '../lib/api';
 import Icon from './Icon';
+import ContributionDialog from './ContributionDialog';
+import { contributionMode } from '../lib/mode';
 
 export default function StatusBar() {
   const content = useStore((s) => s.content);
@@ -11,9 +13,11 @@ export default function StatusBar() {
   const notify = useStore((s) => s.notify);
   const [git, setGit] = useState<any>(null);
   const [syncing, setSyncing] = useState(false);
+  const [contributionOpen, setContributionOpen] = useState(false);
 
   const refresh = () => api.gitStatus().then(setGit).catch(() => setGit(null));
   useEffect(() => {
+    if (contributionMode) return;
     refresh();
     const id = setInterval(refresh, 15000);
     return () => clearInterval(id);
@@ -46,13 +50,25 @@ export default function StatusBar() {
 
   return (
     <div className="status-bar">
-      {dirty && <span>Saving…</span>}
+      {dirty && <span>{contributionMode ? 'Unsaved draft' : 'Saving…'}</span>}
       {isText && <span>{words} words</span>}
       {isText && <span>{content.length} characters</span>}
-      <span className="clickable" title="Git sync" onClick={sync}>
-        <Icon name="refresh-cw" size={13} style={syncing ? { animation: 'spin 1s linear infinite' } : undefined} />
-        {gitLabel}
-      </span>
+      {contributionMode ? (
+        isText && activePath && (
+          <span className="clickable contribution-submit" title="Create a review pull request" onClick={() => setContributionOpen(true)}>
+            <Icon name="git-pull-request" size={13} />
+            提交审核
+          </span>
+        )
+      ) : (
+        <span className="clickable" title="Git sync" onClick={sync}>
+          <Icon name="refresh-cw" size={13} style={syncing ? { animation: 'spin 1s linear infinite' } : undefined} />
+          {gitLabel}
+        </span>
+      )}
+      {contributionOpen && activePath && (
+        <ContributionDialog path={activePath} onClose={() => setContributionOpen(false)} />
+      )}
     </div>
   );
 }

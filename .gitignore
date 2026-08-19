@@ -5,6 +5,12 @@ data/
 *.log
 .env
 .env.local
+.env.*
+!.env.example
+!.env.netlify.example
+!web/.env.contribution
+.dev.vars*
+!.dev.vars.example
 .DS_Store
 web/dist/
 server/dist/

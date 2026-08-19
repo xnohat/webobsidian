@@ -56,6 +56,13 @@ export interface GitCommit {
   author: string;
 }
 
+export interface ContributionResult {
+  branch: string;
+  commitSha: string;
+  pullNumber: number;
+  pullUrl: string;
+}
+
 async function req<T>(url: string, opts: RequestInit = {}): Promise<T> {
   const { headers: optHeaders, ...rest } = opts;
   const res = await fetch(url, {
@@ -142,6 +149,17 @@ export const api = {
     return res.json() as Promise<{ ok: true; path: string; size: number }>;
   },
   rawUrl: (path: string) => `/api/files/content?path=${encodeURIComponent(path)}`,
+
+  // contribution review
+  submitContribution: (input: {
+    title: string;
+    contributor: { name: string };
+    files: { path: string; content: string }[];
+  }) =>
+    req<ContributionResult>('/api/contributions', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
 
   // search & links
   // limit omitted → server returns every match (panel renders them incrementally)

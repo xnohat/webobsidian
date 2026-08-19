@@ -17,6 +17,8 @@ GitHub sync (incl. Git LFS), an API for AI agents, and community-plugin support.
 
 [Quick start](#-quick-start-docker) · [Features](#-features) · [Configuration](#-configuration) · [Agent API](#-agent-api) · [Development](#-local-development) · [Architecture](#-architecture)
 
+Contribution-editor deployment: [Netlify configuration](netlify.toml) · [Cloudflare Workers](docs/CLOUDFLARE_DEPLOYMENT.md)
+
 > 📐 Design: [PRD.md](PRD.md) · 📋 Progress: [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
 
 </div>

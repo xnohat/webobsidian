@@ -15,6 +15,11 @@
     "build": "npm --workspace web run build && npm --workspace server run build",
     "start": "npm --workspace server run start",
     "typecheck": "npm --workspace server run typecheck && npm --workspace web run typecheck",
+    "typecheck:netlify": "npm --workspace server exec -- tsc -p ../netlify/tsconfig.json",
+    "test:netlify": "npm --workspace server exec -- tsx --test ../netlify/tests/*.test.ts",
+    "typecheck:cloudflare": "npm --workspace server exec -- tsc -p ../cloudflare/tsconfig.json",
+    "test:cloudflare": "npm --workspace server exec -- tsx --test ../cloudflare/tests/*.test.ts",
+    "build:contribution": "npm --workspace web run build -- --mode contribution",
     "desktop": "npm run build && npm --workspace desktop run dev",
     "desktop:dist": "npm run build && npm --workspace desktop run dist",
     "desktop:publish": "npm run build && npm --workspace desktop run dist:publish"

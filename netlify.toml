@@ -1,0 +1,15 @@
+[build]
+  command = "npm --workspace web run build"
+  publish = "server/public"
+
+[build.environment]
+  NODE_VERSION = "22"
+  VITE_CONTRIBUTION_MODE = "true"
+
+[functions]
+  directory = "netlify/functions"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
