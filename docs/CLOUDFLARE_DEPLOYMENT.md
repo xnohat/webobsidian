@@ -80,8 +80,8 @@ The response should report both `githubConfigured` and `authConfigured` as `true
 ## Automatic deployment from GitHub
 
 The `deploy-cloudflare.yml` workflow verifies and deploys the editor whenever the
-`cloudflare-production` branch changes. It can also be started manually from the
-GitHub Actions page. Neither `main` nor feature branches deploy automatically.
+`cloudflare-production` branch changes. Neither `main` nor feature branches deploy
+automatically.
 
 Add these repository Actions secrets under **Settings → Secrets and variables →
 Actions**:

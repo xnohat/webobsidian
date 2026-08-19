@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - cloudflare-production
-  workflow_dispatch:
 
 permissions:
   contents: read
