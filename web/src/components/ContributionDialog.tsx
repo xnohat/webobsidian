@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { api } from '../lib/api';
+import { api, type OpenContribution } from '../lib/api';
 import { useStore } from '../lib/store';
 import {
   clearContribution,
@@ -28,7 +28,29 @@ export default function ContributionDialog({ path, onClose }: Props) {
   const [error, setError] = useState('');
   const [pullUrl, setPullUrl] = useState('');
   const [linkExisting, setLinkExisting] = useState(false);
-  const [manualBranch, setManualBranch] = useState('');
+  const [openContributions, setOpenContributions] = useState<OpenContribution[]>([]);
+  const [selectedBranch, setSelectedBranch] = useState('');
+  const [loadingContributions, setLoadingContributions] = useState(false);
+
+  const toggleExisting = async () => {
+    if (linkExisting) {
+      setLinkExisting(false);
+      setSelectedBranch('');
+      return;
+    }
+    setLinkExisting(true);
+    setLoadingContributions(true);
+    setError('');
+    try {
+      const result = await api.listOpenContributions();
+      setOpenContributions(result.items);
+      setSelectedBranch(result.items[0]?.branch ?? '');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : '无法读取开放 PR');
+    } finally {
+      setLoadingContributions(false);
+    }
+  };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -37,7 +59,7 @@ export default function ContributionDialog({ path, onClose }: Props) {
     try {
       await save();
       const content = useStore.getState().content;
-      const updateBranch = (existing?.branch ?? manualBranch.trim()) || undefined;
+      const updateBranch = (existing?.branch ?? selectedBranch) || undefined;
       const result = await api.submitContribution({
         title,
         contributor: { name: contributorName },
@@ -75,7 +97,7 @@ export default function ContributionDialog({ path, onClose }: Props) {
     <div className="modal-bg" onClick={onClose}>
       <form className="modal contribution-dialog" onSubmit={submit} onClick={(event) => event.stopPropagation()}>
         <div className="contribution-dialog-body">
-          <h2>{existing ? `更新 PR #${existing.pullNumber}` : manualBranch ? '更新已有 PR' : '提交审核'}</h2>
+          <h2>{existing ? `更新 PR #${existing.pullNumber}` : selectedBranch ? '更新已有 PR' : '提交审核'}</h2>
           <p className="contribution-help">
             系统会使用统一贡献账号创建分支，并向主仓库的 <code>contributions</code> 分支发起 PR；不会直接修改 <code>main</code>。
           </p>
@@ -86,15 +108,24 @@ export default function ContributionDialog({ path, onClose }: Props) {
           )}
           {!existing && linkExisting && (
             <label>
-              <span>已有投稿分支</span>
-              <input
+              <span>选择开放的投稿 PR</span>
+              <select
                 className="text-input"
-                value={manualBranch}
-                placeholder="contrib/20260819-3e98d0f0"
-                pattern="contrib/\d{8}-[a-f0-9]{8}"
+                value={selectedBranch}
                 required
-                onChange={(event) => setManualBranch(event.target.value.trim())}
-              />
+                disabled={loadingContributions || openContributions.length === 0}
+                onChange={(event) => setSelectedBranch(event.target.value)}
+              >
+                {loadingContributions && <option value="">正在读取 GitHub…</option>}
+                {!loadingContributions && openContributions.length === 0 && (
+                  <option value="">没有可关联的开放 PR</option>
+                )}
+                {openContributions.map((contribution) => (
+                  <option key={contribution.branch} value={contribution.branch}>
+                    #{contribution.pullNumber} · {contribution.title} · {contribution.branch}
+                  </option>
+                ))}
+              </select>
             </label>
           )}
           <label>
@@ -148,17 +179,14 @@ export default function ContributionDialog({ path, onClose }: Props) {
             <button
               className="btn secondary"
               type="button"
-              onClick={() => {
-                setLinkExisting((value) => !value);
-                setManualBranch('');
-              }}
+              onClick={toggleExisting}
             >
               {linkExisting ? '取消关联' : '关联已有 PR'}
             </button>
           )}
           {!pullUrl && (
             <button className="btn" type="submit" disabled={busy}>
-              {busy ? '正在提交…' : existing || manualBranch ? '更新 PR' : '创建 PR'}
+              {busy ? '正在提交…' : existing || selectedBranch ? '更新 PR' : '创建 PR'}
             </button>
           )}
         </div>

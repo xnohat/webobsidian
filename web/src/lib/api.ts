@@ -64,6 +64,13 @@ export interface ContributionResult {
   pullUrl: string;
 }
 
+export interface OpenContribution {
+  branch: string;
+  pullNumber: number;
+  pullUrl: string;
+  title: string;
+}
+
 async function req<T>(url: string, opts: RequestInit = {}): Promise<T> {
   const { headers: optHeaders, ...rest } = opts;
   const res = await fetch(url, {
@@ -162,6 +169,8 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(input),
     }),
+  listOpenContributions: () =>
+    req<{ items: OpenContribution[] }>('/api/contributions'),
 
   // search & links
   // limit omitted → server returns every match (panel renders them incrementally)

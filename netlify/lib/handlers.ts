@@ -10,6 +10,7 @@ import {
   createContribution,
   getStagingMarkdown,
   getStagingTree,
+  listOpenContributions,
   updateContribution,
 } from './github.js';
 import { json, methodNotAllowed } from './http.js';
@@ -134,12 +135,15 @@ export async function handleSubmitContribution(
   request: Request,
   env: RuntimeEnvironment,
 ): Promise<Response> {
-  if (request.method !== 'POST') return methodNotAllowed(['POST']);
+  if (!['GET', 'POST'].includes(request.method)) return methodNotAllowed(['GET', 'POST']);
   if (!(await hasValidSession(request, env))) {
     return json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
+    if (request.method === 'GET') {
+      return json({ items: await listOpenContributions(loadEditorConfig(env)) });
+    }
     const input = validateContributionInput(await request.json());
     const config = loadEditorConfig(env);
     const result = input.branch

@@ -9,10 +9,10 @@ contribution branch locally, so later submissions add commits to the same open p
 request. Clear the saved contribution from the submission dialog after the pull request
 is merged or closed to begin a new review.
 
-Pull requests created before this tracking feature can be linked from the submission
-dialog by entering their `contrib/YYYYMMDD-xxxxxxxx` head branch. The API verifies that
-the branch belongs to the configured fork and still has exactly one open pull request
-targeting the staging branch before adding a commit.
+Pull requests created before this tracking feature can be selected from the submission
+dialog. The API lists only open `contrib/YYYYMMDD-xxxxxxxx` branches owned by the
+configured fork and targeting the staging branch, then verifies the selected pull
+request again before adding a commit.
 
 ## Prerequisites
 

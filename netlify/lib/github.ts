@@ -36,6 +36,13 @@ export interface CreatedContribution {
   pullUrl: string;
 }
 
+export interface OpenContribution {
+  branch: string;
+  pullNumber: number;
+  pullUrl: string;
+  title: string;
+}
+
 function pullBody(config: EditorConfig, input: CreateContributionInput, branch: string): string {
   return [
     '由 USC-Wiki 网页投稿编辑器创建。',
@@ -99,6 +106,32 @@ export async function getStagingMarkdown(config: EditorConfig, path: string): Pr
     { headers: { accept: 'application/vnd.github.raw+json' } },
   );
   return response.text();
+}
+
+export async function listOpenContributions(config: EditorConfig): Promise<OpenContribution[]> {
+  const query = new URLSearchParams({
+    state: 'open',
+    base: config.stagingBranch,
+    per_page: '100',
+  });
+  const pulls = await githubJson<Array<{
+    number: number;
+    html_url: string;
+    title: string;
+    head: { ref: string; repo: { owner: { login: string } } | null };
+  }>>(config, repoPath(config.upstreamOwner, config.repo, `/pulls?${query}`));
+
+  return pulls
+    .filter((pull) =>
+      pull.head.repo?.owner.login.toLowerCase() === config.forkOwner.toLowerCase()
+      && /^contrib\/\d{8}-[a-f0-9]{8}$/.test(pull.head.ref),
+    )
+    .map((pull) => ({
+      branch: pull.head.ref,
+      pullNumber: pull.number,
+      pullUrl: pull.html_url,
+      title: pull.title,
+    }));
 }
 
 async function githubJson<T>(
