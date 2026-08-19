@@ -41,6 +41,8 @@ import {
 import { renderMarkdown } from '../lib/markdown';
 import { setActiveEditor } from '../lib/activeEditor';
 import { api } from '../lib/api';
+import { contributionMode } from '../lib/mode';
+import { resolveNotePath } from '../lib/tree';
 
 const titleOf = (path: string | null) =>
   path ? (path.split('/').pop() ?? path).replace(/\.(md|markdown)$/i, '') : '';
@@ -70,12 +72,18 @@ export default function Editor() {
 
   useEffect(() => {
     setLivePreviewMenuHandler(openContextMenu);
-    setLivePreviewPropertyProvider(() => api.properties().then((r) => r.properties).catch(() => []));
-    setLivePreviewTagProvider(() => api.tags().then((r) => r.tags.map((t) => t.tag)).catch(() => []));
+    setLivePreviewPropertyProvider(() => contributionMode
+      ? Promise.resolve([])
+      : api.properties().then((r) => r.properties).catch(() => []));
+    setLivePreviewTagProvider(() => contributionMode
+      ? Promise.resolve([])
+      : api.tags().then((r) => r.tags.map((t) => t.tag)).catch(() => []));
     // ![[note]] transclusion: resolve + render with the same pipeline as Reading.
     const resolveEmbed = async (target: string) => {
       try {
-        const { path } = await api.resolve(target);
+        const path = contributionMode
+          ? resolveNotePath(tree, target)
+          : (await api.resolve(target)).path;
         if (!path) return null;
         const r = await api.read(path);
         return { path, content: typeof r === 'string' ? r : r.content };
@@ -90,7 +98,7 @@ export default function Editor() {
       const html = await renderMarkdown(stripped, { rawUrl: (p) => api.rawUrl(p), resolveEmbed });
       return { html };
     });
-  }, [openContextMenu]);
+  }, [openContextMenu, tree]);
 
   // Feed the `[[` link suggester (vault file paths) and the `#` tag suggester.
   useEffect(() => {

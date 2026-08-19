@@ -17,6 +17,7 @@ import FolderPicker from './components/FolderPicker';
 import { loadPlugins } from './lib/plugins';
 import { initUrlSync } from './lib/urlsync';
 import { useIsMobile } from './lib/useIsMobile';
+import { contributionMode } from './lib/mode';
 
 export default function App() {
   const authed = useStore((s) => s.authed);
@@ -51,9 +52,15 @@ export default function App() {
 
   useEffect(() => {
     if (!authed) return;
-    loadTree();
     // Deep link (/note/<path>) wins over the restored workspace's active note.
     const deepLink = initUrlSync();
+    if (contributionMode) {
+      void loadTree().then(() => {
+        if (deepLink) return useStore.getState().openFile(deepLink);
+      });
+      return;
+    }
+    loadTree();
     useStore
       .getState()
       .loadUiState() // restore workspace from server + open note(s)
@@ -103,9 +110,9 @@ export default function App() {
       if (k === 'p') { e.preventDefault(); setPalette(true, e.shiftKey ? 'commands' : 'commands'); }
       else if (k === 'o') { e.preventDefault(); setPalette(true, 'files'); }
       else if (k === 's') { e.preventDefault(); save(); }
-      else if (k === 'n') { e.preventDefault(); s.newNote(); }
+      else if (k === 'n' && !contributionMode) { e.preventDefault(); s.newNote(); }
       else if (k === 'e') { e.preventDefault(); s.setViewMode(s.viewMode === 'reading' ? 'live' : 'reading'); }
-      else if (k === 'f' && e.shiftKey) { e.preventDefault(); s.setLeftPanel('search'); }
+      else if (k === 'f' && e.shiftKey && !contributionMode) { e.preventDefault(); s.setLeftPanel('search'); }
       else if (k === '\\') { e.preventDefault(); s.toggleLeft(); }
     };
     window.addEventListener('keydown', onKey);
@@ -161,11 +168,11 @@ export default function App() {
   // CSS), driven by the device-local `mobileDrawer` state — not the persisted
   // leftOpen/rightOpen that sync across desktops.
   const showLeft = isMobile || leftOpen;
-  const showRight = isMobile || rightOpen;
+  const showRight = !contributionMode && (isMobile || rightOpen);
   const appCls = [
     'app',
     leftOpen ? '' : 'left-closed',
-    rightOpen ? '' : 'right-closed',
+    showRight ? '' : 'right-closed',
     isMobile ? 'mobile' : '',
     isMobile && mobileDrawer === 'left' ? 'drawer-left-open' : '',
     isMobile && mobileDrawer === 'right' ? 'drawer-right-open' : '',
@@ -183,12 +190,12 @@ export default function App() {
         )}
       </div>
       <CommandPalette />
-      <Settings />
-      <ShareDialog />
-      <VersionHistory />
-      <TrashView />
+      {!contributionMode && <Settings />}
+      {!contributionMode && <ShareDialog />}
+      {!contributionMode && <VersionHistory />}
+      {!contributionMode && <TrashView />}
       <ContextMenu />
-      <FolderPicker />
+      {!contributionMode && <FolderPicker />}
       {toast && <div className="toast">{toast}</div>}
     </div>
   );

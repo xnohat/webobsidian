@@ -14,6 +14,7 @@ import { editorFind, getActiveEditor } from '../lib/activeEditor';
 import { triggerAddProperty } from '../lib/livePreview';
 import { pathToUrl } from '../lib/urlsync';
 import { VIDEO_EXT_RE, AUDIO_EXT_RE } from '../lib/media';
+import { contributionMode } from '../lib/mode';
 
 function EditorPane() {
   const activePath = useStore((s) => s.activePath);
@@ -142,6 +143,51 @@ export default function Workspace() {
         // extracts the stage to a PNG (a plain canvas read would be blank).
         { label: 'Copy screenshot', icon: 'camera', onClick: () => window.dispatchEvent(new CustomEvent('wo-graph-screenshot')) },
         { label: '', separator: true },
+        ...tabItems,
+      ];
+    } else if (contributionMode) {
+      const sep: ContextMenuItem = { label: '', separator: true };
+      items = [
+        ...(canSplit
+          ? [
+              { label: 'Split right', icon: 'columns', onClick: () => openToSide(path, 'right') },
+              { label: 'Split down', icon: 'rows', onClick: () => openToSide(path, 'down') },
+            ]
+          : []),
+        { label: 'Open in new window', icon: 'arrow-up-right', onClick: () => window.open(pathToUrl(path), '_blank', 'noopener') },
+        sep,
+        { label: bookmarks.includes(path) ? 'Remove bookmark' : 'Bookmark', icon: 'bookmark', onClick: () => toggleBookmark(path) },
+        ...(isMd ? [{ label: 'Add file property', icon: 'plus', onClick: addFileProperty }] : []),
+        ...(isMd ? [{ label: 'Export to PDF…', icon: 'file-pdf', onClick: exportToPdf }] : []),
+        ...(canSplit
+          ? [
+              sep,
+              {
+                label: 'Find…',
+                icon: 'search',
+                onClick: () => {
+                  if (!editorFind()) notify('Open the note to search inside it');
+                },
+              },
+            ]
+          : []),
+        sep,
+        {
+          label: 'Copy URL path',
+          onClick: () => {
+            navigator.clipboard?.writeText(`${location.origin}${pathToUrl(path)}`).catch(() => {});
+            notify('URL copied');
+          },
+        },
+        {
+          label: 'Reveal file in navigation',
+          icon: 'folder',
+          onClick: () => {
+            revealInTree(path);
+            if (isMobile) setMobileDrawer('left');
+          },
+        },
+        sep,
         ...tabItems,
       ];
     } else {
@@ -287,7 +333,12 @@ export default function Workspace() {
   };
 
   return (
-    <div className="workspace" onPaste={onPaste} onDrop={onDrop} onDragOver={(e) => e.preventDefault()}>
+    <div
+      className="workspace"
+      onPaste={contributionMode ? undefined : onPaste}
+      onDrop={contributionMode ? undefined : onDrop}
+      onDragOver={contributionMode ? undefined : (e) => e.preventDefault()}
+    >
       <div className="tab-bar">
         <span
           className="tab-new tab-ctl"
@@ -325,21 +376,25 @@ export default function Workspace() {
             </div>
           ))}
         </div>
-        <span
-          className="tab-new tab-ctl"
-          title="New note (⌘N)"
-          onClick={() => newNote()}
-        >
-          <Icon name="plus" size={16} />
-        </span>
+        {!contributionMode && (
+          <span
+            className="tab-new tab-ctl"
+            title="New note (⌘N)"
+            onClick={() => newNote()}
+          >
+            <Icon name="plus" size={16} />
+          </span>
+        )}
         <span className="grow" style={{ flex: 1 }} />
-        <span
-          className="tab-new tab-ctl"
-          title="Toggle right sidebar"
-          onClick={() => (isMobile ? setMobileDrawer('right') : toggleRight())}
-        >
-          <Icon name="panel-right" size={isMobile ? 20 : 16} />
-        </span>
+        {!contributionMode && (
+          <span
+            className="tab-new tab-ctl"
+            title="Toggle right sidebar"
+            onClick={() => (isMobile ? setMobileDrawer('right') : toggleRight())}
+          >
+            <Icon name="panel-right" size={isMobile ? 20 : 16} />
+          </span>
+        )}
       </div>
 
       {activePath && (

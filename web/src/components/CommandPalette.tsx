@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../lib/store';
 import { api, type TreeNode } from '../lib/api';
+import { contributionMode } from '../lib/mode';
 
 interface Cmd {
   id: string;
@@ -46,22 +47,28 @@ export default function CommandPalette() {
 
   const files = useMemo(() => flatten(tree), [tree]);
 
-  const commands: Cmd[] = useMemo(
-    () => [
-      { id: 'new', title: 'New note', hint: '⌘N', run: () => newNote() },
-      { id: 'new-canvas', title: 'New canvas', run: () => newCanvas() },
-      { id: 'daily', title: 'Open today’s daily note', run: () => openDailyNote() },
+  const commands: Cmd[] = useMemo(() => {
+    const editorCommands: Cmd[] = [
       { id: 'save', title: 'Save current file', hint: '⌘S', run: () => save() },
       { id: 'bookmark', title: 'Bookmark current file', run: () => activePath && toggleBookmark(activePath) },
       { id: 'split', title: 'Open current file to the right', run: () => activePath && openToSide(activePath) },
-      { id: 'search', title: 'Open search', run: () => setLeftPanel('search') },
       { id: 'bookmarks', title: 'Open bookmarks & recent', run: () => setLeftPanel('bookmarks') },
-      { id: 'graph', title: 'Open graph view', run: () => setGraph(true) },
-      { id: 'settings', title: 'Open settings', run: () => setSettings(true) },
-      { id: 'trash', title: 'Open trash', run: () => setTrash(true) },
       { id: 'reading', title: 'View: Reading mode', run: () => setViewMode('reading') },
       { id: 'live', title: 'View: Live edit', run: () => setViewMode('live') },
       { id: 'source', title: 'View: Source', run: () => setViewMode('source') },
+    ];
+    if (contributionMode) return editorCommands;
+    return [
+      { id: 'new', title: 'New note', hint: '⌘N', run: () => newNote() },
+      { id: 'new-canvas', title: 'New canvas', run: () => newCanvas() },
+      { id: 'daily', title: 'Open today’s daily note', run: () => openDailyNote() },
+      ...editorCommands.slice(0, 3),
+      { id: 'search', title: 'Open search', run: () => setLeftPanel('search') },
+      editorCommands[3],
+      { id: 'graph', title: 'Open graph view', run: () => setGraph(true) },
+      { id: 'settings', title: 'Open settings', run: () => setSettings(true) },
+      { id: 'trash', title: 'Open trash', run: () => setTrash(true) },
+      ...editorCommands.slice(4),
       { id: 'reindex', title: 'Rebuild search index', run: async () => {
           notify('Rebuilding search index…', 0);
           try {
@@ -71,9 +78,8 @@ export default function CommandPalette() {
             notify('Failed to rebuild search index');
           }
         } },
-    ],
-    [save, setLeftPanel, setGraph, setSettings, setTrash, setViewMode, activePath, toggleBookmark, openToSide, openDailyNote, newNote, newCanvas, notify],
-  );
+    ];
+  }, [save, setLeftPanel, setGraph, setSettings, setTrash, setViewMode, activePath, toggleBookmark, openToSide, openDailyNote, newNote, newCanvas, notify]);
 
   const items = useMemo(() => {
     const isCmd = mode === 'commands' || q.startsWith('>');

@@ -5,6 +5,7 @@ import SearchPanel from './SearchPanel';
 import TagsPanel from './TagsPanel';
 import BookmarksPanel from './BookmarksPanel';
 import Icon from './Icon';
+import { contributionMode } from '../lib/mode';
 
 const TITLES: Record<string, string> = {
   files: 'Files',
@@ -29,6 +30,7 @@ export default function Sidebar() {
   const toggleAutoReveal = useStore((s) => s.toggleAutoReveal);
   const openContextMenu = useStore((s) => s.openContextMenu);
   const vaultName = tree?.name || 'Vault';
+  const visiblePanel = contributionMode && leftPanel !== 'bookmarks' ? 'files' : leftPanel;
 
   const allCollapsed = expanded.length === 0;
   const toggleCollapseAll = () => setExpanded(allCollapsed ? collectFolderPaths(tree) : []);
@@ -88,18 +90,22 @@ export default function Sidebar() {
   return (
     <div className="sidebar">
       <div className="nav-header">
-        <span className="nav-title">{TITLES[leftPanel]}</span>
-        {leftPanel === 'files' && (
+        <span className="nav-title">{TITLES[visiblePanel]}</span>
+        {visiblePanel === 'files' && (
           <>
-            <button className="nav-action" title="New note" onClick={() => newNote()}>
-              <Icon name="square-pen" size={16} />
-            </button>
-            <button className="nav-action" title="New canvas" onClick={() => newCanvas()}>
-              <Icon name="layout-dashboard" size={16} />
-            </button>
-            <button className="nav-action" title="New folder" onClick={() => newFolder()}>
-              <Icon name="folder-plus" size={16} />
-            </button>
+            {!contributionMode && (
+              <>
+                <button className="nav-action" title="New note" onClick={() => newNote()}>
+                  <Icon name="square-pen" size={16} />
+                </button>
+                <button className="nav-action" title="New canvas" onClick={() => newCanvas()}>
+                  <Icon name="layout-dashboard" size={16} />
+                </button>
+                <button className="nav-action" title="New folder" onClick={() => newFolder()}>
+                  <Icon name="folder-plus" size={16} />
+                </button>
+              </>
+            )}
             <button className="nav-action" title="Change sort order" onClick={openSortMenu}>
               <Icon name="arrow-up-narrow-wide" size={16} />
             </button>
@@ -117,26 +123,30 @@ export default function Sidebar() {
             >
               <Icon name={allCollapsed ? 'chevrons-up-down' : 'chevrons-down-up'} size={16} />
             </button>
-            <button className="nav-action" title="Trash" onClick={() => setTrash(true)}>
-              <Icon name="trash" size={16} />
-            </button>
+            {!contributionMode && (
+              <button className="nav-action" title="Trash" onClick={() => setTrash(true)}>
+                <Icon name="trash" size={16} />
+              </button>
+            )}
           </>
         )}
       </div>
       <div className="sidebar-body">
-        {leftPanel === 'files' && <FileTree />}
-        {leftPanel === 'search' && <SearchPanel />}
-        {leftPanel === 'tags' && <TagsPanel />}
-        {leftPanel === 'bookmarks' && <BookmarksPanel />}
+        {visiblePanel === 'files' && <FileTree />}
+        {visiblePanel === 'search' && <SearchPanel />}
+        {visiblePanel === 'tags' && <TagsPanel />}
+        {visiblePanel === 'bookmarks' && <BookmarksPanel />}
       </div>
       <div className="vault-footer">
         <span className="vault-name">
           <Icon name="gem" size={15} /> {vaultName}
         </span>
         <span className="grow" />
-        <button title="Settings" onClick={() => setSettings(true)}>
-          <Icon name="settings" size={16} />
-        </button>
+        {!contributionMode && (
+          <button title="Settings" onClick={() => setSettings(true)}>
+            <Icon name="settings" size={16} />
+          </button>
+        )}
       </div>
       <div className="sidebar-resizer" title="Drag to resize" onPointerDown={onResizeDown} />
     </div>

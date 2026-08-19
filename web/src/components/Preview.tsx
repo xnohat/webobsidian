@@ -7,6 +7,8 @@ import { renderMarkdown } from '../lib/markdown';
 import { calloutIconSvg } from '../lib/callouts';
 import { openLightbox } from '../lib/imageLightbox';
 import { api } from '../lib/api';
+import { contributionMode } from '../lib/mode';
+import { resolveNotePath } from '../lib/tree';
 
 /** Syntax-highlight a `<code class="language-x">` block with the SAME CodeMirror
  *  grammars Live Preview uses (token classes styled by the Obsidian palette). */
@@ -96,6 +98,7 @@ export default function Preview({ source }: { source?: string }) {
   const openWikilink = useStore((s) => s.openWikilink);
   const openContextMenu = useStore((s) => s.openContextMenu);
   const setLeftPanel = useStore((s) => s.setLeftPanel);
+  const tree = useStore((s) => s.tree);
   const [html, setHtml] = useState('');
 
   useEffect(() => {
@@ -104,7 +107,9 @@ export default function Preview({ source }: { source?: string }) {
       rawUrl: (p) => api.rawUrl(p),
       resolveEmbed: async (target) => {
         try {
-          const { path } = await api.resolve(target);
+          const path = contributionMode
+            ? resolveNotePath(tree, target)
+            : (await api.resolve(target)).path;
           if (!path) return null;
           const r = await api.read(path);
           return { path, content: typeof r === 'string' ? r : r.content };
@@ -118,7 +123,7 @@ export default function Preview({ source }: { source?: string }) {
     return () => {
       cancelled = true;
     };
-  }, [content]);
+  }, [content, tree]);
 
   // Post-render pass — same renderers as Live Preview so both modes match:
   // KaTeX for [data-tex] spans, mermaid for ```mermaid fences, callout icons.
