@@ -9,6 +9,7 @@ interface RawContributionInput {
   title?: unknown;
   contributor?: { name?: unknown };
   files?: Array<{ path?: unknown; content?: unknown }>;
+  branch?: unknown;
 }
 
 export function validateContributionInput(raw: RawContributionInput): CreateContributionInput {
@@ -42,7 +43,15 @@ export function validateContributionInput(raw: RawContributionInput): CreateCont
     return { path, content: file.content };
   });
 
-  return { title, contributorName, files };
+  let branch: string | undefined;
+  if (raw.branch !== undefined) {
+    if (typeof raw.branch !== 'string' || !/^contrib\/\d{8}-[a-f0-9]{8}$/.test(raw.branch)) {
+      throw new Error('branch must be a contribution branch created by this editor');
+    }
+    branch = raw.branch;
+  }
+
+  return { title, contributorName, files, ...(branch ? { branch } : {}) };
 }
 
 export function createContributionBranch(

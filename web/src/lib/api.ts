@@ -57,6 +57,7 @@ export interface GitCommit {
 }
 
 export interface ContributionResult {
+  action: 'created' | 'updated';
   branch: string;
   commitSha: string;
   pullNumber: number;
@@ -155,6 +156,7 @@ export const api = {
     title: string;
     contributor: { name: string };
     files: { path: string; content: string }[];
+    branch?: string;
   }) =>
     req<ContributionResult>('/api/contributions', {
       method: 'POST',

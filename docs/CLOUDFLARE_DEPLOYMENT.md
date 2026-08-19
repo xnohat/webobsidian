@@ -4,6 +4,16 @@ The contribution editor supports both Netlify Functions and Cloudflare Workers. 
 adapters call the same request handlers under `netlify/lib`, so authentication, GitHub
 access, path validation, and pull-request behavior remain identical.
 
+The first submission for a document creates a pull request. The browser remembers that
+contribution branch locally, so later submissions add commits to the same open pull
+request. Clear the saved contribution from the submission dialog after the pull request
+is merged or closed to begin a new review.
+
+Pull requests created before this tracking feature can be linked from the submission
+dialog by entering their `contrib/YYYYMMDD-xxxxxxxx` head branch. The API verifies that
+the branch belongs to the configured fork and still has exactly one open pull request
+targeting the staging branch before adding a commit.
+
 ## Prerequisites
 
 - Node.js 20 or newer

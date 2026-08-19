@@ -50,3 +50,20 @@ test('creates an opaque, date-prefixed contribution branch', () => {
     'contrib/20260819-a1b2c3d4',
   );
 });
+
+test('accepts only editor-generated branches for contribution updates', () => {
+  const input = {
+    title: 'Update existing PR',
+    contributor: { name: 'Tester' },
+    files: [{ path: 'docs/a.md', content: 'updated' }],
+  };
+  assert.equal(
+    validateContributionInput({ ...input, branch: 'contrib/20260819-a1b2c3d4' }).branch,
+    'contrib/20260819-a1b2c3d4',
+  );
+  assert.throws(() => validateContributionInput({ ...input, branch: 'main' }), /contribution branch/);
+  assert.throws(
+    () => validateContributionInput({ ...input, branch: 'contrib/20260819-../../main' }),
+    /contribution branch/,
+  );
+});

@@ -6,7 +6,12 @@ import {
   type RuntimeEnvironment,
 } from './config.js';
 import { createContributionBranch, validateContributionInput } from './contributions.js';
-import { createContribution, getStagingMarkdown, getStagingTree } from './github.js';
+import {
+  createContribution,
+  getStagingMarkdown,
+  getStagingTree,
+  updateContribution,
+} from './github.js';
 import { json, methodNotAllowed } from './http.js';
 import { assertReadableMarkdownPath } from './paths.js';
 import {
@@ -136,12 +141,11 @@ export async function handleSubmitContribution(
 
   try {
     const input = validateContributionInput(await request.json());
-    const result = await createContribution(
-      loadEditorConfig(env),
-      input,
-      createContributionBranch(),
-    );
-    return json(result, { status: 201 });
+    const config = loadEditorConfig(env);
+    const result = input.branch
+      ? await updateContribution(config, input, input.branch)
+      : await createContribution(config, input, createContributionBranch());
+    return json(result, { status: result.action === 'created' ? 201 : 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to submit contribution';
     const status = message.startsWith('GitHub API request failed') ? 502 : 400;

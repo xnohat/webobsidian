@@ -25,13 +25,26 @@ export interface CreateContributionInput {
   title: string;
   contributorName: string;
   files: ContributionFile[];
+  branch?: string;
 }
 
 export interface CreatedContribution {
+  action: 'created' | 'updated';
   branch: string;
   commitSha: string;
   pullNumber: number;
   pullUrl: string;
+}
+
+function pullBody(config: EditorConfig, input: CreateContributionInput, branch: string): string {
+  return [
+    '由 USC-Wiki 网页投稿编辑器创建。',
+    '',
+    `实际投稿人：${input.contributorName}`,
+    `投稿分支：\`${config.forkOwner}:${branch}\``,
+    '',
+    '审核通过后请合并到 `contributions`；本 PR 不直接进入 `main`。',
+  ].join('\n');
 }
 
 function repoPath(ownerName: string, repoName: string, suffix: string): string {
@@ -174,20 +187,86 @@ export async function createContribution(
         title: input.title,
         head: `${config.forkOwner}:${branch}`,
         base: config.stagingBranch,
-        body: [
-          '由 USC-Wiki 网页投稿编辑器创建。',
-          '',
-          `实际投稿人：${input.contributorName}`,
-          `投稿分支：\`${config.forkOwner}:${branch}\``,
-          '',
-          '审核通过后请合并到 `contributions`；本 PR 不直接进入 `main`。',
-        ].join('\n'),
+        body: pullBody(config, input, branch),
         maintainer_can_modify: false,
       }),
     },
   );
 
   return {
+    action: 'created',
+    branch,
+    commitSha: commit.sha,
+    pullNumber: pull.number,
+    pullUrl: pull.html_url,
+  };
+}
+
+export async function updateContribution(
+  config: EditorConfig,
+  input: CreateContributionInput,
+  branch: string,
+): Promise<CreatedContribution> {
+  const upstream = (suffix: string) => repoPath(config.upstreamOwner, config.repo, suffix);
+  const fork = (suffix: string) => repoPath(config.forkOwner, config.repo, suffix);
+  const query = new URLSearchParams({
+    state: 'open',
+    head: `${config.forkOwner}:${branch}`,
+    base: config.stagingBranch,
+  });
+  const pulls = await githubJson<Array<{ number: number; html_url: string }>>(
+    config,
+    upstream(`/pulls?${query}`),
+  );
+  if (pulls.length !== 1) {
+    throw new Error('No matching open contribution PR was found; create a new contribution instead');
+  }
+
+  const branchRef = await githubJson<{ object: { sha: string } }>(
+    config,
+    fork(`/git/ref/heads/${encodeRef(branch)}`),
+  );
+  const headSha = branchRef.object.sha;
+  const headCommit = await githubJson<{ tree: { sha: string } }>(
+    config,
+    fork(`/git/commits/${encodeURIComponent(headSha)}`),
+  );
+  const tree = await githubJson<{ sha: string }>(config, fork('/git/trees'), {
+    method: 'POST',
+    body: JSON.stringify({
+      base_tree: headCommit.tree.sha,
+      tree: input.files.map((file) => ({
+        path: file.path,
+        mode: '100644',
+        type: 'blob',
+        content: file.content,
+      })),
+    }),
+  });
+  const commit = await githubJson<{ sha: string }>(config, fork('/git/commits'), {
+    method: 'POST',
+    body: JSON.stringify({
+      message: `docs: ${input.title}`,
+      tree: tree.sha,
+      parents: [headSha],
+    }),
+  });
+  await githubJson(config, fork(`/git/refs/heads/${encodeRef(branch)}`), {
+    method: 'PATCH',
+    body: JSON.stringify({ sha: commit.sha, force: false }),
+  });
+
+  const pull = pulls[0];
+  await githubJson(config, upstream(`/pulls/${pull.number}`), {
+    method: 'PATCH',
+    body: JSON.stringify({
+      title: input.title,
+      body: pullBody(config, input, branch),
+    }),
+  });
+
+  return {
+    action: 'updated',
     branch,
     commitSha: commit.sha,
     pullNumber: pull.number,
