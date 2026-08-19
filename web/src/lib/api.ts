@@ -64,11 +64,13 @@ export interface ContributionResult {
   pullUrl: string;
 }
 
-export interface OpenContribution {
+export interface ContributionReview {
   branch: string;
   pullNumber: number;
   pullUrl: string;
   title: string;
+  status: 'open' | 'merged' | 'closed';
+  updatedAt: string;
 }
 
 async function req<T>(url: string, opts: RequestInit = {}): Promise<T> {
@@ -169,8 +171,10 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(input),
     }),
-  listOpenContributions: () =>
-    req<{ items: OpenContribution[] }>('/api/contributions'),
+  listContributions: (path?: string) =>
+    req<{ items: ContributionReview[] }>(
+      `/api/contributions/status${path ? `?path=${encodeURIComponent(path)}` : ''}`,
+    ),
 
   // search & links
   // limit omitted → server returns every match (panel renders them incrementally)

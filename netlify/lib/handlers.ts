@@ -10,7 +10,7 @@ import {
   createContribution,
   getStagingMarkdown,
   getStagingTree,
-  listOpenContributions,
+  listContributions,
   updateContribution,
 } from './github.js';
 import { json, methodNotAllowed } from './http.js';
@@ -142,7 +142,9 @@ export async function handleSubmitContribution(
 
   try {
     if (request.method === 'GET') {
-      return json({ items: await listOpenContributions(loadEditorConfig(env)) });
+      const rawPath = new URL(request.url).searchParams.get('path');
+      const path = rawPath ? assertReadableMarkdownPath(rawPath) : undefined;
+      return json({ items: await listContributions(loadEditorConfig(env), path) });
     }
     const input = validateContributionInput(await request.json());
     const config = loadEditorConfig(env);

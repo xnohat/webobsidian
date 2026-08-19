@@ -4,10 +4,16 @@ The contribution editor supports both Netlify Functions and Cloudflare Workers. 
 adapters call the same request handlers under `netlify/lib`, so authentication, GitHub
 access, path validation, and pull-request behavior remain identical.
 
-The first submission for a document creates a pull request. The browser remembers that
-contribution branch locally, so later submissions add commits to the same open pull
-request. Clear the saved contribution from the submission dialog after the pull request
-is merged or closed to begin a new review.
+The first submission for a document creates a pull request. When a Markdown document is
+opened, the editor queries GitHub for a pull request that changed that path. This makes
+open contributions discoverable on another browser or device without relying on
+`localStorage`. The status bar links directly to the matching GitHub pull request and
+refreshes when the window regains focus or after one minute.
+
+After a pull request is merged, its saved association is removed automatically. A local
+draft is also removed when it still matches the exact content submitted from that
+browser. If the draft contains newer edits, the editor preserves it. Closed, unmerged
+pull requests keep their local drafts.
 
 Pull requests created before this tracking feature can be selected from the submission
 dialog. The API lists only open `contrib/YYYYMMDD-xxxxxxxx` branches owned by the

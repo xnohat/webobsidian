@@ -71,3 +71,13 @@ test('enforces the Cloudflare login rate-limit binding', async () => {
   assert.equal(response.status, 429);
   assert.deepEqual(await response.json(), { error: 'Too many requests' });
 });
+
+test('keeps contribution status reads separate from the submission limiter', async () => {
+  const response = await routeRequest(
+    new Request('https://editor.example/api/contributions/status?path=docs/example.md'),
+    environment(false),
+  );
+
+  assert.equal(response.status, 401);
+  assert.deepEqual(await response.json(), { error: 'Unauthorized' });
+});

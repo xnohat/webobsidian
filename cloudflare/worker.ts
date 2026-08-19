@@ -65,9 +65,15 @@ export async function routeRequest(
   if (pathname === '/api/files' || pathname === '/api/files/') {
     return handleVaultTree(request, env);
   }
+  if (pathname === '/api/contributions/status') {
+    return handleSubmitContribution(request, env);
+  }
   if (pathname === '/api/contributions') {
-    const limited = await enforceRateLimit(request, pathname, env.CONTRIBUTION_RATE_LIMITER);
-    return limited ?? handleSubmitContribution(request, env);
+    if (request.method === 'POST') {
+      const limited = await enforceRateLimit(request, pathname, env.CONTRIBUTION_RATE_LIMITER);
+      if (limited) return limited;
+    }
+    return handleSubmitContribution(request, env);
   }
 
   if (pathname.startsWith('/api/') || pathname.startsWith('/auth/')) {

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { api, type OpenContribution } from '../lib/api';
+import { api, type ContributionReview } from '../lib/api';
 import { useStore } from '../lib/store';
 import {
   clearContribution,
@@ -10,9 +10,10 @@ import {
 interface Props {
   path: string;
   onClose: () => void;
+  onSubmitted?: () => void;
 }
 
-export default function ContributionDialog({ path, onClose }: Props) {
+export default function ContributionDialog({ path, onClose, onSubmitted }: Props) {
   const save = useStore((state) => state.save);
   const notify = useStore((state) => state.notify);
   const defaultTitle = useMemo(
@@ -28,7 +29,7 @@ export default function ContributionDialog({ path, onClose }: Props) {
   const [error, setError] = useState('');
   const [pullUrl, setPullUrl] = useState('');
   const [linkExisting, setLinkExisting] = useState(false);
-  const [openContributions, setOpenContributions] = useState<OpenContribution[]>([]);
+  const [openContributions, setOpenContributions] = useState<ContributionReview[]>([]);
   const [selectedBranch, setSelectedBranch] = useState('');
   const [loadingContributions, setLoadingContributions] = useState(false);
 
@@ -42,7 +43,7 @@ export default function ContributionDialog({ path, onClose }: Props) {
     setLoadingContributions(true);
     setError('');
     try {
-      const result = await api.listOpenContributions();
+      const result = await api.listContributions();
       setOpenContributions(result.items);
       setSelectedBranch(result.items[0]?.branch ?? '');
     } catch (cause) {
@@ -72,14 +73,17 @@ export default function ContributionDialog({ path, onClose }: Props) {
         pullNumber: result.pullNumber,
         pullUrl: result.pullUrl,
         title,
+        submittedContent: content,
       });
       setExisting({
         branch: result.branch,
         pullNumber: result.pullNumber,
         pullUrl: result.pullUrl,
         title,
+        submittedContent: content,
       });
       setPullUrl(result.pullUrl);
+      onSubmitted?.();
       notify(
         result.action === 'created'
           ? `PR #${result.pullNumber} 已创建，等待审核`

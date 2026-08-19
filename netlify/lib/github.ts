@@ -36,22 +36,39 @@ export interface CreatedContribution {
   pullUrl: string;
 }
 
-export interface OpenContribution {
+export interface ContributionReview {
   branch: string;
   pullNumber: number;
   pullUrl: string;
   title: string;
+  status: 'open' | 'merged' | 'closed';
+  updatedAt: string;
 }
 
 function pullBody(config: EditorConfig, input: CreateContributionInput, branch: string): string {
+  const fileMarker = encodeURIComponent(JSON.stringify(input.files.map((file) => file.path)));
   return [
     '由 USC-Wiki 网页投稿编辑器创建。',
     '',
     `实际投稿人：${input.contributorName}`,
     `投稿分支：\`${config.forkOwner}:${branch}\``,
+    `投稿文件：${input.files.map((file) => `\`${file.path}\``).join('、')}`,
     '',
     '审核通过后请合并到 `contributions`；本 PR 不直接进入 `main`。',
+    '',
+    `<!-- usc-wiki-editor-files:${fileMarker} -->`,
   ].join('\n');
+}
+
+function contributionFilesFromBody(body: string | null): string[] | null {
+  const marker = body?.match(/<!-- usc-wiki-editor-files:([^\s]+) -->/);
+  if (!marker) return null;
+  try {
+    const value = JSON.parse(decodeURIComponent(marker[1])) as unknown;
+    return Array.isArray(value) && value.every((item) => typeof item === 'string') ? value : null;
+  } catch {
+    return null;
+  }
 }
 
 function repoPath(ownerName: string, repoName: string, suffix: string): string {
@@ -108,30 +125,52 @@ export async function getStagingMarkdown(config: EditorConfig, path: string): Pr
   return response.text();
 }
 
-export async function listOpenContributions(config: EditorConfig): Promise<OpenContribution[]> {
+export async function listContributions(
+  config: EditorConfig,
+  path?: string,
+): Promise<ContributionReview[]> {
   const query = new URLSearchParams({
-    state: 'open',
+    state: path ? 'all' : 'open',
     base: config.stagingBranch,
     per_page: '100',
+    sort: 'updated',
+    direction: 'desc',
   });
   const pulls = await githubJson<Array<{
     number: number;
     html_url: string;
     title: string;
+    body: string | null;
+    state: 'open' | 'closed';
+    merged_at: string | null;
+    updated_at: string;
     head: { ref: string; repo: { owner: { login: string } } | null };
   }>>(config, repoPath(config.upstreamOwner, config.repo, `/pulls?${query}`));
 
-  return pulls
-    .filter((pull) =>
-      pull.head.repo?.owner.login.toLowerCase() === config.forkOwner.toLowerCase()
+  const candidates = pulls.filter(
+    (pull) => pull.head.repo?.owner.login.toLowerCase() === config.forkOwner.toLowerCase()
       && /^contrib\/\d{8}-[a-f0-9]{8}$/.test(pull.head.ref),
-    )
-    .map((pull) => ({
+  );
+  const matches = await Promise.all(candidates.map(async (pull) => {
+    let files = contributionFilesFromBody(pull.body);
+    if (path && !files) {
+      const changedFiles = await githubJson<Array<{ filename: string }>>(
+        config,
+        repoPath(config.upstreamOwner, config.repo, `/pulls/${pull.number}/files?per_page=100`),
+      );
+      files = changedFiles.map((file) => file.filename);
+    }
+    if (path && !files?.includes(path)) return null;
+    return {
       branch: pull.head.ref,
       pullNumber: pull.number,
       pullUrl: pull.html_url,
       title: pull.title,
-    }));
+      status: pull.merged_at ? 'merged' as const : pull.state,
+      updatedAt: pull.updated_at,
+    };
+  }));
+  return matches.filter((review): review is ContributionReview => review !== null);
 }
 
 async function githubJson<T>(

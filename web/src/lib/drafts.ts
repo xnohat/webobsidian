@@ -6,6 +6,8 @@ export interface ContributionDraft {
   pullNumber: number;
   pullUrl: string;
   title: string;
+  /** Exact content included in the latest submission from this browser. */
+  submittedContent?: string;
 }
 
 function key(path: string): string {
@@ -22,6 +24,10 @@ export function loadDraft(path: string): string | null {
 
 export function saveDraft(path: string, content: string): void {
   localStorage.setItem(key(path), content);
+}
+
+export function clearDraft(path: string): void {
+  localStorage.removeItem(key(path));
 }
 
 export function loadContribution(path: string): ContributionDraft | null {

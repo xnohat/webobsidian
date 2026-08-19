@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { EditorConfig } from '../lib/config.js';
-import { createContribution, listOpenContributions } from '../lib/github.js';
+import { createContribution, listContributions } from '../lib/github.js';
 
 const config: EditorConfig = {
   githubToken: 'test-token',
@@ -73,6 +73,7 @@ test('creates a fork branch, atomic commit, and staging pull request', async (co
   assert.equal(pullRequest.head, 'cherryLucas:contrib/20260819-a1b2c3d4');
   assert.equal(pullRequest.base, 'contributions');
   assert.match(pullRequest.body, /不直接进入 `main`/);
+  assert.match(pullRequest.body, /usc-wiki-editor-files:/);
 });
 
 test('lists only open editor contribution branches from the configured fork', async (context) => {
@@ -82,6 +83,10 @@ test('lists only open editor contribution branches from the configured fork', as
       number: 7,
       html_url: 'https://github.com/hzxyayaya/USC-wiki/pull/7',
       title: '更新 中国软件杯',
+      body: null,
+      state: 'open',
+      merged_at: null,
+      updated_at: '2026-08-19T09:00:00Z',
       head: {
         ref: 'contrib/20260819-3e98d0f0',
         repo: { owner: { login: 'cherryLucas' } },
@@ -91,12 +96,20 @@ test('lists only open editor contribution branches from the configured fork', as
       number: 8,
       html_url: 'https://github.com/hzxyayaya/USC-wiki/pull/8',
       title: 'Unrelated fork',
+      body: null,
+      state: 'open',
+      merged_at: null,
+      updated_at: '2026-08-19T08:00:00Z',
       head: { ref: 'contrib/20260819-a1b2c3d4', repo: { owner: { login: 'someoneElse' } } },
     },
     {
       number: 9,
       html_url: 'https://github.com/hzxyayaya/USC-wiki/pull/9',
       title: 'Unmanaged branch',
+      body: null,
+      state: 'open',
+      merged_at: null,
+      updated_at: '2026-08-19T07:00:00Z',
       head: { ref: 'feature/docs', repo: { owner: { login: 'cherryLucas' } } },
     },
   ])) as typeof fetch;
@@ -104,14 +117,59 @@ test('lists only open editor contribution branches from the configured fork', as
     globalThis.fetch = originalFetch;
   });
 
-  assert.deepEqual(await listOpenContributions(config), [
+  assert.deepEqual(await listContributions(config), [
     {
       branch: 'contrib/20260819-3e98d0f0',
       pullNumber: 7,
       pullUrl: 'https://github.com/hzxyayaya/USC-wiki/pull/7',
       title: '更新 中国软件杯',
+      status: 'open',
+      updatedAt: '2026-08-19T09:00:00Z',
     },
   ]);
+});
+
+test('finds a merged legacy contribution by its changed file', async (context) => {
+  const originalFetch = globalThis.fetch;
+  const requests: string[] = [];
+  globalThis.fetch = (async (input: string | URL | Request) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+    requests.push(url);
+    if (url.includes('/files?')) {
+      return Response.json([{ filename: 'docs/竞赛与资源/竞赛/中国软件杯.md' }]);
+    }
+    return Response.json([{
+      number: 7,
+      html_url: 'https://github.com/hzxyayaya/USC-wiki/pull/7',
+      title: '更新 中国软件杯',
+      body: '由旧版编辑器创建，没有文件标记。',
+      state: 'closed',
+      merged_at: '2026-08-19T09:30:00Z',
+      updated_at: '2026-08-19T09:30:00Z',
+      head: {
+        ref: 'contrib/20260819-3e98d0f0',
+        repo: { owner: { login: 'cherryLucas' } },
+      },
+    }]);
+  }) as typeof fetch;
+  context.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  assert.deepEqual(
+    await listContributions(config, 'docs/竞赛与资源/竞赛/中国软件杯.md'),
+    [{
+      branch: 'contrib/20260819-3e98d0f0',
+      pullNumber: 7,
+      pullUrl: 'https://github.com/hzxyayaya/USC-wiki/pull/7',
+      title: '更新 中国软件杯',
+      status: 'merged',
+      updatedAt: '2026-08-19T09:30:00Z',
+    }],
+  );
+  assert.equal(requests.length, 2);
+  assert.match(requests[0], /state=all/);
+  assert.match(requests[1], /pulls\/7\/files/);
 });
 
 test('adds a commit to an existing open contribution pull request', async (context) => {
