@@ -4,7 +4,7 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-06-27 (security fix — chặn leo thang quyền token share; merge fix F-03 rate-limit, giữ `trust proxy` mặc định bật)
+Cập nhật lần cuối: 2026-08-20 (FR-1 — symlink vault roots: theo symlink trong allowedRoots, cycle guard realpath)
 
 ---
 
@@ -30,6 +30,9 @@ Cập nhật lần cuối: 2026-06-27 (security fix — chặn leo thang quyền
 ## Phase 3 — Vault filesystem — FR-1
 - [x] M3.1 Service vault: list tree, read, write, create, rename/move, delete→trash
 - [x] M3.2 Path traversal guard + allowedRoots
+- [x] M3.7 Symlink vault roots: walks của `listTree`/`copy`/`listMarkdownFiles`/`buildFileIndex` theo symlink
+      (folder/file, kể cả trỏ ra ngoài vault root nếu realpath trong allowedRoots; link hỏng bỏ qua), cycle
+      guard bằng `realpath`; `assertRealpathInVault` kiểm tra đa allowedRoots; `fs.cp` bật `dereference: true`
 - [x] M3.3 Upload attachments (binary), serve binary với mime
 - [x] M3.4 Folder browser an toàn để chọn vault path
 - [x] M3.5 Filesystem watcher (chokidar) → events qua WebSocket
@@ -430,6 +433,14 @@ Cập nhật lần cuối: 2026-06-27 (security fix — chặn leo thang quyền
       `desktop/release`.
 
 ### Nhật ký tiến độ
+- 2026-08-20 (FR-1 — symlink vault roots): vault dùng `readdir` với Dirent (semantics lstat) nên symlink
+  không bao giờ được liệt kê (không `isDirectory`/`isFile`), và `assertRealpathInVault` chặn mọi đường
+  thoát khỏi vault root đơn — vault có folder symlink trỏ ra ngoài root vô hình. **Sửa:** walks của
+  `listTree`/`copy`/`listMarkdownFiles`/`buildFileIndex` xử lý `e.isSymbolicLink()` (theo `fs.stat` →
+  folder/file, link hỏng bỏ qua) với cycle guard bằng `realpath` (Set) chống vòng lặp (vd symlink trỏ ngược
+  về root thành folder rỗng thay vì đệ quy vô hạn); `assertRealpathInVault` kiểm tra realpath theo **tất
+  cả** allowedRoots thay vì root đơn; `fs.cp` bật `dereference: true`. Đã xác minh: vault có 3 symlink
+  trỏ ra ngoài → 434 file `.md` được liệt kê/đọc/search OK, typecheck + build sạch.
 - 2026-06-27 (security fix — leo thang quyền qua token share): `verifyToken()` (server/src/services/auth.ts)
   chỉ kiểm tra chữ ký nên **mọi** token ký bằng `auth.jwtSecret` đều được chấp nhận như phiên owner. Endpoint
   public `POST /public/shares/:id/unlock` ký unlock-cookie bằng cùng secret → người được chia sẻ (có mật khẩu

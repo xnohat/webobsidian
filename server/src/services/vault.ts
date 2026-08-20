@@ -44,6 +44,16 @@ const TEXT_EXTS = new Set([
 
 const IGNORED = new Set(['.git', 'node_modules']);
 
+/** Vault roots that file operations may resolve into: the vault root itself plus
+ * any allowedRoots from settings (folders reachable via symlinks may live outside
+ * the root). Falls back to the single vault root when none are configured. */
+export async function getAllowedRoots(): Promise<string[]> {
+  const s = await getSettings();
+  const vault = path.resolve(s.vault.path);
+  const extra = s.vault.allowedRoots.map((r) => path.resolve(r));
+  return extra.length ? [vault, ...extra] : [vault];
+}
+
 export async function getVaultRoot(): Promise<string> {
   const s = await getSettings();
   return path.resolve(s.vault.path);
@@ -66,21 +76,22 @@ export async function resolveInVault(relPath: string): Promise<string> {
   // Symlink guard: a symlink *inside* the vault could point outside it, which the
   // string-prefix check above can't catch. Resolve the real path of the deepest
   // existing ancestor and confirm it still lives under the vault root.
-  await assertRealpathInVault(abs, root);
+  await assertRealpathInVault(abs, await getAllowedRoots());
   return abs;
 }
 
-async function assertRealpathInVault(abs: string, root: string): Promise<void> {
-  const realRoot = await fs.realpath(root).catch(() => root);
-  const realRootSep = realRoot.endsWith(path.sep) ? realRoot : realRoot + path.sep;
+async function assertRealpathInVault(abs: string, roots: string[]): Promise<void> {
+  const realRoots = await Promise.all(roots.map((r) => fs.realpath(r).catch(() => r)));
+  const realRootSeps = realRoots.map((r) => (r.endsWith(path.sep) ? r : r + path.sep));
   let probe = abs;
   for (;;) {
     try {
       const real = await fs.realpath(probe);
-      if (real !== realRoot && !real.startsWith(realRootSep)) {
+      const inside = realRoots.some((rr, i) => real === rr || real.startsWith(realRootSeps[i]));
+      if (!inside) {
         throw Object.assign(new Error('Path escapes vault'), { status: 400 });
       }
-      return; // deepest existing ancestor is inside the vault; the rest is new
+      return; // deepest existing ancestor is inside an allowed root; the rest is new
     } catch (e: any) {
       if (e?.status === 400) throw e; // our own escape error — propagate
       const parent = path.dirname(probe);
@@ -104,7 +115,11 @@ export async function listTree(): Promise<TreeNode> {
   const root = await getVaultRoot();
   await fs.mkdir(root, { recursive: true });
 
-  async function walk(absDir: string): Promise<TreeNode[]> {
+  async function walk(absDir: string, visited: Set<string>): Promise<TreeNode[]> {
+    // Symlink cycle guard: a link may point back into an ancestor or the root.
+    const key = await fs.realpath(absDir).catch(() => absDir);
+    if (visited.has(key)) return [];
+    visited.add(key);
     const entries = await fs.readdir(absDir, { withFileTypes: true });
     // Stat files concurrently per directory (cached) so the one-time fill is fast;
     // steady state reads from statCache → no syscalls. mtime/ctime power sort-by-time.
@@ -115,11 +130,24 @@ export async function listTree(): Promise<TreeNode> {
           const abs = path.join(absDir, e.name);
           const rel = toRel(root, abs);
           if (e.isDirectory()) {
-            return { name: e.name, path: rel, type: 'folder', children: await walk(abs) };
+            return { name: e.name, path: rel, type: 'folder', children: await walk(abs, visited) };
           }
           if (e.isFile()) {
             const { m, c } = await fileStat(abs, rel);
             return { name: e.name, path: rel, type: 'file', ext: path.extname(e.name).toLowerCase(), mtime: m, ctime: c };
+          }
+          // Symlinked entries: a Dirent is neither dir nor file, but the link may
+          // resolve to either. Broken links are skipped.
+          if (e.isSymbolicLink()) {
+            const st = await fs.stat(abs).catch(() => null);
+            if (!st) return null;
+            if (st.isDirectory()) {
+              return { name: e.name, path: rel, type: 'folder', children: await walk(abs, visited) };
+            }
+            if (st.isFile()) {
+              const { m, c } = await fileStat(abs, rel);
+              return { name: e.name, path: rel, type: 'file', ext: path.extname(e.name).toLowerCase(), mtime: m, ctime: c };
+            }
           }
           return null;
         }),
@@ -133,7 +161,7 @@ export async function listTree(): Promise<TreeNode> {
     return out;
   }
 
-  return { name: path.basename(root), path: '', type: 'folder', children: await walk(root) };
+  return { name: path.basename(root), path: '', type: 'folder', children: await walk(root, new Set()) };
 }
 
 export function isTextFile(rel: string): boolean {
@@ -220,21 +248,30 @@ export async function copy(from: string, to: string): Promise<string[]> {
   const absFrom = await resolveInVault(from);
   const absTo = await resolveInVault(to);
   await fs.mkdir(path.dirname(absTo), { recursive: true });
-  await fs.cp(absFrom, absTo, { recursive: true, errorOnExist: true, force: false });
+  await fs.cp(absFrom, absTo, { recursive: true, errorOnExist: true, force: false, dereference: true });
   const root = await getVaultRoot();
   const out: string[] = [];
   const st = await fs.stat(absTo);
   if (st.isDirectory()) {
-    async function walk(dir: string) {
+    async function walk(dir: string, visited: Set<string>) {
+      const key = await fs.realpath(dir).catch(() => dir);
+      if (visited.has(key)) return;
+      visited.add(key);
       const entries = await fs.readdir(dir, { withFileTypes: true });
       for (const e of entries) {
         if (IGNORED.has(e.name)) continue;
         const abs = path.join(dir, e.name);
-        if (e.isDirectory()) await walk(abs);
+        if (e.isDirectory()) await walk(abs, visited);
         else if (e.isFile()) out.push(toRel(root, abs));
+        else if (e.isSymbolicLink()) {
+          const st = await fs.stat(abs).catch(() => null);
+          if (!st) continue;
+          if (st.isDirectory()) await walk(abs, visited);
+          else if (st.isFile()) out.push(toRel(root, abs));
+        }
       }
     }
-    await walk(absTo);
+    await walk(absTo, new Set());
   } else {
     out.push(toRel(root, absTo));
   }
@@ -396,23 +433,32 @@ export async function emptyTrash(): Promise<void> {
 export async function listMarkdownFiles(): Promise<string[]> {
   const root = await getVaultRoot();
   const out: string[] = [];
-  async function walk(dir: string) {
+  async function walk(dir: string, visited: Set<string>) {
     let entries;
     try {
       entries = await fs.readdir(dir, { withFileTypes: true });
     } catch {
       return;
     }
+    const key = await fs.realpath(dir).catch(() => dir);
+    if (visited.has(key)) return;
+    visited.add(key);
     for (const e of entries) {
       // Skip dotfiles/dot-dirs (`.trash`, `.obsidian`, …) like the tree view and
       // file index do — a note moved to `.trash` must not stay a live link target
       // (and would otherwise shadow a real file with the same basename).
       if (IGNORED.has(e.name) || e.name.startsWith('.')) continue;
       const abs = path.join(dir, e.name);
-      if (e.isDirectory()) await walk(abs);
+      if (e.isDirectory()) await walk(abs, visited);
       else if (e.isFile() && /\.(md|markdown)$/i.test(e.name)) out.push(toRel(root, abs));
+      else if (e.isSymbolicLink()) {
+        const st = await fs.stat(abs).catch(() => null);
+        if (!st) continue;
+        if (st.isDirectory()) await walk(abs, visited);
+        else if (st.isFile() && /\.(md|markdown)$/i.test(e.name)) out.push(toRel(root, abs));
+      }
     }
   }
-  await walk(root);
+  await walk(root, new Set());
   return out;
 }

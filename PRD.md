@@ -1,7 +1,10 @@
 # PRD — WebObsidian
 
 > Product Requirements Document
-> Phiên bản: 1.5 · Cập nhật: 2026-06-22 · Trạng thái: Draft
+> Phiên bản: 1.6 · Cập nhật: 2026-08-20 · Trạng thái: Draft
+> Changelog 1.6 (FR-1 — symlink vault roots): hỗ trợ **symlink trong vault**: folder/file được trỏ qua
+> symlink được liệt kê và đọc/ghi bình thường kể cả khi trỏ ra ngoài vault root (miễn realpath nằm trong
+> `vault.allowedRoots`); cycle guard bằng `realpath` chống vòng lặp symlink.
 > Changelog 1.5 (FR-13 — Desktop app Electron đa nền tảng, theo yêu cầu người dùng): bổ sung **FR-13** —
 > đóng gói WebObsidian thành **app cài đặt** macOS/Windows/Linux (arm64/x64/ia32). Workspace mới `desktop/`
 > là **Electron shell** spawn đúng server Express hiện có như tiến trình con (qua `ELECTRON_RUN_AS_NODE`,
@@ -180,6 +183,10 @@ webobsidian/
   sẵn có (`vault.resolveDirCaseInsensitive`) — tránh tạo thư mục trùng khác hoa-thường (vd `attachments` cạnh
   `Attachments` có sẵn) trên filesystem phân biệt hoa-thường (Linux).
 - Watch filesystem (chokidar) để phản ánh thay đổi ngoài (git pull, sửa trực tiếp).
+- **Symlink vault roots**: folder/file được trỏ qua symlink trong vault được liệt kê, đọc/ghi và index như
+  file thường — kể cả khi symlink trỏ ra ngoài vault root, miễn realpath của đích nằm trong
+  `vault.allowedRoots`. Cycle guard bằng `realpath` (Set) chống vòng lặp symlink (vd symlink trỏ ngược
+  về chính vault root). Link hỏng bị bỏ qua.
 - Tương thích cấu trúc `.obsidian/` (config, plugins, themes).
 
 ### FR-2 · Editor & rendering
@@ -413,7 +420,8 @@ Express + SPA hiện có (không fork code, không đổi kiến trúc) — nên
 
 ## 4. Yêu cầu phi chức năng (NFR)
 - **Bảo mật**: password hash scrypt, JWT secret tự sinh, API key hash khi lưu, path traversal guard
-  (chặn `..`, segment `.git`, symlink thoát vault), CORS hạn chế, rate limiting (cả `/auth/login`:
+  (chặn `..`, segment `.git`, symlink thoát vault — trừ khi realpath đích nằm trong `vault.allowedRoots`),
+  CORS hạn chế, rate limiting (cả `/auth/login`:
   10 lần/15 phút — **khóa theo địa chỉ socket TCP thật, không theo `req.ip`/`X-Forwarded-For`** nên
   không thể bypass bằng cách xoay vòng XFF, **bất kể cấu hình `trust proxy`**; vì vậy `trust proxy` để
   mặc định bật (`true`, qua `TRUST_PROXY`) cho `X-Forwarded-Proto`/Secure-cookie hoạt động sau proxy). Bắt buộc đổi mật khẩu mặc định (`123456`) ngay sau lần đăng nhập đầu

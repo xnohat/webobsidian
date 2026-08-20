@@ -30,21 +30,30 @@ function record(maps: { b: Map<string, string>; bn: Map<string, string> }, rel: 
 export async function buildFileIndex(): Promise<void> {
   const root = await getVaultRoot();
   const maps = { b: new Map<string, string>(), bn: new Map<string, string>() };
-  async function walk(dir: string) {
+  async function walk(dir: string, visited: Set<string>) {
     let entries;
     try {
       entries = await fs.readdir(dir, { withFileTypes: true });
     } catch {
       return;
     }
+    const key = await fs.realpath(dir).catch(() => dir);
+    if (visited.has(key)) return;
+    visited.add(key);
     for (const e of entries) {
       if (IGNORED.has(e.name) || e.name.startsWith('.')) continue;
       const abs = path.join(dir, e.name);
-      if (e.isDirectory()) await walk(abs);
+      if (e.isDirectory()) await walk(abs, visited);
       else if (e.isFile()) record(maps, toRel(root, abs));
+      else if (e.isSymbolicLink()) {
+        const st = await fs.stat(abs).catch(() => null);
+        if (!st) continue;
+        if (st.isDirectory()) await walk(abs, visited);
+        else if (st.isFile()) record(maps, toRel(root, abs));
+      }
     }
   }
-  await walk(root);
+  await walk(root, new Set());
   byBasename = maps.b;
   byBasenameNoExt = maps.bn;
 }
