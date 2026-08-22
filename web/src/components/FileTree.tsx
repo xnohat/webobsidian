@@ -4,7 +4,6 @@ import { api, type TreeNode } from '../lib/api';
 import { findNode, pruneDescendants } from '../lib/tree';
 import { pathToUrl } from '../lib/urlsync';
 import Icon from './Icon';
-import { contributionMode } from '../lib/mode';
 
 /** Inline rename box shown in place of a tree row's name (Obsidian-style). */
 function RenameInput({ node, onDone }: { node: TreeNode; onDone: () => void }) {
@@ -280,22 +279,6 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
   const onContext = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (contributionMode) {
-      const items = isFolder
-        ? [
-            { label: 'Copy path', onClick: copyPath },
-            { label: 'Copy URL path', onClick: copyUrl },
-          ]
-        : [
-            { label: 'Open', onClick: () => openFile(node.path) },
-            { label: 'Open to the right', onClick: () => openToSide(node.path) },
-            { label: '', separator: true },
-            { label: bookmarks.includes(node.path) ? 'Remove bookmark' : 'Bookmark', onClick: () => toggleBookmark(node.path) },
-            { label: 'Copy URL path', onClick: copyUrl },
-          ];
-      openContextMenu({ x: e.clientX, y: e.clientY, items });
-      return;
-    }
     const sel = useStore.getState().selected;
     // Right-clicking a row that's part of a multi-selection → bulk actions.
     if (sel.length > 1 && sel.includes(node.path)) {
@@ -377,13 +360,13 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
           className={`tree-row folder ${isSelected ? 'selected' : ''} ${dropping ? 'drop-target' : ''}`}
           style={isCut ? { opacity: 0.5 } : undefined}
           data-path={node.path}
-          draggable={!contributionMode}
-          onDragStart={contributionMode ? undefined : onDragStart}
+          draggable
+          onDragStart={onDragStart}
           onClick={onRowClick}
           onContextMenu={onContext}
-          onDragOver={contributionMode ? undefined : (e) => { e.preventDefault(); setDropping(true); }}
+          onDragOver={(e) => { e.preventDefault(); setDropping(true); }}
           onDragLeave={() => setDropping(false)}
-          onDrop={contributionMode ? undefined : onDrop}
+          onDrop={onDrop}
         >
           <span className="twisty">
             <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
@@ -412,17 +395,17 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
         className={`tree-row ${activePath === node.path ? 'active' : ''} ${isSelected ? 'selected' : ''} ${dropping ? 'drop-target' : ''}`}
         style={isCut ? { opacity: 0.5 } : undefined}
         data-path={node.path}
-        draggable={!contributionMode}
-        onDragStart={contributionMode ? undefined : onDragStart}
+        draggable
+        onDragStart={onDragStart}
         onClick={onRowClick}
         onContextMenu={onContext}
         // A file is a valid drop target too: dropping onto it moves the dragged
         // item into the file's parent folder (Obsidian behaviour). Without this,
         // drops on a file — or anywhere inside an expanded folder's contents —
         // bubble up to the root handler and either no-op or move to the vault root.
-        onDragOver={contributionMode ? undefined : (e) => { e.preventDefault(); setDropping(true); }}
+        onDragOver={(e) => { e.preventDefault(); setDropping(true); }}
         onDragLeave={() => setDropping(false)}
-        onDrop={contributionMode ? undefined : onDrop}
+        onDrop={onDrop}
         title={node.path}
       >
         <span className="twisty leaf" />
@@ -569,7 +552,6 @@ export default function FileTree() {
 
   const onRootContext = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (contributionMode) return;
     openContextMenu({
       x: e.clientX,
       y: e.clientY,
@@ -596,8 +578,8 @@ export default function FileTree() {
     );
   return (
     <div
-      onDragOver={contributionMode ? undefined : (e) => e.preventDefault()}
-      onDrop={contributionMode ? undefined : onRootDrop}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={onRootDrop}
       onContextMenu={onRootContext}
       // Click on the empty area below the rows clears the selection.
       onClick={(e) => { if (e.target === e.currentTarget) setSelected([]); }}

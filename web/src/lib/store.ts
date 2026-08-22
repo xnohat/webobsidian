@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { api, type TreeNode, type ShareRecord } from './api';
-import { findNode, resolveNotePath } from './tree';
+import { findNode } from './tree';
 import { loadDraft, saveDraft } from './drafts';
 import { contributionMode } from './mode';
 
@@ -500,12 +500,6 @@ export const useStore = create<AppState>()(
 
       openWikilink: async (target) => {
         try {
-          if (contributionMode) {
-            const path = resolveNotePath(get().tree, target);
-            if (path) await get().openFile(path);
-            else get().notify(`未找到链接文档：${target}`);
-            return;
-          }
           const { path } = await api.resolve(target);
           if (path) await get().openFile(path);
           else {

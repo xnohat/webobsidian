@@ -17,26 +17,6 @@ export function isFolderPath(root: TreeNode | null, path: string | null): boolea
   return !!path && findNode(root, path)?.type === 'folder';
 }
 
-/** Resolve an Obsidian wikilink target from the already-loaded vault tree. */
-export function resolveNotePath(root: TreeNode | null, target: string): string | null {
-  if (!root) return null;
-  const raw = target.split('#')[0].trim().replace(/\\/g, '/').replace(/^\/+/, '');
-  if (!raw) return null;
-  const wanted = /\.[^/]+$/.test(raw) ? raw : `${raw}.md`;
-  const exact = findNode(root, wanted);
-  if (exact?.type === 'file') return exact.path;
-
-  const wantedName = wanted.split('/').pop()!.toLowerCase();
-  const matches: string[] = [];
-  const stack = [...(root.children ?? [])];
-  while (stack.length) {
-    const node = stack.pop()!;
-    if (node.type === 'file' && node.name.toLowerCase() === wantedName) matches.push(node.path);
-    if (node.children) stack.push(...node.children);
-  }
-  return matches.length === 1 ? matches[0] : null;
-}
-
 /**
  * Drop any path that is nested under another path in the set. Used before bulk
  * move/delete so a folder and one of its own children aren't both operated on

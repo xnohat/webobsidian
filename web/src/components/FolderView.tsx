@@ -2,7 +2,6 @@ import { useStore } from '../lib/store';
 import { findNode } from '../lib/tree';
 import { api, type TreeNode } from '../lib/api';
 import Icon from './Icon';
-import { contributionMode } from '../lib/mode';
 
 function entryIcon(n: TreeNode): string {
   if (n.type === 'folder') return 'folder';
@@ -37,11 +36,9 @@ export default function FolderView({ path }: { path: string }) {
       <div className="preview-inner folder-view">
         <div className="folder-view-head">
           <h1><Icon name="folder" size={26} /> {node?.name ?? path}</h1>
-          {!contributionMode && (
-            <button className="tool-btn" title="New note in this folder" onClick={() => newNote(path)}>
-              <Icon name="plus" size={18} />
-            </button>
-          )}
+          <button className="tool-btn" title="New note in this folder" onClick={() => newNote(path)}>
+            <Icon name="plus" size={18} />
+          </button>
         </div>
         <div className="folder-view-meta">
           {folders.length} folder{folders.length === 1 ? '' : 's'} · {files.length} file{files.length === 1 ? '' : 's'}
@@ -54,7 +51,7 @@ export default function FolderView({ path }: { path: string }) {
               <div
                 key={c.path}
                 className="folder-entry"
-                draggable={!contributionMode}
+                draggable
                 onDragStart={(e) => {
                   e.dataTransfer.setData('text/wo-path', c.path);
                   e.dataTransfer.effectAllowed = 'move';
