@@ -1895,8 +1895,15 @@ const EMPHASIS_CLASS: Record<string, string> = {
 
 const hidden = Decoration.replace({});
 
+let attachmentUrlProvider = (target: string) =>
+  `/api/files/content?path=${encodeURIComponent(target)}`;
+
+export function setLivePreviewAttachmentUrlProvider(provider: (target: string) => string): void {
+  attachmentUrlProvider = provider;
+}
+
 function attachmentUrl(target: string): string {
-  return `/api/files/content?path=${encodeURIComponent(target)}`;
+  return attachmentUrlProvider(target);
 }
 
 function buildDecorations(view: EditorView): DecorationSet {

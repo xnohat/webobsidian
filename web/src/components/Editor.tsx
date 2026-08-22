@@ -36,11 +36,13 @@ import {
   setLivePreviewPropertyTypes,
   setLivePreviewPropertyTypeSetter,
   setLivePreviewTagProvider,
+  setLivePreviewAttachmentUrlProvider,
   setNoteTitle,
 } from '../lib/livePreview';
 import { renderMarkdown } from '../lib/markdown';
 import { setActiveEditor } from '../lib/activeEditor';
 import { api } from '../lib/api';
+import { resolveAssetPath } from '../lib/tree';
 
 const titleOf = (path: string | null) =>
   path ? (path.split('/').pop() ?? path).replace(/\.(md|markdown)$/i, '') : '';
@@ -65,6 +67,15 @@ export default function Editor() {
   const tree = useStore((s) => s.tree);
 
   useEffect(() => {
+    setLivePreviewAttachmentUrlProvider((target) =>
+      api.rawUrl(resolveAssetPath(tree, target, activePath) ?? target));
+    const current = view.current;
+    if (current) {
+      current.dispatch({ effects: setLivePreviewEnabled.of(current.state.field(livePreviewState)) });
+    }
+  }, [tree, activePath]);
+
+  useEffect(() => {
     setLivePreviewLinkHandler(openWikilink);
   }, [openWikilink]);
 
@@ -87,10 +98,13 @@ export default function Editor() {
       const note = await resolveEmbed(target.split('#')[0].trim());
       if (!note) return null;
       const stripped = note.content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
-      const html = await renderMarkdown(stripped, { rawUrl: (p) => api.rawUrl(p), resolveEmbed });
+      const html = await renderMarkdown(stripped, {
+        rawUrl: (p) => api.rawUrl(resolveAssetPath(tree, p, activePath) ?? p),
+        resolveEmbed,
+      });
       return { html };
     });
-  }, [openContextMenu]);
+  }, [openContextMenu, tree, activePath]);
 
   // Feed the `[[` link suggester (vault file paths) and the `#` tag suggester.
   useEffect(() => {

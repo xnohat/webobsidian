@@ -115,6 +115,10 @@ export async function getStagingTree(config: EditorConfig): Promise<GitHubTreeRe
 }
 
 export async function getStagingMarkdown(config: EditorConfig, path: string): Promise<string> {
+  return (await getStagingFile(config, path)).text();
+}
+
+export async function getStagingFile(config: EditorConfig, path: string): Promise<Response> {
   const encodedPath = path.split('/').map(encodeURIComponent).join('/');
   const ref = encodeURIComponent(config.stagingBranch);
   const response = await githubRequest(
@@ -122,7 +126,7 @@ export async function getStagingMarkdown(config: EditorConfig, path: string): Pr
     repoPath(config.upstreamOwner, config.repo, `/contents/${encodedPath}?ref=${ref}`),
     { headers: { accept: 'application/vnd.github.raw+json' } },
   );
-  return response.text();
+  return response;
 }
 
 export async function listContributions(

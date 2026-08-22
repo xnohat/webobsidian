@@ -7,6 +7,7 @@ import { renderMarkdown } from '../lib/markdown';
 import { calloutIconSvg } from '../lib/callouts';
 import { openLightbox } from '../lib/imageLightbox';
 import { api } from '../lib/api';
+import { resolveAssetPath } from '../lib/tree';
 
 /** Syntax-highlight a `<code class="language-x">` block with the SAME CodeMirror
  *  grammars Live Preview uses (token classes styled by the Obsidian palette). */
@@ -93,6 +94,7 @@ export default function Preview({ source }: { source?: string }) {
   const storeContent = useStore((s) => s.content);
   const content = source ?? storeContent;
   const activePath = useStore((s) => s.activePath);
+  const tree = useStore((s) => s.tree);
   const openWikilink = useStore((s) => s.openWikilink);
   const openContextMenu = useStore((s) => s.openContextMenu);
   const setLeftPanel = useStore((s) => s.setLeftPanel);
@@ -101,7 +103,7 @@ export default function Preview({ source }: { source?: string }) {
   useEffect(() => {
     let cancelled = false;
     renderMarkdown(content, {
-      rawUrl: (p) => api.rawUrl(p),
+      rawUrl: (p) => api.rawUrl(resolveAssetPath(tree, p, activePath) ?? p),
       resolveEmbed: async (target) => {
         try {
           const { path } = await api.resolve(target);
@@ -118,7 +120,7 @@ export default function Preview({ source }: { source?: string }) {
     return () => {
       cancelled = true;
     };
-  }, [content]);
+  }, [content, tree, activePath]);
 
   // Post-render pass — same renderers as Live Preview so both modes match:
   // KaTeX for [data-tex] spans, mermaid for ```mermaid fences, callout icons.

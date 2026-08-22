@@ -32,6 +32,13 @@ test('converts the GitHub docs tree into the existing WebObsidian tree shape', (
             type: 'folder',
             children: [
               {
+                name: 'image.png',
+                path: 'docs/Guide/image.png',
+                type: 'file',
+                ext: 'png',
+                size: 84,
+              },
+              {
                 name: 'Start.md',
                 path: 'docs/Guide/Start.md',
                 type: 'file',

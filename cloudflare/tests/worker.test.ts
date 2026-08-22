@@ -114,3 +114,25 @@ test('public editor mode does not require the login limiter or password secrets'
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { ok: true, mustChangePassword: false });
 });
+
+test('serves readable vault images as raw bytes', async () => {
+  const originalFetch = globalThis.fetch;
+  const image = new Uint8Array([137, 80, 78, 71]);
+  globalThis.fetch = async () => new Response(image, {
+    headers: { 'content-type': 'application/octet-stream' },
+  });
+
+  try {
+    const response = await routeRequest(
+      new Request('https://editor.example/api/files/content?path=docs/Guide/attachments/image.png'),
+      environment(true, true),
+    );
+
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('content-type'), 'image/png');
+    assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
+    assert.deepEqual(new Uint8Array(await response.arrayBuffer()), image);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

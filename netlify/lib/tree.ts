@@ -1,5 +1,5 @@
 import type { GitHubTreeResponse } from './github.js';
-import { isMarkdownPath, isReadableTreePath } from './paths.js';
+import { isImagePath, isMarkdownPath, isReadableTreePath } from './paths.js';
 
 export interface TreeNode {
   name: string;
@@ -22,7 +22,8 @@ export function toVaultTree(response: GitHubTreeResponse): TreeNode {
   const entries = response.tree
     .filter(
       (entry) =>
-        isReadableTreePath(entry.path) && (entry.type === 'tree' || isMarkdownPath(entry.path)),
+        isReadableTreePath(entry.path)
+        && (entry.type === 'tree' || isMarkdownPath(entry.path) || isImagePath(entry.path)),
     )
     .sort((a, b) => a.path.localeCompare(b.path));
 

@@ -9,13 +9,14 @@ import {
 import { createContributionBranch, validateContributionInput } from './contributions.js';
 import {
   createContribution,
+  getStagingFile,
   getStagingMarkdown,
   getStagingTree,
   listContributions,
   updateContribution,
 } from './github.js';
 import { json, methodNotAllowed } from './http.js';
-import { assertReadableMarkdownPath } from './paths.js';
+import { assertReadableFilePath, assertReadableMarkdownPath, isImagePath } from './paths.js';
 import {
   expiredSessionCookie,
   hasValidSession,
@@ -126,14 +127,36 @@ export async function handleVaultFile(
     const rawPath = new URL(request.url).searchParams.get('path');
     if (!rawPath) return json({ error: 'path required' }, { status: 400 });
 
-    const path = assertReadableMarkdownPath(rawPath);
-    const content = await getStagingMarkdown(loadEditorConfig(env), path);
+    const path = assertReadableFilePath(rawPath);
+    const config = loadEditorConfig(env);
+    if (isImagePath(path)) {
+      const upstream = await getStagingFile(config, path);
+      const headers = new Headers();
+      headers.set('content-type', imageContentType(path));
+      headers.set('x-content-type-options', 'nosniff');
+      return new Response(upstream.body, { status: 200, headers });
+    }
+    const content = await getStagingMarkdown(config, path);
     return json({ path, content, encoding: 'utf8' });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to read document';
     const status = message.startsWith('GitHub API request failed') ? 502 : 400;
     return json({ error: message }, { status });
   }
+}
+
+function imageContentType(path: string): string {
+  const extension = path.slice(path.lastIndexOf('.')).toLowerCase();
+  return {
+    '.avif': 'image/avif',
+    '.bmp': 'image/bmp',
+    '.gif': 'image/gif',
+    '.jpeg': 'image/jpeg',
+    '.jpg': 'image/jpeg',
+    '.png': 'image/png',
+    '.svg': 'image/svg+xml',
+    '.webp': 'image/webp',
+  }[extension] ?? 'application/octet-stream';
 }
 
 export async function handleSubmitContribution(
