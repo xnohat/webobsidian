@@ -1,4 +1,4 @@
-import type { RuntimeEnvironment } from '../netlify/lib/config.js';
+import { isPublicEditor, type RuntimeEnvironment } from '../netlify/lib/config.js';
 import {
   handleAuthStatus,
   handleHealth,
@@ -25,8 +25,6 @@ export interface CloudflareEnvironment extends RuntimeEnvironment {
   GITHUB_FORK_OWNER: string;
   GITHUB_REPO: string;
   GITHUB_STAGING_BRANCH: string;
-  EDITOR_PASSWORD: string;
-  SESSION_SECRET: string;
   ASSETS: AssetBinding;
   LOGIN_RATE_LIMITER: RateLimitBinding;
   CONTRIBUTION_RATE_LIMITER: RateLimitBinding;
@@ -58,6 +56,7 @@ export async function routeRequest(
   if (pathname === '/auth/me') return handleMe(request, env);
   if (pathname === '/auth/logout') return handleLogout(request);
   if (pathname === '/auth/login') {
+    if (isPublicEditor(env)) return handleLogin(request, env);
     const limited = await enforceRateLimit(request, pathname, env.LOGIN_RATE_LIMITER);
     return limited ?? handleLogin(request, env);
   }

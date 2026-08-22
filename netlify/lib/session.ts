@@ -1,5 +1,5 @@
 import { timingSafeEqual } from 'node:crypto';
-import { loadAuthConfig, type RuntimeEnvironment } from './config.js';
+import { isPublicEditor, loadAuthConfig, type RuntimeEnvironment } from './config.js';
 
 const COOKIE_NAME = 'uscwiki_editor_session';
 const SESSION_SECONDS = 12 * 60 * 60;
@@ -72,6 +72,7 @@ export async function hasValidSession(
   request: Request,
   env: RuntimeEnvironment = process.env,
 ): Promise<boolean> {
+  if (isPublicEditor(env)) return true;
   try {
     const token = readCookie(request);
     if (!token) return false;

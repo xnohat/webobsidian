@@ -8,7 +8,8 @@
     "GITHUB_UPSTREAM_OWNER": "hzxyayaya",
     "GITHUB_FORK_OWNER": "cherryLucas",
     "GITHUB_REPO": "USC-wiki",
-    "GITHUB_STAGING_BRANCH": "contributions"
+    "GITHUB_STAGING_BRANCH": "contributions",
+    "PUBLIC_EDITOR": "true"
   },
   "assets": {
     "directory": "./server/public",

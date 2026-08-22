@@ -31,18 +31,27 @@ The GitHub token must be able to create branches and commits in
 `cherryLucas/USC-wiki`, and open pull requests against
 `hzxyayaya/USC-wiki:contributions`.
 
+## Public access
+
+This deployment sets `PUBLIC_EDITOR=true` in `wrangler.jsonc`. Visitors enter the editor
+without a password or session cookie and can submit changes through the configured
+GitHub contribution account. Server-side validation still limits changes to Markdown
+under `docs/**`, targets pull requests at `contributions`, and never writes directly to
+`main`. Contribution POST requests remain rate-limited.
+
+Remove `PUBLIC_EDITOR` (or set it to `false`) to restore password authentication for a
+different deployment.
+
 ## Local development
 
-Copy `.dev.vars.example` to `.dev.vars` and fill in the three secrets:
+Copy `.dev.vars.example` to `.dev.vars` and set the GitHub token:
 
 ```text
 GITHUB_TOKEN=...
-EDITOR_PASSWORD=...
-SESSION_SECRET=...
 ```
 
-`EDITOR_PASSWORD` must contain at least 8 characters. `SESSION_SECRET` must contain at
-least 32 characters. Never commit `.dev.vars`.
+The checked-in public mode does not use `EDITOR_PASSWORD` or `SESSION_SECRET`. Never
+commit `.dev.vars`.
 
 Build the contribution-mode frontend and start the local Worker:
 
@@ -58,14 +67,6 @@ stored in `wrangler.jsonc`. Store credentials only as encrypted Worker secrets:
 
 ```powershell
 wrangler secret put GITHUB_TOKEN
-wrangler secret put EDITOR_PASSWORD
-wrangler secret put SESSION_SECRET
-```
-
-Generate a session secret in PowerShell if needed:
-
-```powershell
-[Convert]::ToHexString([Security.Cryptography.RandomNumberGenerator]::GetBytes(32)).ToLower()
 ```
 
 ## Deploy
@@ -96,9 +97,9 @@ Actions**:
   Workers** template and restricted to the deployment account.
 - `CLOUDFLARE_ACCOUNT_ID`: the Cloudflare account ID that owns `usc-wiki-editor`.
 
-The application secrets (`GITHUB_TOKEN`, `EDITOR_PASSWORD`, and `SESSION_SECRET`) stay
-on the Worker and are preserved by deployments. Do not copy them into the GitHub
-workflow.
+The application secret (`GITHUB_TOKEN`) stays on the Worker and is preserved by
+deployments. Do not copy it into the GitHub workflow. Existing password/session secrets
+may remain stored but are ignored while `PUBLIC_EDITOR=true`.
 
 After reviewing a release, promote the exact tested commit without merging it into
 `main`:
@@ -114,7 +115,8 @@ That push starts verification and deploys only if every check succeeds.
 - `/api/*` and `/auth/*` run through `cloudflare/worker.ts` first.
 - Other requests are served from `server/public` with SPA fallback to `index.html`.
 - Unknown API routes return JSON `404`, never the SPA document.
-- Login is limited to 5 requests per minute per source address and Cloudflare location.
+- Password-protected deployments limit login to 5 requests per minute per source
+  address and Cloudflare location. Public mode does not call the login endpoint.
 - Contribution submission is limited to 10 requests per minute per source address and
   Cloudflare location.
 

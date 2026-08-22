@@ -2,21 +2,22 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { routeRequest, type CloudflareEnvironment } from '../worker.js';
 
-function environment(rateLimitSuccess = true): CloudflareEnvironment {
+function environment(
+  rateLimitSuccess = true,
+  publicEditor = false,
+): CloudflareEnvironment {
   const limiter = {
     async limit() {
       return { success: rateLimitSuccess };
     },
   };
 
-  return {
+  const env: CloudflareEnvironment = {
     GITHUB_TOKEN: 'token',
     GITHUB_UPSTREAM_OWNER: 'upstream',
     GITHUB_FORK_OWNER: 'fork',
     GITHUB_REPO: 'repo',
     GITHUB_STAGING_BRANCH: 'contributions',
-    EDITOR_PASSWORD: 'password123',
-    SESSION_SECRET: '0123456789abcdef0123456789abcdef',
     ASSETS: {
       async fetch() {
         return new Response('asset');
@@ -25,6 +26,12 @@ function environment(rateLimitSuccess = true): CloudflareEnvironment {
     LOGIN_RATE_LIMITER: limiter,
     CONTRIBUTION_RATE_LIMITER: limiter,
   };
+  if (publicEditor) env.PUBLIC_EDITOR = 'true';
+  else {
+    env.EDITOR_PASSWORD = 'password123';
+    env.SESSION_SECRET = '0123456789abcdef0123456789abcdef';
+  }
+  return env;
 }
 
 test('routes health checks with the injected Cloudflare environment', async () => {
@@ -80,4 +87,30 @@ test('keeps contribution status reads separate from the submission limiter', asy
 
   assert.equal(response.status, 401);
   assert.deepEqual(await response.json(), { error: 'Unauthorized' });
+});
+
+test('public editor mode authenticates visitors without a session cookie', async () => {
+  const response = await routeRequest(
+    new Request('https://editor.example/auth/me'),
+    environment(true, true),
+  );
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    authenticated: true,
+    mustChangePassword: false,
+  });
+});
+
+test('public editor mode does not require the login limiter or password secrets', async () => {
+  const response = await routeRequest(
+    new Request('https://editor.example/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    }),
+    environment(false, true),
+  );
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { ok: true, mustChangePassword: false });
 });

@@ -19,6 +19,7 @@ export interface RuntimeEnvironment {
   GITHUB_STAGING_BRANCH?: string;
   EDITOR_PASSWORD?: string;
   SESSION_SECRET?: string;
+  PUBLIC_EDITOR?: string;
 }
 
 const CONFIG_KEYS = [
@@ -70,4 +71,8 @@ export function authConfigReady(env: RuntimeEnvironment = process.env): boolean 
   } catch {
     return false;
   }
+}
+
+export function isPublicEditor(env: RuntimeEnvironment = process.env): boolean {
+  return ['1', 'true'].includes(env.PUBLIC_EDITOR?.trim().toLowerCase() ?? '');
 }

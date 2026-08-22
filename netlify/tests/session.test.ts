@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { issueSessionToken, passwordMatches, verifySessionToken } from '../lib/session.js';
+import {
+  hasValidSession,
+  issueSessionToken,
+  passwordMatches,
+  verifySessionToken,
+} from '../lib/session.js';
 
 const secret = 'a-session-secret-that-is-longer-than-thirty-two-characters';
 
@@ -20,4 +25,10 @@ test('rejects expired and tampered sessions', async () => {
 test('compares editor passwords without partial matches', () => {
   assert.equal(passwordMatches('correct horse battery staple', 'correct horse battery staple'), true);
   assert.equal(passwordMatches('correct horse', 'correct horse battery staple'), false);
+});
+
+test('accepts requests without a cookie only when public editor mode is explicit', async () => {
+  const request = new Request('https://editor.example/api/files');
+  assert.equal(await hasValidSession(request, { PUBLIC_EDITOR: 'true' }), true);
+  assert.equal(await hasValidSession(request, {}), false);
 });

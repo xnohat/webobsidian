@@ -1,6 +1,7 @@
 import {
   authConfigReady,
   editorConfigReady,
+  isPublicEditor,
   loadAuthConfig,
   loadEditorConfig,
   type RuntimeEnvironment,
@@ -34,7 +35,7 @@ export async function handleHealth(
     ok: true,
     service: 'usc-wiki-contribution-editor',
     githubConfigured: editorConfigReady(env),
-    authConfigured: authConfigReady(env),
+    authConfigured: isPublicEditor(env) || authConfigReady(env),
   });
 }
 
@@ -43,6 +44,9 @@ export async function handleAuthStatus(
   env: RuntimeEnvironment,
 ): Promise<Response> {
   if (request.method !== 'GET') return methodNotAllowed(['GET']);
+  if (isPublicEditor(env)) {
+    return json({ passwordSet: true, mustChangePassword: false, publicAccess: true });
+  }
   if (!authConfigReady(env)) {
     return json({ error: 'Editor authentication is not configured' }, { status: 503 });
   }
@@ -54,6 +58,7 @@ export async function handleLogin(
   env: RuntimeEnvironment,
 ): Promise<Response> {
   if (request.method !== 'POST') return methodNotAllowed(['POST']);
+  if (isPublicEditor(env)) return json({ ok: true, mustChangePassword: false });
 
   try {
     const { password } = (await request.json()) as { password?: unknown };
