@@ -53,14 +53,16 @@ export default function App() {
     if (!authed) return;
     loadTree();
     // Deep link (/note/<path>) wins over the restored workspace's active note.
+    const shouldEdit = new URLSearchParams(window.location.search).get('mode') === 'live';
     const deepLink = initUrlSync();
     useStore
       .getState()
       .loadUiState() // restore workspace from server + open note(s)
-      .then(() => {
+      .then(async () => {
         if (deepLink && deepLink !== useStore.getState().activePath) {
-          return useStore.getState().openFile(deepLink);
+          await useStore.getState().openFile(deepLink);
         }
+        if (shouldEdit) useStore.getState().setViewMode('live');
       })
       .catch(() => {});
     api
