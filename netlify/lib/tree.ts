@@ -53,5 +53,15 @@ export function toVaultTree(response: GitHubTreeResponse): TreeNode {
     node.children?.forEach(sortChildren);
   };
   sortChildren(root);
-  return root;
+
+  // Hoist the docs/ directory to become the root node.  USC-Wiki stores all
+  // editable content under docs/, so surfacing it as the top-level folder
+  // removes a redundant layer and lets the sidebar footer show "docs" instead
+  // of the generic "Vault" label.  All internal paths (e.g. docs/Guide/a.md)
+  // remain unchanged so every other API call continues to work without
+  // modification.
+  const docsNode = root.children?.find(
+    (c) => c.name.toLowerCase() === 'docs' && c.type === 'folder',
+  );
+  return docsNode ?? root;
 }

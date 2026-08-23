@@ -130,9 +130,7 @@ export default function Sidebar() {
         {leftPanel === 'bookmarks' && <BookmarksPanel />}
       </div>
       <div className="vault-footer">
-        <span className="vault-name">
-          <Icon name="gem" size={15} /> {vaultName}
-        </span>
+        <span className="vault-name">{vaultName}</span>
         <span className="grow" />
         <button title="Settings" onClick={() => setSettings(true)}>
           <Icon name="settings" size={16} />
@@ -142,3 +140,5 @@ export default function Sidebar() {
     </div>
   );
 }
+
+
