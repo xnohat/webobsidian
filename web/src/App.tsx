@@ -18,6 +18,12 @@ import { loadPlugins } from './lib/plugins';
 import { initUrlSync } from './lib/urlsync';
 import { useIsMobile } from './lib/useIsMobile';
 
+type ThemeClass = 'theme-dark' | 'theme-light';
+type ThemePreference = ThemeClass | 'system';
+
+const systemTheme = (): ThemeClass =>
+  window.matchMedia('(prefers-color-scheme: dark)').matches ? 'theme-dark' : 'theme-light';
+
 export default function App() {
   const authed = useStore((s) => s.authed);
   const setAuthed = useStore((s) => s.setAuthed);
@@ -34,7 +40,17 @@ export default function App() {
   const save = useStore((s) => s.save);
   const toast = useStore((s) => s.toast);
   const [checking, setChecking] = useState(true);
-  const [theme, setTheme] = useState<'theme-dark' | 'theme-light'>('theme-light');
+  const [themePreference, setThemePreference] = useState<ThemePreference>('system');
+  const [detectedTheme, setDetectedTheme] = useState<ThemeClass>(systemTheme);
+  const theme = themePreference === 'system' ? detectedTheme : themePreference;
+
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const syncTheme = () => setDetectedTheme(media.matches ? 'theme-dark' : 'theme-light');
+    syncTheme();
+    media.addEventListener('change', syncTheme);
+    return () => media.removeEventListener('change', syncTheme);
+  }, []);
 
   useEffect(() => {
     api
@@ -67,7 +83,16 @@ export default function App() {
       .catch(() => {});
     api
       .getSettings()
-      .then((s) => setTheme(s?.ui?.theme === 'obsidian-dark' ? 'theme-dark' : 'theme-light'))
+      .then((s) => {
+        const savedTheme = s?.ui?.theme;
+        setThemePreference(
+          savedTheme === 'obsidian-dark'
+            ? 'theme-dark'
+            : savedTheme === 'obsidian-light'
+              ? 'theme-light'
+              : 'system',
+        );
+      })
       .catch(() => {});
     useStore.getState().loadShares(); // badge shared notes in the file tree
     loadPlugins().catch(() => {});
@@ -176,7 +201,11 @@ export default function App() {
   return (
     <div className={theme}>
       <div className={appCls}>
-        <Ribbon onTheme={() => setTheme((t) => (t === 'theme-dark' ? 'theme-light' : 'theme-dark'))} />
+        <Ribbon
+          onTheme={() =>
+            setThemePreference(theme === 'theme-dark' ? 'theme-light' : 'theme-dark')
+          }
+        />
         {showLeft && <Sidebar />}
         <Workspace />
         {showRight && <RightSidebar />}

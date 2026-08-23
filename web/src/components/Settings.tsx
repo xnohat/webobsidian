@@ -391,15 +391,16 @@ function Plugins() {
 }
 
 function Appearance({ s }: { s: any }) {
-  const [theme, setTheme] = useState(s.ui.theme);
+  const [theme, setTheme] = useState(s.ui.theme ?? 'system');
   const save = async (t: string) => { setTheme(t); await api.putSettings({ ui: { theme: t } }); location.reload(); };
   return (
     <div>
       <h2>Appearance</h2>
       <Row name="Theme">
         <select className="text-input" value={theme} onChange={(e) => save(e.target.value)}>
-          <option value="obsidian-dark">Obsidian Dark</option>
-          <option value="obsidian-light">Obsidian Light</option>
+          <option value="system">Follow system</option>
+          <option value="obsidian-light">USC Wiki Light</option>
+          <option value="obsidian-dark">USC Wiki Dark</option>
         </select>
       </Row>
     </div>
