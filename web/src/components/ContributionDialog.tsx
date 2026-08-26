@@ -3,6 +3,7 @@ import { api, type ContributionReview } from '../lib/api';
 import { useStore } from '../lib/store';
 import {
   clearContribution,
+  isCreatedNote,
   loadContribution,
   saveContribution,
 } from '../lib/drafts';
@@ -17,7 +18,7 @@ export default function ContributionDialog({ path, onClose, onSubmitted }: Props
   const save = useStore((state) => state.save);
   const notify = useStore((state) => state.notify);
   const defaultTitle = useMemo(
-    () => `更新 ${path.split('/').pop()?.replace(/\.(md|markdown)$/i, '') ?? '文档'}`,
+    () => `${isCreatedNote(path) ? '新增' : '更新'} ${path.split('/').pop()?.replace(/\.(md|markdown)$/i, '') ?? '文档'}`,
     [path],
   );
   const [existing, setExisting] = useState(() => loadContribution(path));

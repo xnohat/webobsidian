@@ -14,6 +14,8 @@ import { editorFind, getActiveEditor } from '../lib/activeEditor';
 import { triggerAddProperty } from '../lib/livePreview';
 import { pathToUrl } from '../lib/urlsync';
 import { VIDEO_EXT_RE, AUDIO_EXT_RE } from '../lib/media';
+import { contributionMode } from '../lib/mode';
+import { isCreatedNote } from '../lib/drafts';
 
 function EditorPane() {
   const activePath = useStore((s) => s.activePath);
@@ -142,6 +144,33 @@ export default function Workspace() {
         // extracts the stage to a PNG (a plain canvas read would be blank).
         { label: 'Copy screenshot', icon: 'camera', onClick: () => window.dispatchEvent(new CustomEvent('wo-graph-screenshot')) },
         { label: '', separator: true },
+        ...tabItems,
+      ];
+    } else if (contributionMode && isCreatedNote(path)) {
+      const sep: ContextMenuItem = { label: '', separator: true };
+      items = [
+        ...(canSplit
+          ? [
+              { label: 'Split right', icon: 'columns', onClick: () => openToSide(path, 'right') },
+              { label: 'Split down', icon: 'rows', onClick: () => openToSide(path, 'down') },
+              sep,
+            ]
+          : []),
+        ...(isMd ? [{ label: 'Add file property', icon: 'plus', onClick: addFileProperty }] : []),
+        ...(isMd ? [{ label: 'Export to PDF…', icon: 'file-pdf', onClick: exportToPdf }] : []),
+        {
+          label: 'Copy URL path',
+          onClick: () => {
+            navigator.clipboard?.writeText(`${location.origin}${pathToUrl(path)}`).catch(() => {});
+            notify('URL copied');
+          },
+        },
+        {
+          label: 'Reveal file in navigation',
+          icon: 'folder',
+          onClick: () => revealInTree(path),
+        },
+        sep,
         ...tabItems,
       ];
     } else {

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { TreeNode } from '../src/lib/api.js';
-import { resolveWikilinkPath } from '../src/lib/tree.js';
+import { addDraftNoteToTree, resolveWikilinkPath } from '../src/lib/tree.js';
 
 const tree: TreeNode = {
   name: 'docs',
@@ -59,3 +59,23 @@ test('resolves an unambiguous note name and ignores its heading anchor', () => {
 test('does not guess when multiple notes share a basename', () => {
   assert.equal(resolveWikilinkPath(tree, '入学准备'), null);
 });
+
+test('adds a new contribution draft to an existing folder in the vault tree', () => {
+  const next = addDraftNoteToTree(tree, 'docs/学习指南/新文档.md');
+
+  assert.equal(
+    resolveWikilinkPath(next, '学习指南/新文档'),
+    'docs/学习指南/新文档.md',
+  );
+  assert.equal(findFileNames(next, 'docs/学习指南').includes('新文档.md'), true);
+});
+
+function findFileNames(root: TreeNode, folderPath: string): string[] {
+  const stack = [root];
+  while (stack.length) {
+    const node = stack.pop()!;
+    if (node.path === folderPath) return (node.children ?? []).map((child) => child.name);
+    stack.push(...(node.children ?? []));
+  }
+  return [];
+}

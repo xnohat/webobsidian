@@ -3,12 +3,22 @@ import { useStore, type TreeSort } from '../lib/store';
 import { api, type TreeNode } from '../lib/api';
 import { findNode, pruneDescendants } from '../lib/tree';
 import { pathToUrl } from '../lib/urlsync';
+import { contributionMode } from '../lib/mode';
+import {
+  clearDraft,
+  forgetCreatedNote,
+  isCreatedNote,
+  loadContribution,
+  moveCreatedNote,
+} from '../lib/drafts';
 import Icon from './Icon';
 
 /** Inline rename box shown in place of a tree row's name (Obsidian-style). */
 function RenameInput({ node, onDone }: { node: TreeNode; onDone: () => void }) {
   const loadTree = useStore((s) => s.loadTree);
   const closeTab = useStore((s) => s.closeTab);
+  const openFile = useStore((s) => s.openFile);
+  const save = useStore((s) => s.save);
   const notify = useStore((s) => s.notify);
   const ref = useRef<HTMLInputElement>(null);
   const done = useRef(false);
@@ -32,12 +42,25 @@ function RenameInput({ node, onDone }: { node: TreeNode; onDone: () => void }) {
     const to = dir ? `${dir}/${name}` : name;
     if (to === node.path) return;
     try {
-      await api.rename(node.path, to);
+      if (contributionMode && isCreatedNote(node.path)) {
+        if (loadContribution(node.path)) {
+          throw new Error('已提交审核的新文档不能改名，请先在当前路径继续更新');
+        }
+        if (!/\.(md|markdown)$/i.test(to)) {
+          throw new Error('投稿模式只能创建 Markdown 文档');
+        }
+        if (findNode(useStore.getState().tree, to)) throw new Error('同名文档已经存在');
+        await save();
+        if (!moveCreatedNote(node.path, to)) throw new Error('无法读取本地新文档草稿');
+      } else {
+        await api.rename(node.path, to);
+      }
       closeTab(node.path);
+      await loadTree();
+      await openFile(to);
     } catch (e: any) {
       notify(e?.message ?? 'Rename failed');
     }
-    await loadTree();
   };
 
   return (
@@ -158,6 +181,7 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
   const setSelectAnchor = useStore((s) => s.setSelectAnchor);
 
   const isFolder = node.type === 'folder';
+  const isLocalCreatedNote = contributionMode && !isFolder && isCreatedNote(node.path);
   const editing = renamingPath === node.path;
   const isCut = clipboard?.mode === 'cut' && clipboard.path === node.path;
 
@@ -207,6 +231,18 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
   const doRename = () => setRenamingPath(node.path);
   const doDelete = async () => {
     if (confirm(`Delete "${node.name}"?`)) {
+      if (isLocalCreatedNote) {
+        if (loadContribution(node.path)) {
+          notify('已提交审核的新文档不能在这里删除');
+          return;
+        }
+        clearDraft(node.path);
+        forgetCreatedNote(node.path);
+        closeTab(node.path);
+        await loadTree();
+        notify('本地新文档已删除');
+        return;
+      }
       const r = await api.remove(node.path);
       closeTab(node.path);
       await loadTree();
@@ -312,7 +348,16 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
           { label: '', separator: true },
           { label: 'Delete', danger: true, onClick: doDelete },
         ]
-      : [
+      : isLocalCreatedNote
+        ? [
+            { label: 'Open', onClick: () => openFile(node.path) },
+            { label: '', separator: true },
+            { label: 'Rename…', onClick: doRename },
+            { label: 'Copy URL path', onClick: copyUrl },
+            { label: '', separator: true },
+            { label: 'Delete local draft', danger: true, onClick: doDelete },
+          ]
+        : [
           { label: 'Open', onClick: () => openFile(node.path) },
           { label: 'Open to the right', onClick: () => openToSide(node.path) },
           { label: '', separator: true },
@@ -395,7 +440,7 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
         className={`tree-row ${activePath === node.path ? 'active' : ''} ${isSelected ? 'selected' : ''} ${dropping ? 'drop-target' : ''}`}
         style={isCut ? { opacity: 0.5 } : undefined}
         data-path={node.path}
-        draggable
+        draggable={!isLocalCreatedNote}
         onDragStart={onDragStart}
         onClick={onRowClick}
         onContextMenu={onContext}

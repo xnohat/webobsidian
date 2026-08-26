@@ -60,6 +60,38 @@ export function pruneDescendants(paths: string[]): string[] {
   return keep;
 }
 
+/** Add a browser-local Markdown draft beneath an existing folder. */
+export function addDraftNoteToTree(root: TreeNode, path: string): TreeNode {
+  if (findNode(root, path)) return root;
+  const slash = path.lastIndexOf('/');
+  if (slash < 0) return root;
+  const parentPath = path.slice(0, slash);
+  const name = path.slice(slash + 1);
+  if (!name || !/\.(md|markdown)$/i.test(name)) return root;
+
+  let added = false;
+  const visit = (node: TreeNode): TreeNode => {
+    if (node.path === parentPath && node.type === 'folder') {
+      added = true;
+      return {
+        ...node,
+        children: [
+          ...(node.children ?? []),
+          { name, path, type: 'file', ext: name.slice(name.lastIndexOf('.') + 1) },
+        ],
+      };
+    }
+    if (!node.children) return node;
+    const children = node.children.map(visit);
+    return children.some((child, index) => child !== node.children?.[index])
+      ? { ...node, children }
+      : node;
+  };
+
+  const next = visit(root);
+  return added ? next : root;
+}
+
 /**
  * Resolve an Obsidian wikilink target (e.g. "入学准备" or "Guide/Start") to a
  * vault-relative file path using only the in-memory tree.  Used in contribution

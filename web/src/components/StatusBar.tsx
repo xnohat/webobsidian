@@ -8,6 +8,7 @@ import { contributionMode } from '../lib/mode';
 import {
   clearContribution,
   clearDraft,
+  forgetCreatedNote,
   loadDraft,
   loadContribution,
   saveContribution,
@@ -69,11 +70,13 @@ export default function StatusBar() {
             && draft === submittedContent
             && (!state.dirty || state.content === submittedContent);
           clearContribution(activePath);
+          forgetCreatedNote(activePath);
           setReview(completed);
           if (draftIsSubmittedVersion) {
             clearDraft(activePath);
             useStore.setState({ dirty: false });
             notify(`PR #${completed.pullNumber} 已合并，本地旧草稿已清理`, 5000);
+            await state.loadTree();
             await state.openFile(activePath);
           } else {
             notify(`PR #${completed.pullNumber} 已合并；检测到较新的本地草稿，已保留`, 5000);
