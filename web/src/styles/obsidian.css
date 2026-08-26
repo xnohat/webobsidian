@@ -426,6 +426,10 @@ body.wo-col-resizing .sidebar, body.wo-col-resizing .right-sidebar { transition:
 .cm-s-obsidian .cm-line.HyperMD-codeblock-bg.cm-activeLine {
   background: var(--background-primary-alt) !important; }
 .cm-selectionBackground, .cm-editor ::selection { background: var(--text-selection) !important; }
+/* Ensure the CodeMirror drawSelection() cursor is always visible against the
+   editor background. Without this, the cursor div has no explicit colour and
+   can disappear on certain themes or zoom levels. */
+.cm-cursor, .cm-dropCursor { border-left-color: var(--text-normal) !important; }
 
 /* ---- Obsidian editor typography (cm-s-obsidian, §19/§20) ---- */
 /* Live Preview block spacing: heading lines carry padding-top = --p-spacing (1rem) */

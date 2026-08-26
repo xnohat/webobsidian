@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { api, type TreeNode, type ShareRecord } from './api';
-import { findNode } from './tree';
+import { findNode, resolveWikilinkPath } from './tree';
 import { loadDraft, saveDraft } from './drafts';
 import { contributionMode } from './mode';
 
@@ -500,15 +500,26 @@ export const useStore = create<AppState>()(
 
       openWikilink: async (target) => {
         try {
-          const { path } = await api.resolve(target);
-          if (path) await get().openFile(path);
-          else {
-            // Only append `.md` when the target has no extension at all — a target
-            // like `Foo.canvas` must stay `Foo.canvas`, not become `Foo.canvas.md`.
+          let resolvedPath: string | null = null;
+          if (contributionMode) {
+            // In contribution mode the /api/resolve endpoint does not exist.
+            // Resolve the wikilink target from the in-memory file tree so
+            // Ctrl/Cmd-click navigation works without a server round-trip.
+            resolvedPath = resolveWikilinkPath(get().tree, target);
+          } else {
+            const result = await api.resolve(target);
+            resolvedPath = result.path;
+          }
+          if (resolvedPath) {
+            await get().openFile(resolvedPath);
+          } else if (!contributionMode) {
+            // Keep the standard WebObsidian behavior outside contribution mode:
+            // an unresolved wikilink creates the missing note.
             const hasExt = /\.[^./]+$/.test(target);
             const newPath = hasExt ? target : `${target}.md`;
             await get().createNote(newPath, `# ${target.replace(/\.md$/, '')}\n`);
           }
+          // Contribution mode intentionally skips note creation on a miss.
         } catch {
           /* ignore */
         }

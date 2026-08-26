@@ -28,6 +28,9 @@ jobs:
       - name: Typecheck desktop
         run: npm --workspace desktop run typecheck
 
+      - name: Test frontend utilities
+        run: npm run test:web
+
       - name: Build
         run: npm run build
 

@@ -37,6 +37,7 @@ jobs:
           npm run typecheck:cloudflare
           npm run test:netlify
           npm run test:cloudflare
+          npm run test:web
 
       - name: Build contribution frontend
         run: npm run build:contribution

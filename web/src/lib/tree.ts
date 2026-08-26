@@ -59,3 +59,54 @@ export function pruneDescendants(paths: string[]): string[] {
   for (const p of sorted) if (!keep.some((k) => p === k || p.startsWith(`${k}/`))) keep.push(p);
   return keep;
 }
+
+/**
+ * Resolve an Obsidian wikilink target (e.g. "入学准备" or "Guide/Start") to a
+ * vault-relative file path using only the in-memory tree.  Used in contribution
+ * mode where the /api/resolve endpoint is not available.
+ *
+ * Resolution order mirrors Obsidian's shortest-path algorithm:
+ *  1. Exact path match (target contains '/')
+ *  2. Basename match anywhere in the tree — unambiguous only when exactly one
+ *     file has that name (with or without .md extension).
+ */
+export function resolveWikilinkPath(
+  root: TreeNode | null,
+  target: string,
+): string | null {
+  if (!root || !target) return null;
+
+  // Strip heading/block anchor and normalise separators.
+  const clean = target.split('#')[0].replaceAll('\\', '/').trim();
+  if (!clean) return null;
+
+  // 1. Exact path match (already includes directory components).
+  if (clean.includes('/')) {
+    const rooted = root.path && !clean.startsWith(`${root.path}/`)
+      ? `${root.path}/${clean}`
+      : clean;
+    const exactCandidates = [clean, `${clean}.md`, rooted, `${rooted}.md`];
+    for (const path of new Set(exactCandidates)) {
+      const exact = findNode(root, path);
+      if (exact?.type === 'file') return exact.path;
+    }
+  }
+
+  // 2. Basename search — walk the whole tree.
+  const basename = clean.slice(clean.lastIndexOf('/') + 1);
+  const candidates: string[] = [];
+  const stack: TreeNode[] = [root];
+  while (stack.length) {
+    const node = stack.pop()!;
+    if (node.type === 'file') {
+      const nameNoExt = node.name.replace(/\.(md|markdown)$/i, '');
+      if (node.name === basename || nameNoExt === basename) {
+        candidates.push(node.path);
+      }
+    }
+    if (node.children) stack.push(...node.children);
+  }
+  // Return unambiguous match; if multiple files share the same basename,
+  // we cannot auto-resolve (mirrors Obsidian behaviour).
+  return candidates.length === 1 ? candidates[0] : null;
+}

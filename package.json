@@ -19,6 +19,7 @@
     "test:netlify": "npm --workspace server exec -- tsx --test ../netlify/tests/*.test.ts",
     "typecheck:cloudflare": "npm --workspace server exec -- tsc -p ../cloudflare/tsconfig.json",
     "test:cloudflare": "npm --workspace server exec -- tsx --test ../cloudflare/tests/*.test.ts",
+    "test:web": "npm --workspace server exec -- tsx --test ../web/tests/*.test.ts",
     "build:contribution": "npm --workspace web run build -- --mode contribution",
     "desktop": "npm run build && npm --workspace desktop run dev",
     "desktop:dist": "npm run build && npm --workspace desktop run dist",
