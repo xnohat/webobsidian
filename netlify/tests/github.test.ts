@@ -76,6 +76,54 @@ test('creates a fork branch, atomic commit, and staging pull request', async (co
   assert.match(pullRequest.body, /usc-wiki-editor-files:/);
 });
 
+test('creates Git blobs for binary contribution attachments', async (context) => {
+  const originalFetch = globalThis.fetch;
+  const requests: Array<{ url: string; body?: unknown }> = [];
+  const responses = [
+    { object: { sha: 'base-sha' } },
+    { tree: { sha: 'base-tree' } },
+    { ref: 'refs/heads/contrib/20260819-deadbeef' },
+    { sha: 'image-blob-sha' },
+    { sha: 'new-tree' },
+    { sha: 'new-commit' },
+    { ref: 'refs/heads/contrib/20260819-deadbeef' },
+    { number: 43, html_url: 'https://github.com/hzxyayaya/USC-wiki/pull/43' },
+  ];
+  globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+    requests.push({
+      url,
+      body: typeof init?.body === 'string' ? JSON.parse(init.body) : undefined,
+    });
+    const body = responses.shift();
+    assert.ok(body, `Unexpected GitHub request: ${url}`);
+    return Response.json(body);
+  }) as typeof fetch;
+  context.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  await createContribution(
+    config,
+    {
+      title: '新增图片',
+      contributorName: '张三',
+      files: [
+        { path: 'docs/指南/新文档.md', content: '![[示例.png]]' },
+        { path: 'docs/指南/attachments/示例.png', content: 'iVBORw0KGgo=', encoding: 'base64' },
+      ],
+    },
+    'contrib/20260819-deadbeef',
+  );
+
+  assert.equal(requests[3].url.endsWith('/cherryLucas/USC-wiki/git/blobs'), true);
+  assert.deepEqual(requests[3].body, { content: 'iVBORw0KGgo=', encoding: 'base64' });
+  assert.deepEqual((requests[4].body as { tree: unknown[] }).tree, [
+    { path: 'docs/指南/新文档.md', mode: '100644', type: 'blob', content: '![[示例.png]]' },
+    { path: 'docs/指南/attachments/示例.png', mode: '100644', type: 'blob', sha: 'image-blob-sha' },
+  ]);
+});
+
 test('lists only open editor contribution branches from the configured fork', async (context) => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (async () => Response.json([

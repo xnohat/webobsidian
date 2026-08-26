@@ -164,7 +164,7 @@ export const api = {
   submitContribution: (input: {
     title: string;
     contributor: { name: string };
-    files: { path: string; content: string }[];
+    files: { path: string; content: string; encoding?: 'base64' }[];
     branch?: string;
   }) =>
     req<ContributionResult>('/api/contributions', {

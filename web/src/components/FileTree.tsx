@@ -12,6 +12,13 @@ import {
   moveCreatedNote,
 } from '../lib/drafts';
 import Icon from './Icon';
+import {
+  draftAssetUrl,
+  getDraftAsset,
+  reassignDraftAssets,
+  removeDraftAsset,
+  removeDraftAssets,
+} from '../lib/draftAssets';
 
 /** Inline rename box shown in place of a tree row's name (Obsidian-style). */
 function RenameInput({ node, onDone }: { node: TreeNode; onDone: () => void }) {
@@ -52,6 +59,7 @@ function RenameInput({ node, onDone }: { node: TreeNode; onDone: () => void }) {
         if (findNode(useStore.getState().tree, to)) throw new Error('同名文档已经存在');
         await save();
         if (!moveCreatedNote(node.path, to)) throw new Error('无法读取本地新文档草稿');
+        await reassignDraftAssets(node.path, to);
       } else {
         await api.rename(node.path, to);
       }
@@ -81,10 +89,10 @@ function RenameInput({ node, onDone }: { node: TreeNode; onDone: () => void }) {
 }
 
 function fileIcon(node: TreeNode): string | null {
-  const ext = node.ext ?? '';
-  if (/\.(md|markdown)$/.test(ext)) return null; // markdown: text only, like Obsidian
-  if (/\.(png|jpe?g|gif|svg|webp)$/.test(ext)) return 'image';
-  if (ext === '.pdf') return 'file-pdf';
+  const ext = (node.ext ?? '').replace(/^\./, '').toLowerCase();
+  if (/^(md|markdown)$/.test(ext)) return null; // markdown: text only, like Obsidian
+  if (/^(avif|bmp|png|jpe?g|gif|svg|webp)$/.test(ext)) return 'image';
+  if (ext === 'pdf') return 'file-pdf';
   return 'paperclip';
 }
 
@@ -182,6 +190,7 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
 
   const isFolder = node.type === 'folder';
   const isLocalCreatedNote = contributionMode && !isFolder && isCreatedNote(node.path);
+  const isLocalDraftAsset = contributionMode && !isFolder && draftAssetUrl(node.path) !== null;
   const editing = renamingPath === node.path;
   const isCut = clipboard?.mode === 'cut' && clipboard.path === node.path;
 
@@ -231,6 +240,18 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
   const doRename = () => setRenamingPath(node.path);
   const doDelete = async () => {
     if (confirm(`Delete "${node.name}"?`)) {
+      if (isLocalDraftAsset) {
+        const asset = await getDraftAsset(node.path);
+        if (asset && loadContribution(asset.notePath)) {
+          notify('已提交审核的附件不能在这里删除');
+          return;
+        }
+        await removeDraftAsset(node.path);
+        closeTab(node.path);
+        await loadTree();
+        notify('本地附件已删除');
+        return;
+      }
       if (isLocalCreatedNote) {
         if (loadContribution(node.path)) {
           notify('已提交审核的新文档不能在这里删除');
@@ -238,6 +259,7 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
         }
         clearDraft(node.path);
         forgetCreatedNote(node.path);
+        await removeDraftAssets(node.path);
         closeTab(node.path);
         await loadTree();
         notify('本地新文档已删除');
@@ -357,7 +379,14 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
             { label: '', separator: true },
             { label: 'Delete local draft', danger: true, onClick: doDelete },
           ]
-        : [
+        : isLocalDraftAsset
+          ? [
+              { label: 'Open', onClick: () => openFile(node.path) },
+              { label: 'Copy URL path', onClick: copyUrl },
+              { label: '', separator: true },
+              { label: 'Delete local attachment', danger: true, onClick: doDelete },
+            ]
+          : [
           { label: 'Open', onClick: () => openFile(node.path) },
           { label: 'Open to the right', onClick: () => openToSide(node.path) },
           { label: '', separator: true },
@@ -395,6 +424,12 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
     e.stopPropagation();
     setDropping(false);
     const targetDir = isFolder ? node.path : parentDir(node.path);
+    if (e.dataTransfer.files.length) {
+      window.dispatchEvent(new CustomEvent('wo-import-files', {
+        detail: { files: Array.from(e.dataTransfer.files), targetDir },
+      }));
+      return;
+    }
     await moveItemsTo(readDragPaths(e), targetDir);
   };
 
@@ -440,7 +475,7 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
         className={`tree-row ${activePath === node.path ? 'active' : ''} ${isSelected ? 'selected' : ''} ${dropping ? 'drop-target' : ''}`}
         style={isCut ? { opacity: 0.5 } : undefined}
         data-path={node.path}
-        draggable={!isLocalCreatedNote}
+        draggable={!isLocalCreatedNote && !isLocalDraftAsset}
         onDragStart={onDragStart}
         onClick={onRowClick}
         onContextMenu={onContext}
@@ -562,6 +597,12 @@ export default function FileTree() {
 
   const onRootDrop = async (e: React.DragEvent) => {
     e.preventDefault();
+    if (e.dataTransfer.files.length) {
+      window.dispatchEvent(new CustomEvent('wo-import-files', {
+        detail: { files: Array.from(e.dataTransfer.files), targetDir: rawTree?.path || undefined },
+      }));
+      return;
+    }
     // Drop on the empty area = move to the vault root. Only nested items move.
     const paths = readDragPaths(e).filter((p) => p.includes('/'));
     if (paths.length) await moveItemsTo(paths, '');

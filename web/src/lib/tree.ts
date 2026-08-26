@@ -60,25 +60,15 @@ export function pruneDescendants(paths: string[]): string[] {
   return keep;
 }
 
-/** Add a browser-local Markdown draft beneath an existing folder. */
-export function addDraftNoteToTree(root: TreeNode, path: string): TreeNode {
-  if (findNode(root, path)) return root;
-  const slash = path.lastIndexOf('/');
-  if (slash < 0) return root;
-  const parentPath = path.slice(0, slash);
-  const name = path.slice(slash + 1);
-  if (!name || !/\.(md|markdown)$/i.test(name)) return root;
-
+function addChildToFolder(root: TreeNode, parentPath: string, child: TreeNode): TreeNode {
+  if (findNode(root, child.path)) return root;
   let added = false;
   const visit = (node: TreeNode): TreeNode => {
     if (node.path === parentPath && node.type === 'folder') {
       added = true;
       return {
         ...node,
-        children: [
-          ...(node.children ?? []),
-          { name, path, type: 'file', ext: name.slice(name.lastIndexOf('.') + 1) },
-        ],
+        children: [...(node.children ?? []), child],
       };
     }
     if (!node.children) return node;
@@ -90,6 +80,52 @@ export function addDraftNoteToTree(root: TreeNode, path: string): TreeNode {
 
   const next = visit(root);
   return added ? next : root;
+}
+
+/** Add a browser-local Markdown draft beneath an existing folder. */
+export function addDraftNoteToTree(root: TreeNode, path: string): TreeNode {
+  const slash = path.lastIndexOf('/');
+  if (slash < 0) return root;
+  const name = path.slice(slash + 1);
+  if (!name || !/\.(md|markdown)$/i.test(name)) return root;
+  return addChildToFolder(root, path.slice(0, slash), {
+    name,
+    path,
+    type: 'file',
+    ext: name.slice(name.lastIndexOf('.') + 1),
+  });
+}
+
+/** Add a browser-local image draft, creating only its immediate attachments folder. */
+export function addDraftAssetToTree(root: TreeNode, path: string): TreeNode {
+  const slash = path.lastIndexOf('/');
+  if (slash < 0) return root;
+  const parentPath = path.slice(0, slash);
+  const name = path.slice(slash + 1);
+  if (!/\.(avif|bmp|gif|jpe?g|png|webp)$/i.test(name)) return root;
+
+  let next = root;
+  const parent = parentPath === root.path ? root : findNode(root, parentPath);
+  if (!parent) {
+    const parentSlash = parentPath.lastIndexOf('/');
+    if (parentSlash < 0) return root;
+    const grandparentPath = parentPath.slice(0, parentSlash);
+    const folderName = parentPath.slice(parentSlash + 1);
+    const grandparent = grandparentPath === root.path ? root : findNode(root, grandparentPath);
+    if (grandparent?.type !== 'folder') return root;
+    next = addChildToFolder(root, grandparentPath, {
+      name: folderName,
+      path: parentPath,
+      type: 'folder',
+      children: [],
+    });
+  }
+  return addChildToFolder(next, parentPath, {
+    name,
+    path,
+    type: 'file',
+    ext: name.slice(name.lastIndexOf('.') + 1),
+  });
 }
 
 /**

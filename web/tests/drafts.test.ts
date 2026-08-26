@@ -8,6 +8,7 @@ import {
   rememberCreatedNote,
   saveDraft,
 } from '../src/lib/drafts.js';
+import { blobToBase64 } from '../src/lib/draftAssets.js';
 
 test('keeps a newly created contribution note and its draft together when renamed', () => {
   const values = new Map<string, string>();
@@ -33,4 +34,9 @@ test('keeps a newly created contribution note and its draft together when rename
 
   forgetCreatedNote(renamed);
   assert.equal(isCreatedNote(renamed), false);
+});
+
+test('encodes a dropped binary attachment for the GitHub Blob API', async () => {
+  const encoded = await blobToBase64(new Blob([new Uint8Array([0x89, 0x50, 0x4e, 0x47])]));
+  assert.equal(encoded, 'iVBORw==');
 });

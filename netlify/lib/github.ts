@@ -19,6 +19,7 @@ export interface GitHubTreeResponse {
 export interface ContributionFile {
   path: string;
   content: string;
+  encoding?: 'base64';
 }
 
 export interface CreateContributionInput {
@@ -43,6 +44,22 @@ export interface ContributionReview {
   title: string;
   status: 'open' | 'merged' | 'closed';
   updatedAt: string;
+}
+
+async function contributionTreeEntries(
+  config: EditorConfig,
+  fork: (suffix: string) => string,
+  files: ContributionFile[],
+): Promise<Array<Record<string, string>>> {
+  return Promise.all(files.map(async (file) => {
+    const base = { path: file.path, mode: '100644', type: 'blob' };
+    if (file.encoding !== 'base64') return { ...base, content: file.content };
+    const blob = await githubJson<{ sha: string }>(config, fork('/git/blobs'), {
+      method: 'POST',
+      body: JSON.stringify({ content: file.content, encoding: 'base64' }),
+    });
+    return { ...base, sha: blob.sha };
+  }));
 }
 
 function pullBody(config: EditorConfig, input: CreateContributionInput, branch: string): string {
@@ -222,12 +239,7 @@ export async function createContribution(
       method: 'POST',
       body: JSON.stringify({
         base_tree: baseCommit.tree.sha,
-        tree: input.files.map((file) => ({
-          path: file.path,
-          mode: '100644',
-          type: 'blob',
-          content: file.content,
-        })),
+        tree: await contributionTreeEntries(config, fork, input.files),
       }),
     },
   );
@@ -311,12 +323,7 @@ export async function updateContribution(
     method: 'POST',
     body: JSON.stringify({
       base_tree: headCommit.tree.sha,
-      tree: input.files.map((file) => ({
-        path: file.path,
-        mode: '100644',
-        type: 'blob',
-        content: file.content,
-      })),
+      tree: await contributionTreeEntries(config, fork, input.files),
     }),
   });
   const commit = await githubJson<{ sha: string }>(config, fork('/git/commits'), {

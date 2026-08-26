@@ -67,3 +67,51 @@ test('accepts only editor-generated branches for contribution updates', () => {
     /contribution branch/,
   );
 });
+
+test('accepts reviewed image attachments only as base64 under docs', () => {
+  assert.deepEqual(
+    validateContributionInput({
+      title: '新增带图文档',
+      contributor: { name: 'Lucas' },
+      files: [
+        { path: 'docs/指南/新文档.md', content: '# 新文档' },
+        {
+          path: 'docs/指南/attachments/示例.png',
+          content: 'iVBORw0KGgo=',
+          encoding: 'base64',
+        },
+      ],
+    }),
+    {
+      title: '新增带图文档',
+      contributorName: 'Lucas',
+      files: [
+        { path: 'docs/指南/新文档.md', content: '# 新文档' },
+        {
+          path: 'docs/指南/attachments/示例.png',
+          content: 'iVBORw0KGgo=',
+          encoding: 'base64',
+        },
+      ],
+    },
+  );
+  assert.throws(
+    () => validateContributionInput({
+      title: '非法附件',
+      contributor: { name: 'Lucas' },
+      files: [{ path: 'docs/指南/script.svg', content: 'PHN2Zz4=', encoding: 'base64' }],
+    }),
+    /supported image/,
+  );
+  assert.throws(
+    () => validateContributionInput({
+      title: '附件路径错误',
+      contributor: { name: 'Lucas' },
+      files: [
+        { path: 'docs/指南/新文档.md', content: '# 新文档' },
+        { path: 'docs/指南/示例.png', content: 'iVBORw0KGgo=', encoding: 'base64' },
+      ],
+    }),
+    /attachments folder/,
+  );
+});

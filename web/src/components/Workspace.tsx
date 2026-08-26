@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useStore, GRAPH_PATH, type ContextMenuItem } from '../lib/store';
 import { api } from '../lib/api';
 import Editor from './Editor';
@@ -5,7 +6,7 @@ import Preview from './Preview';
 import GraphView from './GraphView';
 import CanvasView from './CanvasView';
 import FolderView from './FolderView';
-import { isFolderPath } from '../lib/tree';
+import { addDraftAssetToTree, findNode, isFolderPath } from '../lib/tree';
 import Icon from './Icon';
 import StatusBar from './StatusBar';
 import FormatToolbar from './FormatToolbar';
@@ -16,9 +17,17 @@ import { pathToUrl } from '../lib/urlsync';
 import { VIDEO_EXT_RE, AUDIO_EXT_RE } from '../lib/media';
 import { contributionMode } from '../lib/mode';
 import { isCreatedNote } from '../lib/drafts';
+import {
+  CONTRIBUTION_IMAGE_RE,
+  MAX_DRAFT_IMAGE_BYTES,
+  draftAssetsForNote,
+  saveDraftAsset,
+} from '../lib/draftAssets';
+import { vaultAssetUrl } from '../lib/assetUrl';
 
 function EditorPane() {
   const activePath = useStore((s) => s.activePath);
+  const tree = useStore((s) => s.tree);
   const viewMode = useStore((s) => s.viewMode);
   const isMd = activePath ? /\.(md|markdown)$/i.test(activePath) : false;
   const isImage = activePath ? /\.(png|jpe?g|gif|svg|webp)$/i.test(activePath) : false;
@@ -33,7 +42,7 @@ function EditorPane() {
     return (
       <div className="markdown-preview">
         <div className="preview-inner">
-          <img src={api.rawUrl(activePath)} alt={activePath} />
+          <img src={vaultAssetUrl(tree, activePath, activePath)} alt={activePath} />
         </div>
       </div>
     );
@@ -79,6 +88,7 @@ export default function Workspace() {
   const setMobileDrawer = useStore((s) => s.setMobileDrawer);
   const isMobile = useIsMobile();
   const newNote = useStore((s) => s.newNote);
+  const createNote = useStore((s) => s.createNote);
   const goBack = useStore((s) => s.goBack);
   const goForward = useStore((s) => s.goForward);
   const openContextMenu = useStore((s) => s.openContextMenu);
@@ -289,7 +299,98 @@ export default function Workspace() {
   };
 
   // Paste / drop image → upload to attachments and insert an embed.
-  const handleFiles = async (files: FileList | File[]) => {
+  const handleContributionFiles = async (files: File[], targetDir?: string) => {
+    let imported = 0;
+    for (const file of files) {
+      try {
+      const safeName = file.name
+        .trim()
+        .replace(/[\\/\u0000-\u001f]/g, '-')
+        .replace(/[\[\]#|^]/g, '-');
+      if (!safeName || safeName.startsWith('.') || safeName === '..') {
+        notify('文件名无效');
+        continue;
+      }
+
+      if (/\.(md|markdown)$/i.test(safeName)) {
+        if (file.size > 256 * 1024) {
+          notify(`${safeName} 超过 256 KiB，无法导入`);
+          continue;
+        }
+        const current = useStore.getState();
+        const activeNode = current.activePath ? findNode(current.tree, current.activePath) : null;
+        const activeDir = activeNode?.type === 'folder'
+          ? activeNode.path
+          : current.activePath?.includes('/')
+            ? current.activePath.slice(0, current.activePath.lastIndexOf('/'))
+            : '';
+        const dir = targetDir || activeDir || current.tree?.path || 'docs';
+        const path = uniqueImportedPath(current.tree, dir, safeName);
+        await createNote(path, await file.text());
+        imported++;
+        continue;
+      }
+
+      if (CONTRIBUTION_IMAGE_RE.test(safeName)) {
+        const current = useStore.getState();
+        const notePath = current.activePath;
+        if (!notePath || !/\.(md|markdown)$/i.test(notePath)) {
+          notify('请先打开一个 Markdown 文档，再拖入图片');
+          continue;
+        }
+        if (file.size > MAX_DRAFT_IMAGE_BYTES) {
+          notify(`${safeName} 超过 2 MiB，无法导入`);
+          continue;
+        }
+        const existingAssets = await draftAssetsForNote(notePath);
+        if (existingAssets.length >= 19) {
+          notify('一个投稿最多包含 19 个图片附件');
+          continue;
+        }
+        if (existingAssets.reduce((total, asset) => total + asset.size, 0) + file.size > 5 * 1024 * 1024) {
+          notify('当前文档的投稿附件总大小不能超过 5 MiB');
+          continue;
+        }
+        const noteDir = notePath.slice(0, notePath.lastIndexOf('/'));
+        const attachmentDir = `${noteDir}/attachments`;
+        const path = uniqueImportedPath(current.tree, attachmentDir, safeName);
+        await saveDraftAsset({
+          path,
+          notePath,
+          mimeType: file.type || 'application/octet-stream',
+          size: file.size,
+          blob: file,
+        });
+        if (current.tree) {
+          useStore.setState({ tree: addDraftAssetToTree(current.tree, path) });
+        }
+        const separator = current.content.endsWith('\n') || current.content.length === 0 ? '' : '\n';
+        const importedName = path.slice(path.lastIndexOf('/') + 1);
+        useStore.getState().setContent(`${current.content}${separator}![[${importedName}]]\n`);
+        imported++;
+        continue;
+      }
+
+      notify(`${safeName} 不是支持的 Markdown 或图片文件`);
+      } catch (cause) {
+        notify(cause instanceof Error ? cause.message : `${file.name} 导入失败`);
+      }
+    }
+    if (imported) {
+      try {
+        await useStore.getState().save();
+        notify(`已导入 ${imported} 个文件，将随投稿 PR 一起提交`);
+      } catch (cause) {
+        notify(cause instanceof Error ? cause.message : '导入的文件无法保存');
+      }
+    }
+  };
+
+  const handleFiles = async (files: FileList | File[], targetDir?: string) => {
+    if (contributionMode) {
+      await handleContributionFiles(Array.from(files), targetDir);
+      return;
+    }
     for (const file of Array.from(files)) {
       if (!file.type.startsWith('image/')) continue;
       try {
@@ -301,17 +402,26 @@ export default function Workspace() {
       }
     }
   };
+
+  useEffect(() => {
+    const onImport = (event: Event) => {
+      const detail = (event as CustomEvent<{ files: File[]; targetDir?: string }>).detail;
+      if (detail?.files?.length) void handleFiles(detail.files, detail.targetDir);
+    };
+    window.addEventListener('wo-import-files', onImport);
+    return () => window.removeEventListener('wo-import-files', onImport);
+  });
   const onPaste = (e: React.ClipboardEvent) => {
     const imgs = Array.from(e.clipboardData.files).filter((f) => f.type.startsWith('image/'));
     if (imgs.length) {
       e.preventDefault();
-      handleFiles(imgs);
+      void handleFiles(imgs);
     }
   };
   const onDrop = (e: React.DragEvent) => {
     if (e.dataTransfer.files.length) {
       e.preventDefault();
-      handleFiles(e.dataTransfer.files);
+      void handleFiles(e.dataTransfer.files);
     }
   };
 
@@ -471,4 +581,24 @@ export default function Workspace() {
       <StatusBar />
     </div>
   );
+}
+
+function uniqueImportedPath(tree: import('../lib/api').TreeNode | null, dir: string, name: string): string {
+  const dot = name.lastIndexOf('.');
+  const stem = dot > 0 ? name.slice(0, dot) : name;
+  const extension = dot > 0 ? name.slice(dot) : '';
+  let candidate = `${dir}/${name}`;
+  for (let index = 1; importedNameExists(tree, dir, candidate.slice(dir.length + 1)); index++) {
+    candidate = `${dir}/${stem} ${index}${extension}`;
+  }
+  return candidate;
+}
+
+function importedNameExists(
+  tree: import('../lib/api').TreeNode | null,
+  dir: string,
+  name: string,
+): boolean {
+  const folder = dir === tree?.path ? tree : findNode(tree, dir);
+  return (folder?.children ?? []).some((child) => child.name.toLowerCase() === name.toLowerCase());
 }

@@ -7,7 +7,7 @@ import { renderMarkdown } from '../lib/markdown';
 import { calloutIconSvg } from '../lib/callouts';
 import { openLightbox } from '../lib/imageLightbox';
 import { api } from '../lib/api';
-import { resolveAssetPath } from '../lib/tree';
+import { vaultAssetUrl } from '../lib/assetUrl';
 
 /** Syntax-highlight a `<code class="language-x">` block with the SAME CodeMirror
  *  grammars Live Preview uses (token classes styled by the Obsidian palette). */
@@ -103,7 +103,7 @@ export default function Preview({ source }: { source?: string }) {
   useEffect(() => {
     let cancelled = false;
     renderMarkdown(content, {
-      rawUrl: (p) => api.rawUrl(resolveAssetPath(tree, p, activePath) ?? p),
+      rawUrl: (p) => vaultAssetUrl(tree, p, activePath),
       resolveEmbed: async (target) => {
         try {
           const { path } = await api.resolve(target);

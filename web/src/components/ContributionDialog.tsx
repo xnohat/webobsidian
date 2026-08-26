@@ -7,6 +7,7 @@ import {
   loadContribution,
   saveContribution,
 } from '../lib/drafts';
+import { blobToBase64, draftAssetsForNote } from '../lib/draftAssets';
 
 interface Props {
   path: string;
@@ -61,11 +62,19 @@ export default function ContributionDialog({ path, onClose, onSubmitted }: Props
     try {
       await save();
       const content = useStore.getState().content;
+      const assets = await draftAssetsForNote(path);
       const updateBranch = (existing?.branch ?? selectedBranch) || undefined;
       const result = await api.submitContribution({
         title,
         contributor: { name: contributorName },
-        files: [{ path, content }],
+        files: [
+          { path, content },
+          ...await Promise.all(assets.map(async (asset) => ({
+            path: asset.path,
+            content: await blobToBase64(asset.blob),
+            encoding: 'base64' as const,
+          }))),
+        ],
         ...(updateBranch ? { branch: updateBranch } : {}),
       });
       localStorage.setItem('uscwiki-editor:contributor-name', contributorName);

@@ -21,7 +21,7 @@ test('rejects traversal and protected repository files', () => {
   assert.throws(() => assertReadableMarkdownPath('.github/workflows/deploy.md'));
 });
 
-test('allows images for reading but never for contribution writes', () => {
+test('keeps the general Markdown write guard closed to images', () => {
   assert.throws(() => assertReadableMarkdownPath('docs/image.png'));
   assert.equal(assertReadableFilePath('docs/关于本站/attachments/说明.png'), 'docs/关于本站/attachments/说明.png');
   assert.throws(() => assertWritableMarkdownPath('docs/image.png'));

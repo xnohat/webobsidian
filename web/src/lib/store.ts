@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { api, type TreeNode, type ShareRecord } from './api';
-import { addDraftNoteToTree, findNode, resolveWikilinkPath } from './tree';
+import { addDraftAssetToTree, addDraftNoteToTree, findNode, resolveWikilinkPath } from './tree';
 import {
   forgetCreatedNote,
   loadCreatedNotes,
@@ -9,6 +9,7 @@ import {
   saveDraft,
 } from './drafts';
 import { contributionMode } from './mode';
+import { warmDraftAssetUrls } from './draftAssets';
 
 /** Per-tab id so we can ignore the echo of our own server-pushed state change. */
 export const CLIENT_ID = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -331,6 +332,9 @@ export const useStore = create<AppState>()(
             } else {
               tree = addDraftNoteToTree(tree, path);
             }
+          }
+          for (const asset of await warmDraftAssetUrls()) {
+            tree = addDraftAssetToTree(tree, asset.path);
           }
         }
         set({ tree });

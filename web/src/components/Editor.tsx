@@ -42,7 +42,7 @@ import {
 import { renderMarkdown } from '../lib/markdown';
 import { setActiveEditor } from '../lib/activeEditor';
 import { api } from '../lib/api';
-import { resolveAssetPath } from '../lib/tree';
+import { vaultAssetUrl } from '../lib/assetUrl';
 
 const titleOf = (path: string | null) =>
   path ? (path.split('/').pop() ?? path).replace(/\.(md|markdown)$/i, '') : '';
@@ -68,7 +68,7 @@ export default function Editor() {
 
   useEffect(() => {
     setLivePreviewAttachmentUrlProvider((target) =>
-      api.rawUrl(resolveAssetPath(tree, target, activePath) ?? target));
+      vaultAssetUrl(tree, target, activePath));
     const current = view.current;
     if (current) {
       current.dispatch({ effects: setLivePreviewEnabled.of(current.state.field(livePreviewState)) });
@@ -99,7 +99,7 @@ export default function Editor() {
       if (!note) return null;
       const stripped = note.content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
       const html = await renderMarkdown(stripped, {
-        rawUrl: (p) => api.rawUrl(resolveAssetPath(tree, p, activePath) ?? p),
+        rawUrl: (p) => vaultAssetUrl(tree, p, activePath),
         resolveEmbed,
       });
       return { html };

@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { TreeNode } from '../src/lib/api.js';
-import { addDraftNoteToTree, resolveWikilinkPath } from '../src/lib/tree.js';
+import {
+  addDraftAssetToTree,
+  addDraftNoteToTree,
+  resolveAssetPath,
+  resolveWikilinkPath,
+} from '../src/lib/tree.js';
 
 const tree: TreeNode = {
   name: 'docs',
@@ -68,6 +73,15 @@ test('adds a new contribution draft to an existing folder in the vault tree', ()
     'docs/学习指南/新文档.md',
   );
   assert.equal(findFileNames(next, 'docs/学习指南').includes('新文档.md'), true);
+});
+
+test('adds a dropped image and its attachments folder beside the active note', () => {
+  const next = addDraftAssetToTree(tree, 'docs/学习指南/attachments/课表.png');
+
+  assert.equal(
+    resolveAssetPath(next, '课表.png', 'docs/学习指南/入学准备.md'),
+    'docs/学习指南/attachments/课表.png',
+  );
 });
 
 function findFileNames(root: TreeNode, folderPath: string): string[] {

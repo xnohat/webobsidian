@@ -1,14 +1,15 @@
 import { useStore } from '../lib/store';
 import { findNode } from '../lib/tree';
-import { api, type TreeNode } from '../lib/api';
+import type { TreeNode } from '../lib/api';
+import { vaultAssetUrl } from '../lib/assetUrl';
 import Icon from './Icon';
 
 function entryIcon(n: TreeNode): string {
   if (n.type === 'folder') return 'folder';
-  const ext = n.ext ?? '';
-  if (/\.(md|markdown)$/i.test(ext)) return 'file-text';
-  if (/\.(png|jpe?g|gif|svg|webp)$/i.test(ext)) return 'image';
-  if (ext === '.pdf') return 'file-pdf';
+  const ext = (n.ext ?? '').replace(/^\./, '').toLowerCase();
+  if (/^(md|markdown)$/.test(ext)) return 'file-text';
+  if (/^(avif|bmp|png|jpe?g|gif|svg|webp)$/.test(ext)) return 'image';
+  if (ext === 'pdf') return 'file-pdf';
   return 'paperclip';
 }
 
@@ -59,8 +60,8 @@ export default function FolderView({ path }: { path: string }) {
                 onClick={() => openFile(c.path)}
                 title={c.path}
               >
-                {c.type === 'file' && /\.(png|jpe?g|gif|svg|webp)$/i.test(c.ext ?? '') ? (
-                  <img className="folder-thumb" src={api.rawUrl(c.path)} alt="" loading="lazy" />
+                {c.type === 'file' && /^(avif|bmp|png|jpe?g|gif|svg|webp)$/i.test((c.ext ?? '').replace(/^\./, '')) ? (
+                  <img className="folder-thumb" src={vaultAssetUrl(tree, c.path, path)} alt="" loading="lazy" />
                 ) : (
                   <Icon name={entryIcon(c)} size={16} />
                 )}

@@ -13,6 +13,7 @@ import {
   loadContribution,
   saveContribution,
 } from '../lib/drafts';
+import { removeDraftAssets } from '../lib/draftAssets';
 
 export default function StatusBar() {
   const content = useStore((s) => s.content);
@@ -74,6 +75,7 @@ export default function StatusBar() {
           setReview(completed);
           if (draftIsSubmittedVersion) {
             clearDraft(activePath);
+            await removeDraftAssets(activePath);
             useStore.setState({ dirty: false });
             notify(`PR #${completed.pullNumber} 已合并，本地旧草稿已清理`, 5000);
             await state.loadTree();
