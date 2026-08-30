@@ -897,6 +897,112 @@ export default function GraphView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ---- touch interactions (mobile): 1 finger = pan, pinch = zoom, tap = open node ----
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const st: {
+      pts: Map<number, { x: number; y: number }>;
+      mode: 'pan' | 'pinch' | null;
+      px: number;
+      py: number;
+      moved: number;
+      dist: number;
+    } = { pts: new Map(), mode: null, px: 0, py: 0, moved: 0, dist: 0 };
+
+    const twoPts = () => {
+      const v = [...st.pts.values()];
+      return v.length >= 2 ? ([v[0], v[1]] as const) : null;
+    };
+    const mid = () => {
+      const p = twoPts();
+      return p ? { x: (p[0].x + p[1].x) / 2, y: (p[0].y + p[1].y) / 2 } : { x: 0, y: 0 };
+    };
+    const spread = () => {
+      const p = twoPts();
+      return p ? Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) || 1 : 1;
+    };
+
+    const onStart = (e: TouchEvent) => {
+      e.preventDefault();
+      for (const t of Array.from(e.changedTouches)) st.pts.set(t.identifier, { x: t.clientX, y: t.clientY });
+      if (st.pts.size === 1) {
+        const p = [...st.pts.values()][0];
+        st.mode = 'pan';
+        st.px = p.x;
+        st.py = p.y;
+        st.moved = 0;
+      } else if (st.pts.size >= 2) {
+        const m = mid();
+        st.mode = 'pinch';
+        st.px = m.x;
+        st.py = m.y;
+        st.dist = spread();
+        st.moved = 999; // a pinch that drops to one finger must not count as a tap
+      }
+    };
+    const onMove = (e: TouchEvent) => {
+      e.preventDefault();
+      if (!st.mode) return;
+      for (const t of Array.from(e.changedTouches)) if (st.pts.has(t.identifier)) st.pts.set(t.identifier, { x: t.clientX, y: t.clientY });
+      flyNode.current = null; // manual gesture cancels a fly-to-node in progress
+      if (st.mode === 'pinch' && st.pts.size >= 2) {
+        const m = mid();
+        const d = spread();
+        cam.current.x += m.x - st.px;
+        cam.current.y += m.y - st.py;
+        const t = Math.min(SCALE_MAX, Math.max(SCALE_MIN, zoomTarget.current * (d / st.dist)));
+        zoomTarget.current = t;
+        const rect = canvas.getBoundingClientRect();
+        zoomAnchor.current = t < cam.current.k * dprNow() ? null : { x: m.x - rect.left, y: m.y - rect.top };
+        st.dist = d;
+        st.px = m.x;
+        st.py = m.y;
+      } else if (st.mode === 'pan' && st.pts.size === 1) {
+        const p = [...st.pts.values()][0];
+        cam.current.x += p.x - st.px;
+        cam.current.y += p.y - st.py;
+        st.moved += Math.abs(p.x - st.px) + Math.abs(p.y - st.py);
+        st.px = p.x;
+        st.py = p.y;
+      }
+      userMoved.current = true;
+      scheduleRender(false);
+    };
+    const onEnd = (e: TouchEvent) => {
+      e.preventDefault();
+      for (const t of Array.from(e.changedTouches)) st.pts.delete(t.identifier);
+      if (st.pts.size === 0) {
+        if (st.mode === 'pan' && st.moved < 10) {
+          const t0 = e.changedTouches[0];
+          const n = nodeAt(t0.clientX, t0.clientY);
+          if (n) {
+            if (n.kind === 'note') openFile(n.id);
+            else if (n.kind === 'tag') searchFor(`tag:${n.id.slice(4)}`);
+          }
+        }
+        st.mode = null;
+      } else if (st.pts.size === 1 && st.mode === 'pinch') {
+        st.mode = 'pan'; // one finger left after a pinch: keep panning
+        const p = [...st.pts.values()][0];
+        st.px = p.x;
+        st.py = p.y;
+      }
+    };
+
+    canvas.addEventListener('touchstart', onStart, { passive: false });
+    canvas.addEventListener('touchmove', onMove, { passive: false });
+    canvas.addEventListener('touchend', onEnd, { passive: false });
+    canvas.addEventListener('touchcancel', onEnd, { passive: false });
+    return () => {
+      canvas.removeEventListener('touchstart', onStart);
+      canvas.removeEventListener('touchmove', onMove);
+      canvas.removeEventListener('touchend', onEnd);
+      canvas.removeEventListener('touchcancel', onEnd);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ---- pointer interactions ----------------------------------------------
   const nodeAt = (clientX: number, clientY: number): GNode | null => {
     const rect = canvasRef.current!.getBoundingClientRect();
