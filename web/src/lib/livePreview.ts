@@ -1346,7 +1346,7 @@ function serializeFrontmatter(props: Prop[]): string {
 // Obsidian's built-in List properties.
 const CORE_LIST_PROPS = new Set(['tags', 'aliases', 'cssclasses']);
 
-// Property type → small glyph for the leading icon (display only, like Obsidian).
+// Property type → small Lucide-style line icon (display only, like Obsidian).
 function propType(p: Prop): string {
   if (p.list || CORE_LIST_PROPS.has(p.key)) return 'list';
   const v = p.values[0] ?? '';
@@ -1356,14 +1356,38 @@ function propType(p: Prop): string {
   if (/^(true|false)$/i.test(v)) return 'checkbox';
   return 'text';
 }
-const TYPE_GLYPH: Record<string, string> = {
-  text: 'T',
-  list: '≣',
-  date: '🗓',
-  datetime: '🕒',
-  number: '#',
-  checkbox: '☑',
+const PROPERTY_ICON_PATHS: Record<string, string[]> = {
+  text: ['M4 6h16', 'M4 12h12', 'M4 18h16'],
+  list: ['M8 6h12', 'M8 12h12', 'M8 18h12', 'M4 6h.01', 'M4 12h.01', 'M4 18h.01'],
+  date: ['M8 2v4', 'M16 2v4', 'M3 10h18', 'M5 4h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z'],
+  datetime: ['M12 7v5l3 2', 'M12 22a10 10 0 1 0-10-10'],
+  number: ['M4 9h16', 'M3 15h16', 'M10 3 8 21', 'm16 3-2 18'],
+  checkbox: ['M9 11l3 3L22 4', 'M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
 };
+
+function propertyTypeIcon(type: string, className = 'prop-type-svg'): SVGSVGElement {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('class', className);
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '2');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  svg.setAttribute('aria-hidden', 'true');
+  for (const d of PROPERTY_ICON_PATHS[type] ?? PROPERTY_ICON_PATHS.text) {
+    const path = document.createElementNS(NS, 'path');
+    path.setAttribute('d', d);
+    svg.appendChild(path);
+  }
+  return svg;
+}
+
+function setPropertyTypeIcon(host: HTMLElement, type: string) {
+  host.replaceChildren(propertyTypeIcon(type));
+  host.title = type;
+}
 
 // Obsidian type id ↔ our display type.
 const OBS_TO_DT: Record<string, string> = {
@@ -1409,7 +1433,7 @@ class FrontmatterWidget extends WidgetType {
   }
   toDOM(view: EditorView) {
     const box = document.createElement('div');
-    box.className = 'properties cm-properties';
+    box.className = `properties cm-properties${this.ro ? ' is-readonly' : ''}`;
 
     // Re-find the current frontmatter range and replace it with fresh YAML.
     const commit = (props: Prop[]) => {
@@ -1483,8 +1507,7 @@ class FrontmatterWidget extends WidgetType {
         // the value control to match the new type (e.g. date → number input).
         const ic = row.querySelector('.prop-icon') as HTMLElement | null;
         if (ic) {
-          ic.textContent = TYPE_GLYPH[dt] ?? 'T';
-          ic.title = dt;
+          setPropertyTypeIcon(ic, dt);
         }
         const valCell = row.querySelector('.prop-val');
         const oldField = row.querySelector('.prop-val-field') as HTMLElement | null;
@@ -1564,21 +1587,24 @@ class FrontmatterWidget extends WidgetType {
         return inp;
       }
       if (dt === 'date' || dt === 'datetime') {
+        const field = document.createElement('span');
+        field.className = 'prop-val-field prop-date-field';
+        field.dataset.raw = value;
         const inp = document.createElement('input');
         inp.type = dt === 'date' ? 'date' : 'datetime-local';
-        inp.className = 'prop-val-field prop-input';
+        inp.className = 'prop-input prop-date-input';
         if (dt === 'date') {
           inp.value = value.slice(0, 10);
         } else {
           const m = value.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/);
           inp.value = m ? `${m[1]}T${m[2]}` : '';
         }
-        inp.dataset.raw = value;
         inp.addEventListener('change', () => {
-          inp.dataset.raw = inp.value;
+          field.dataset.raw = inp.value;
           commitChange();
         });
-        return inp;
+        field.appendChild(inp);
+        return field;
       }
       // text (default)
       const span = document.createElement('span');
@@ -1686,8 +1712,7 @@ class FrontmatterWidget extends WidgetType {
 
       const icon = document.createElement('span');
       icon.className = 'prop-icon';
-      icon.textContent = TYPE_GLYPH[renderAsList ? 'list' : dt] ?? 'T';
-      icon.title = renderAsList ? 'list' : dt;
+      setPropertyTypeIcon(icon, renderAsList ? 'list' : dt);
 
       const k = document.createElement('span');
       k.className = 'prop-key';
@@ -1790,7 +1815,7 @@ class FrontmatterWidget extends WidgetType {
       editorRow.className = 'prop-row prop-newrow';
       const icon = document.createElement('span');
       icon.className = 'prop-icon';
-      icon.textContent = 'T';
+      setPropertyTypeIcon(icon, 'text');
       const input = document.createElement('span');
       input.className = 'prop-key prop-new-key';
       input.setAttribute('contenteditable', 'true');
@@ -1830,7 +1855,7 @@ class FrontmatterWidget extends WidgetType {
           it.className = 'cm-props-dd-item';
           const ic = document.createElement('span');
           ic.className = 'prop-icon';
-          ic.textContent = TYPE_GLYPH[p.type] ?? 'T';
+          setPropertyTypeIcon(ic, p.type);
           const nm = document.createElement('span');
           nm.textContent = p.key;
           it.append(ic, nm);

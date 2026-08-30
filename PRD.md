@@ -1,7 +1,18 @@
 # PRD — WebObsidian
 
 > Product Requirements Document
-> Phiên bản: 1.5 · Cập nhật: 2026-06-22 · Trạng thái: Draft
+> Phiên bản: 1.7 · Cập nhật: 2026-08-29 · Trạng thái: Draft
+> Changelog 1.7 (FR-15 — contribution workspace trước khi sửa): PR không còn là đích được
+> “liên kết” lúc gửi bài. Khi mở Markdown trong chế độ投稿, editor kiểm tra PR đang mở trước,
+> chặn chỉnh sửa cho tới khi người dùng chọn tạo投稿 mới từ `contributions` hoặc tiếp tục một
+> PR hiện có. Khi tiếp tục, tree/file/image được đọc từ head branch của PR và đích gửi bị khóa
+> trong suốt workspace; dialog cuối chỉ tạo/cập nhật đúng workspace đã chọn.
+> Changelog 1.6 (FR-14 — Cloudflare contribution read model): chế độ投稿 công khai trên
+> Cloudflare cung cấp các API **chỉ đọc** mà giao diện Obsidian hiện có cần dùng: search,
+> search matches, tags, properties, backlinks, wikilink resolution và graph. Worker lấy Git tree
+> của nhánh staging rồi đọc Markdown blob theo lô bằng GitHub GraphQL, tránh vượt giới hạn 50
+> subrequest/request của Workers Free; index được cache theo SHA của tree trong isolate. Không mở
+> thêm API ghi file, rename, move hay delete và mọi dữ liệu vẫn giới hạn trong `docs/`.
 > Changelog 1.5 (FR-13 — Desktop app Electron đa nền tảng, theo yêu cầu người dùng): bổ sung **FR-13** —
 > đóng gói WebObsidian thành **app cài đặt** macOS/Windows/Linux (arm64/x64/ia32). Workspace mới `desktop/`
 > là **Electron shell** spawn đúng server Express hiện có như tiến trình con (qua `ELECTRON_RUN_AS_NODE`,
@@ -408,6 +419,34 @@ Express + SPA hiện có (không fork code, không đổi kiến trúc) — nên
   cảnh báo Gatekeeper/SmartScreen — chấp nhận cho self-hosted free).
 - **Phạm vi (non-goals)**: chưa auto-update (người dùng tải bản mới thủ công); chưa ký số; không nhúng git
   portable; không chạy nhiều cửa sổ/vault song song trong 1 instance (single-instance lock).
+
+### FR-14 · Cloudflare contribution read model
+
+- Public contribution deployment phải giữ nguyên contract frontend cho `GET /api/search`,
+  `POST /api/search/matches`, `GET /api/tags`, `GET /api/properties`, `GET /api/backlinks`,
+  `GET /api/resolve` và `GET /api/graph`.
+- Chỉ index Markdown dưới `docs/` từ nhánh staging; không đọc dot-directory hay nội dung ngoài
+  readable roots và không cung cấp mutation tương ứng.
+- Snapshot được định danh bằng Git tree SHA. Một snapshot chỉ được parse một lần trong cùng Worker
+  isolate; request sau tái sử dụng read model cho tới khi SHA đổi.
+- GitHub content phải được đọc theo batch qua GraphQL blob aliases thay vì một REST request mỗi file,
+  để vault trên 50 note vẫn chạy được trên Workers Free.
+
+### FR-15 · Contribution workspace trước khi chỉnh sửa
+
+- Một PR mở là một **contribution workspace** dùng chung cho mọi file được sửa trong phiên, không
+  phải metadata gắn riêng vào tài liệu sau khi người dùng đã sửa xong.
+- Khi mở Markdown mà chưa có workspace, UI phải kiểm tra PR mở có chứa path đó và khóa editor trong
+  lúc kiểm tra. Nếu có, người dùng chọn tiếp tục một PR hoặc tạo投稿 mới; nếu không có, editor tự
+  dùng workspace mới dựa trên `contributions`.
+- Workspace mới đọc tree/file từ upstream `contributions`. Workspace PR đọc tree, Markdown và ảnh
+  từ fork head branch đã được xác thực là PR mở do editor tạo và target `contributions`.
+- API đọc hỗ trợ query `branch` trên `GET /api/files/` và `GET /api/files/content`; status hỗ trợ
+  lọc theo `branch`. Branch sai định dạng, không tồn tại, đã merge hoặc đã đóng không được dùng làm
+  nguồn chỉnh sửa.
+- Dialog gửi bài không cho liên kết hay đổi PR. Workspace mới tạo branch + PR; workspace hiện có chỉ
+  cập nhật branch/PR đã chọn. Status bar luôn hiển thị ngữ cảnh và cho phép “切换投稿”.
+- Khi PR merge/close, workspace được giải phóng; quy tắc dọn hoặc giữ local draft hiện có tiếp tục áp dụng.
 
 ---
 

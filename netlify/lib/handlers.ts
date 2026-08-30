@@ -9,6 +9,8 @@ import {
 import { createContributionBranch, validateContributionInput } from './contributions.js';
 import {
   createContribution,
+  getContributionFile,
+  getContributionTree,
   getStagingFile,
   getStagingMarkdown,
   getStagingTree,
@@ -25,6 +27,7 @@ import {
   sessionCookie,
 } from './session.js';
 import { toVaultTree } from './tree.js';
+import { allProperties, allTags, backlinksFor, contributionReadModel, graphData, matchesFor, resolveLink, searchNotes } from './read-model.js';
 
 export async function handleHealth(
   request: Request,
@@ -106,11 +109,15 @@ export async function handleVaultTree(
   }
 
   try {
-    const tree = await getStagingTree(loadEditorConfig(env));
+    const branch = new URL(request.url).searchParams.get('branch')?.trim();
+    const config = loadEditorConfig(env);
+    const tree = branch
+      ? await getContributionTree(config, branch)
+      : await getStagingTree(config);
     return json(toVaultTree(tree));
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to load document tree';
-    return json({ error: message }, { status: 502 });
+    return json({ error: message }, { status: message.startsWith('Contribution branch') ? 400 : 502 });
   }
 }
 
@@ -124,24 +131,161 @@ export async function handleVaultFile(
   }
 
   try {
-    const rawPath = new URL(request.url).searchParams.get('path');
+    const url = new URL(request.url);
+    const rawPath = url.searchParams.get('path');
+    const branch = url.searchParams.get('branch')?.trim();
     if (!rawPath) return json({ error: 'path required' }, { status: 400 });
 
     const path = assertReadableFilePath(rawPath);
     const config = loadEditorConfig(env);
+    const readFile = () => branch
+      ? getContributionFile(config, branch, path)
+      : getStagingFile(config, path);
     if (isImagePath(path)) {
-      const upstream = await getStagingFile(config, path);
+      const upstream = await readFile();
       const headers = new Headers();
       headers.set('content-type', imageContentType(path));
       headers.set('x-content-type-options', 'nosniff');
       return new Response(upstream.body, { status: 200, headers });
     }
-    const content = await getStagingMarkdown(config, path);
+    const content = branch ? await (await readFile()).text() : await getStagingMarkdown(config, path);
     return json({ path, content, encoding: 'utf8' });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to read document';
     const status = message.startsWith('GitHub API request failed') ? 502 : 400;
     return json({ error: message }, { status });
+  }
+}
+
+export async function handleSearch(
+  request: Request,
+  env: RuntimeEnvironment,
+): Promise<Response> {
+  if (request.method !== 'GET') return methodNotAllowed(['GET']);
+  if (!(await hasValidSession(request, env))) return json({ error: 'Unauthorized' }, { status: 401 });
+
+  try {
+    const url = new URL(request.url);
+    const query = url.searchParams.get('q') ?? '';
+    const limit = Math.max(0, Number(url.searchParams.get('limit') ?? 0) || 0);
+    const model = await contributionReadModel(loadEditorConfig(env));
+    return json({ query, hits: searchNotes(model, query, limit) });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to search documents';
+    return json({ error: message }, { status: 502 });
+  }
+}
+
+export async function handleSearchMatches(
+  request: Request,
+  env: RuntimeEnvironment,
+): Promise<Response> {
+  if (request.method !== 'POST') return methodNotAllowed(['POST']);
+  if (!(await hasValidSession(request, env))) return json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    const input = await request.json() as {
+      query?: unknown;
+      paths?: unknown;
+      matchCase?: unknown;
+      phrase?: unknown;
+    };
+    const query = String(input.query ?? '').trim();
+    const terms = input.phrase
+      ? [query].filter((term) => term.length >= 2)
+      : query.split(/\s+/)
+        .map((term) => term.replace(/^['"]|['"]$/g, '').trim())
+        .filter((term) => term.length >= 2 && !/^(tag|path|title):/i.test(term));
+    const paths = (Array.isArray(input.paths) ? input.paths : []).slice(0, 80).flatMap((value) => {
+      try {
+        return [assertReadableMarkdownPath(String(value))];
+      } catch {
+        return [];
+      }
+    });
+    const model = await contributionReadModel(loadEditorConfig(env));
+    return json({ matches: paths.map((path) => matchesFor(model, path, terms, Boolean(input.matchCase))) });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to find matches';
+    const status = message.startsWith('GitHub API request failed') ? 502 : 400;
+    return json({ error: message }, { status });
+  }
+}
+
+export async function handleTags(
+  request: Request,
+  env: RuntimeEnvironment,
+): Promise<Response> {
+  if (request.method !== 'GET') return methodNotAllowed(['GET']);
+  if (!(await hasValidSession(request, env))) return json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    return json({ tags: allTags(await contributionReadModel(loadEditorConfig(env))) });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to list tags';
+    return json({ error: message }, { status: 502 });
+  }
+}
+
+export async function handleProperties(
+  request: Request,
+  env: RuntimeEnvironment,
+): Promise<Response> {
+  if (request.method !== 'GET') return methodNotAllowed(['GET']);
+  if (!(await hasValidSession(request, env))) return json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    return json({ properties: allProperties(await contributionReadModel(loadEditorConfig(env))) });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to list properties';
+    return json({ error: message }, { status: 502 });
+  }
+}
+
+export async function handleBacklinks(
+  request: Request,
+  env: RuntimeEnvironment,
+): Promise<Response> {
+  if (request.method !== 'GET') return methodNotAllowed(['GET']);
+  if (!(await hasValidSession(request, env))) return json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    const rawPath = new URL(request.url).searchParams.get('path');
+    if (!rawPath) return json({ error: 'path required' }, { status: 400 });
+    const path = assertReadableMarkdownPath(rawPath);
+    const model = await contributionReadModel(loadEditorConfig(env));
+    return json({ path, backlinks: backlinksFor(model, path) });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to list backlinks';
+    const status = message.startsWith('GitHub API request failed') ? 502 : 400;
+    return json({ error: message }, { status });
+  }
+}
+
+export async function handleResolve(
+  request: Request,
+  env: RuntimeEnvironment,
+): Promise<Response> {
+  if (request.method !== 'GET') return methodNotAllowed(['GET']);
+  if (!(await hasValidSession(request, env))) return json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    const target = new URL(request.url).searchParams.get('target')?.trim() ?? '';
+    if (!target) return json({ error: 'target required' }, { status: 400 });
+    const model = await contributionReadModel(loadEditorConfig(env));
+    return json({ target, path: resolveLink(model, target) ?? null });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to resolve link';
+    return json({ error: message }, { status: 502 });
+  }
+}
+
+export async function handleGraph(
+  request: Request,
+  env: RuntimeEnvironment,
+): Promise<Response> {
+  if (request.method !== 'GET') return methodNotAllowed(['GET']);
+  if (!(await hasValidSession(request, env))) return json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    return json(graphData(await contributionReadModel(loadEditorConfig(env))));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to build graph';
+    return json({ error: message }, { status: 502 });
   }
 }
 
@@ -170,9 +314,11 @@ export async function handleSubmitContribution(
 
   try {
     if (request.method === 'GET') {
-      const rawPath = new URL(request.url).searchParams.get('path');
+      const url = new URL(request.url);
+      const rawPath = url.searchParams.get('path');
+      const branch = url.searchParams.get('branch')?.trim() || undefined;
       const path = rawPath ? assertReadableMarkdownPath(rawPath) : undefined;
-      return json({ items: await listContributions(loadEditorConfig(env), path) });
+      return json({ items: await listContributions(loadEditorConfig(env), path, branch) });
     }
     const input = validateContributionInput(await request.json());
     const config = loadEditorConfig(env);

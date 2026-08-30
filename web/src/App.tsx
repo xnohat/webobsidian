@@ -14,6 +14,7 @@ import VersionHistory from './components/VersionHistory';
 import TrashView from './components/TrashView';
 import ContextMenu from './components/ContextMenu';
 import FolderPicker from './components/FolderPicker';
+import ContributionWorkspaceGate from './components/ContributionWorkspaceGate';
 import { loadPlugins } from './lib/plugins';
 import { initUrlSync } from './lib/urlsync';
 import { useIsMobile } from './lib/useIsMobile';
@@ -220,6 +221,7 @@ export default function App() {
       <TrashView />
       <ContextMenu />
       <FolderPicker />
+      <ContributionWorkspaceGate />
       {toast && <div className="toast">{toast}</div>}
     </div>
   );

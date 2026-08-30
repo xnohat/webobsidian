@@ -104,6 +104,14 @@ export class ApiError extends Error {
   }
 }
 
+function workspaceUrl(pathname: string, params: Record<string, string> = {}): string {
+  const query = new URLSearchParams(params);
+  const branch = getContributionWorkspaceBranch();
+  if (branch) query.set('branch', branch);
+  const value = query.toString();
+  return value ? `${pathname}?${value}` : pathname;
+}
+
 export const api = {
   // auth
   authStatus: () => req<{ passwordSet: boolean; mustChangePassword: boolean }>('/auth/status'),
@@ -123,9 +131,9 @@ export const api = {
   me: () => req<{ authenticated: boolean; mustChangePassword: boolean }>('/auth/me'),
 
   // files
-  tree: () => req<TreeNode>('/api/files/'),
+  tree: () => req<TreeNode>(workspaceUrl('/api/files/')),
   read: (path: string) =>
-    req<{ path: string; content: string }>(`/api/files/content?path=${encodeURIComponent(path)}`),
+    req<{ path: string; content: string }>(workspaceUrl('/api/files/content', { path })),
   write: (path: string, content: string) =>
     req<{ ok: true }>('/api/files/content', { method: 'PUT', body: JSON.stringify({ path, content }) }),
   createFolder: (path: string) =>
@@ -158,7 +166,7 @@ export const api = {
     if (!res.ok) throw new ApiError((await res.json().catch(() => ({}))).error ?? 'Upload failed', res.status);
     return res.json() as Promise<{ ok: true; path: string; size: number }>;
   },
-  rawUrl: (path: string) => `/api/files/content?path=${encodeURIComponent(path)}`,
+  rawUrl: (path: string) => workspaceUrl('/api/files/content', { path }),
 
   // contribution review
   submitContribution: (input: {
@@ -171,10 +179,15 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(input),
     }),
-  listContributions: (path?: string) =>
-    req<{ items: ContributionReview[] }>(
-      `/api/contributions/status${path ? `?path=${encodeURIComponent(path)}` : ''}`,
-    ),
+  listContributions: (path?: string, branch?: string) => {
+    const query = new URLSearchParams();
+    if (path) query.set('path', path);
+    if (branch) query.set('branch', branch);
+    const value = query.toString();
+    return req<{ items: ContributionReview[] }>(
+      `/api/contributions/status${value ? `?${value}` : ''}`,
+    );
+  },
 
   // search & links
   // limit omitted → server returns every match (panel renders them incrementally)
@@ -267,3 +280,4 @@ export const api = {
   setPluginEnabled: (id: string, enabled: boolean) =>
     req<{ ok: true }>(`/api/plugins/${id}/enabled`, { method: 'PATCH', body: JSON.stringify({ enabled }) }),
 };
+import { getContributionWorkspaceBranch } from './contributionWorkspace';

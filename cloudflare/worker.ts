@@ -6,6 +6,13 @@ import {
   handleLogout,
   handleMe,
   handleSubmitContribution,
+  handleSearch,
+  handleSearchMatches,
+  handleTags,
+  handleProperties,
+  handleBacklinks,
+  handleResolve,
+  handleGraph,
   handleVaultFile,
   handleVaultTree,
 } from '../netlify/lib/handlers.js';
@@ -61,6 +68,13 @@ export async function routeRequest(
     return limited ?? handleLogin(request, env);
   }
   if (pathname === '/api/files/content') return handleVaultFile(request, env);
+  if (pathname === '/api/search') return handleSearch(request, env);
+  if (pathname === '/api/search/matches') return handleSearchMatches(request, env);
+  if (pathname === '/api/tags') return handleTags(request, env);
+  if (pathname === '/api/properties') return handleProperties(request, env);
+  if (pathname === '/api/backlinks') return handleBacklinks(request, env);
+  if (pathname === '/api/resolve') return handleResolve(request, env);
+  if (pathname === '/api/graph') return handleGraph(request, env);
   if (pathname === '/api/files' || pathname === '/api/files/') {
     return handleVaultTree(request, env);
   }

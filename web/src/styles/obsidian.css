@@ -647,22 +647,28 @@ body.wo-col-resizing .sidebar, body.wo-col-resizing .right-sidebar { transition:
 .internal-link:hover { text-decoration: underline; }
 
 /* Properties block */
-.properties { margin: 0 0 24px; padding-bottom: 12px; border-bottom: 1px solid var(--bg-modifier-border); }
-.prop-row { display: flex; align-items: center; gap: 12px; padding: 4px 0; font-size: 14px; }
-.prop-key { color: var(--text-muted); min-width: 130px; display: flex; align-items: center; gap: 8px; }
-.prop-val { color: var(--text-normal); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.properties { margin: 0 0 22px; padding: 0 0 10px; border: 0; font-family: var(--font-ui); }
+.prop-row {
+  display: grid; grid-template-columns: 24px minmax(116px, 166px) minmax(0, 1fr) 24px;
+  align-items: center; column-gap: 12px; min-height: 36px; padding: 2px 0; font-size: var(--font-ui-medium);
+}
+.prop-key { color: var(--text-muted); min-width: 0; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prop-val { color: var(--text-normal); min-width: 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .prop-pill { background: var(--tag-bg); color: var(--text-accent); border-radius: 12px; padding: 1px 9px; font-size: 0.86em; }
 
 /* Interactive property editor (Live mode) */
-.cm-properties .cm-props-header { font-size: 13px; color: var(--text-faint); font-weight: 600; margin-bottom: 6px; }
+.cm-properties .cm-props-header { font-size: var(--font-ui-medium); color: var(--text-faint); font-weight: 600; margin: 0 0 8px 0; }
 .cm-properties .prop-row { position: relative; }
-.cm-properties .prop-icon { width: 16px; flex-shrink: 0; text-align: center; color: var(--text-faint); font-size: 12px; }
-.cm-properties .prop-key { min-width: 120px; outline: none; border-radius: 4px; padding: 1px 4px; cursor: text; }
-.cm-properties .prop-val-input { outline: none; border-radius: 4px; padding: 1px 5px; min-width: 40px; cursor: text; color: var(--text-normal); }
+.cm-properties .prop-icon { width: 24px; height: 24px; display: grid; place-items: center; color: var(--text-faint); }
+.cm-properties .prop-type-svg { width: 20px; height: 20px; }
+.cm-properties .prop-key { outline: none; border-radius: 4px; padding: 2px 4px; cursor: text; font-weight: 500; }
+.cm-properties .prop-val-input { outline: none; border-radius: 4px; padding: 2px 5px; min-width: 40px; cursor: text; color: var(--text-normal); }
 .cm-properties .prop-input { font: inherit; color: var(--text-normal); background: var(--bg-primary);
   border: 1px solid var(--bg-modifier-border); border-radius: 4px; padding: 2px 6px; min-width: 0; }
 .cm-properties .prop-input:focus { outline: none; box-shadow: inset 0 0 0 1px var(--interactive-accent); border-color: var(--interactive-accent); }
-.cm-properties input.prop-checkbox { width: 16px; height: 16px; cursor: pointer; margin: 0; accent-color: var(--interactive-accent); }
+.cm-properties input.prop-checkbox { width: 20px; height: 20px; cursor: pointer; margin: 0; accent-color: var(--interactive-accent); }
+.cm-properties .prop-date-field { display: inline-flex; align-items: center; min-width: 0; color: var(--text-muted); }
+.cm-properties .prop-date-input { min-height: 30px; color-scheme: light dark; }
 .cm-properties .prop-key:focus, .cm-properties .prop-val-input:focus { background: var(--bg-primary); box-shadow: inset 0 0 0 1px var(--interactive-accent); }
 .cm-properties .prop-key:hover, .cm-properties .prop-val-input:hover { background: var(--bg-modifier-hover); }
 .cm-properties .prop-pill { display: inline-flex; align-items: center; gap: 4px; }
@@ -689,6 +695,24 @@ body.wo-col-resizing .sidebar, body.wo-col-resizing .right-sidebar { transition:
   cursor: pointer; font-size: 14px; color: var(--text-normal); }
 .cm-props-dd-item:hover { background: var(--bg-modifier-hover); }
 .cm-props-dd-item .prop-icon { color: var(--text-faint); width: 16px; text-align: center; }
+
+/* Reading mode mirrors Obsidian's compact, borderless property presentation. */
+.cm-properties.is-readonly { margin-bottom: 18px; padding-bottom: 2px; }
+.cm-properties.is-readonly .cm-props-header { display: none; }
+.cm-properties.is-readonly .prop-row { min-height: 40px; }
+.cm-properties.is-readonly .prop-key { padding-left: 0; cursor: default; }
+.cm-properties.is-readonly .prop-del { display: none; }
+.cm-properties.is-readonly .prop-input {
+  padding: 0; border-color: transparent; background: transparent; box-shadow: none; opacity: 1;
+  -webkit-text-fill-color: var(--text-normal);
+}
+.cm-properties.is-readonly .prop-date-input { min-height: 24px; }
+.cm-properties.is-readonly input.prop-checkbox { opacity: 1; }
+
+@media (max-width: 640px) {
+  .prop-row { grid-template-columns: 22px minmax(88px, 34%) minmax(0, 1fr) 20px; column-gap: 8px; }
+  .cm-properties .prop-type-svg { width: 18px; height: 18px; }
+}
 
 /* Callouts (reading view) — same §21 box/colors as Live Preview */
 .callout { --callout-color: var(--callout-default);
@@ -951,6 +975,16 @@ body.wo-col-resizing .sidebar, body.wo-col-resizing .right-sidebar { transition:
 .contribution-success { border: 1px solid var(--interactive-accent); border-radius: var(--radius); padding: 10px 12px; color: var(--text-normal); background: var(--tag-bg); }
 .contribution-success a { color: var(--text-accent); }
 .contribution-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--bg-modifier-border); }
+.contribution-workspace-gate { z-index: 140; }
+.contribution-current-file { display: flex; flex-direction: column; gap: 5px; padding: 10px 12px;
+  border: 1px solid var(--bg-modifier-border); border-radius: var(--radius); color: var(--text-muted); font-size: 12px; }
+.contribution-current-file code { color: var(--text-normal); overflow-wrap: anywhere; }
+.contribution-workspace-loading { padding: 14px; color: var(--text-muted); text-align: center; }
+.contribution-workspace-option { display: flex; flex-direction: column; gap: 5px; width: 100%; padding: 12px 14px;
+  border: 1px solid var(--bg-modifier-border); border-radius: var(--radius); background: var(--bg-secondary);
+  color: var(--text-normal); text-align: left; cursor: pointer; }
+.contribution-workspace-option:hover { border-color: var(--interactive-accent); background: var(--bg-modifier-hover); }
+.contribution-workspace-option span, .contribution-workspace-option code { color: var(--text-muted); }
 
 /* Login */
 .login-screen { height: 100%; display: grid; place-items: center; background: var(--bg-secondary); }

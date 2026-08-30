@@ -2,12 +2,17 @@ import type { EditorConfig } from './config.js';
 
 const GITHUB_API = 'https://api.github.com';
 
-interface GitHubTreeEntry {
+export interface GitHubTreeEntry {
   path: string;
   mode: string;
   type: 'blob' | 'tree' | 'commit';
   sha: string;
   size?: number;
+}
+
+export interface StagingDocument {
+  path: string;
+  content: string;
 }
 
 export interface GitHubTreeResponse {
@@ -131,6 +136,64 @@ export async function getStagingTree(config: EditorConfig): Promise<GitHubTreeRe
   return response.json() as Promise<GitHubTreeResponse>;
 }
 
+export async function getContributionTree(
+  config: EditorConfig,
+  branch: string,
+): Promise<GitHubTreeResponse> {
+  await requireOpenContribution(config, branch);
+  const response = await githubRequest(
+    config,
+    repoPath(config.forkOwner, config.repo, `/git/trees/${encodeURIComponent(branch)}?recursive=1`),
+  );
+  return response.json() as Promise<GitHubTreeResponse>;
+}
+
+export async function getStagingDocuments(
+  config: EditorConfig,
+  entries: GitHubTreeEntry[],
+): Promise<StagingDocument[]> {
+  const documents: StagingDocument[] = [];
+  const batchSize = 100;
+  for (let offset = 0; offset < entries.length; offset += batchSize) {
+    const batch = entries.slice(offset, offset + batchSize);
+    const fields = batch.map(
+      (entry, index) => `d${index}: object(oid: ${JSON.stringify(entry.sha)}) { ... on Blob { text } }`,
+    ).join('\n');
+    const query = `query($owner: String!, $repo: String!) {
+      repository(owner: $owner, name: $repo) {
+        ${fields}
+      }
+    }`;
+    const response = await fetch(`${GITHUB_API}/graphql`, {
+      method: 'POST',
+      headers: {
+        accept: 'application/vnd.github+json',
+        authorization: `Bearer ${config.githubToken}`,
+        'content-type': 'application/json',
+        'x-github-api-version': '2022-11-28',
+        'user-agent': 'usc-wiki-contribution-editor',
+      },
+      body: JSON.stringify({
+        query,
+        variables: { owner: config.upstreamOwner, repo: config.repo },
+      }),
+    });
+    if (!response.ok) throw new Error(`GitHub API request failed (${response.status})`);
+    const payload = await response.json() as {
+      data?: { repository?: Record<string, { text?: string } | null> };
+      errors?: Array<{ message?: string }>;
+    };
+    if (payload.errors?.length || !payload.data?.repository) {
+      throw new Error(`GitHub API request failed: ${payload.errors?.[0]?.message ?? 'invalid GraphQL response'}`);
+    }
+    for (const [index, entry] of batch.entries()) {
+      const content = payload.data.repository[`d${index}`]?.text;
+      if (typeof content === 'string') documents.push({ path: entry.path, content });
+    }
+  }
+  return documents;
+}
+
 export async function getStagingMarkdown(config: EditorConfig, path: string): Promise<string> {
   return (await getStagingFile(config, path)).text();
 }
@@ -146,12 +209,28 @@ export async function getStagingFile(config: EditorConfig, path: string): Promis
   return response;
 }
 
+export async function getContributionFile(
+  config: EditorConfig,
+  branch: string,
+  path: string,
+): Promise<Response> {
+  await requireOpenContribution(config, branch);
+  const encodedPath = path.split('/').map(encodeURIComponent).join('/');
+  const ref = encodeURIComponent(branch);
+  return githubRequest(
+    config,
+    repoPath(config.forkOwner, config.repo, `/contents/${encodedPath}?ref=${ref}`),
+    { headers: { accept: 'application/vnd.github.raw+json' } },
+  );
+}
+
 export async function listContributions(
   config: EditorConfig,
   path?: string,
+  branch?: string,
 ): Promise<ContributionReview[]> {
   const query = new URLSearchParams({
-    state: path ? 'all' : 'open',
+    state: path || branch ? 'all' : 'open',
     base: config.stagingBranch,
     per_page: '100',
     sort: 'updated',
@@ -171,7 +250,7 @@ export async function listContributions(
   const candidates = pulls.filter(
     (pull) => pull.head.repo?.owner.login.toLowerCase() === config.forkOwner.toLowerCase()
       && /^contrib\/\d{8}-[a-f0-9]{8}$/.test(pull.head.ref),
-  );
+  ).filter((pull) => !branch || pull.head.ref === branch);
   const matches = await Promise.all(candidates.map(async (pull) => {
     let files = contributionFilesFromBody(pull.body);
     if (path && !files) {
@@ -192,6 +271,20 @@ export async function listContributions(
     };
   }));
   return matches.filter((review): review is ContributionReview => review !== null);
+}
+
+async function requireOpenContribution(
+  config: EditorConfig,
+  branch: string,
+): Promise<ContributionReview> {
+  if (!/^contrib\/\d{8}-[a-f0-9]{8}$/.test(branch)) {
+    throw new Error('Contribution branch is invalid');
+  }
+  const review = (await listContributions(config, undefined, branch)).find(
+    (item) => item.branch === branch && item.status === 'open',
+  );
+  if (!review) throw new Error('Contribution branch does not have a matching open PR');
+  return review;
 }
 
 async function githubJson<T>(

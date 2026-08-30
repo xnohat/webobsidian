@@ -4,12 +4,14 @@ import { addDraftAssetToTree, addDraftNoteToTree, findNode, resolveWikilinkPath 
 import {
   forgetCreatedNote,
   loadCreatedNotes,
+  loadContribution,
   loadDraft,
   rememberCreatedNote,
   saveDraft,
 } from './drafts';
 import { contributionMode } from './mode';
 import { warmDraftAssetUrls } from './draftAssets';
+import { getContributionWorkspace } from './contributionWorkspace';
 
 /** Per-tab id so we can ignore the echo of our own server-pushed state change. */
 export const CLIENT_ID = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -227,7 +229,12 @@ const TEXT_RE = /\.(md|markdown|txt|json|csv|canvas|css|js|ya?ml)$/i;
 async function readTextContent(path: string): Promise<string> {
   if (contributionMode) {
     const draft = loadDraft(path);
-    if (draft !== null) return draft;
+    const workspace = getContributionWorkspace();
+    const contribution = loadContribution(path);
+    const draftMatchesWorkspace = !workspace
+      || (workspace.kind === 'new' && !contribution)
+      || (workspace.kind === 'existing' && contribution?.branch === workspace.review.branch);
+    if (draft !== null && draftMatchesWorkspace) return draft;
   }
   const result = await api.read(path);
   return typeof result === 'string' ? result : result.content;

@@ -4,7 +4,7 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-06-27 (security fix — chặn leo thang quyền token share; merge fix F-03 rate-limit, giữ `trust proxy` mặc định bật)
+Cập nhật lần cuối: 2026-08-29 (Phase 31 — contribution workspace trước khi sửa đã hoàn thành)
 
 ---
 
@@ -429,7 +429,35 @@ Cập nhật lần cuối: 2026-06-27 (security fix — chặn leo thang quyền
       bundle desktop. Root scripts `desktop`/`desktop:dist`/`desktop:publish`; `.gitignore` thêm `desktop/.gen`,
       `desktop/release`.
 
+## Phase 30 — Cloudflare contribution read model — FR-14, PRD 1.6
+- [x] M30.1 Batch-load Markdown blobs từ GitHub GraphQL theo staging tree SHA; parse snapshot chỉ đọc
+      và cache trong Worker isolate, không vượt Workers Free subrequest limit.
+- [x] M30.2 Public HTTP seams: search + search matches + tags/properties + backlinks/resolve + graph;
+      giữ response contract hiện có của web client và auth guard public-editor.
+- [x] M30.3 Integration tests Cloudflare cho search, metadata, links/graph, method/path validation;
+      typecheck Cloudflare + Netlify, web tests và contribution build sạch.
+
+## Phase 31 — Contribution workspace trước khi chỉnh sửa — FR-15, PRD 1.7
+- [x] M31.1 Gate khi mở Markdown: kiểm tra PR mở trước khi cho chỉnh sửa; chọn workspace mới hoặc PR hiện có.
+- [x] M31.2 Đọc tree/Markdown/image từ head branch của PR đã chọn; validate branch thuộc PR mở của editor.
+- [x] M31.3 Khóa target trong dialog gửi bài, hiển thị/switch workspace ở status bar và giữ local draft đúng context.
+- [x] M31.4 Test integration Cloudflare + web, typecheck, contribution build và preview smoke.
+
 ### Nhật ký tiến độ
+- 2026-08-29 (Phase 31 — contribution workspace trước khi chỉnh sửa): mở Markdown nay kiểm tra PR mở
+  liên quan trước khi bật chỉnh sửa; người dùng chọn tiếp tục PR hiện có hoặc tạo workspace mới từ
+  `contributions`. Tree, Markdown và ảnh của workspace hiện có được đọc từ head branch đã xác minh;
+  dialog gửi bài khóa target, status bar cho phép mở GitHub/chuyển workspace, draft chỉ được phục hồi
+  trong đúng context. Verify: 22 Netlify + 20 Cloudflare + 9 web tests pass; cả ba typecheck sạch;
+  contribution build sạch; preview thật với PR #7 xác nhận gate, branch reload và update dialog hoạt động.
+- 2026-08-26 (Phase 30 — Cloudflare contribution read model): bổ sung read model chỉ đọc cho public
+  contribution editor. Worker lấy recursive staging tree rồi dùng GitHub GraphQL aliases đọc Markdown blob
+  theo batch 100 file (USC-Wiki thực tế: 71/71 file, 77.257 ký tự, 2 GitHub subrequest lần cold load), parse
+  frontmatter/tags/wikilinks và cache theo tree SHA, recheck 30 giây. Mở các route search, search/matches,
+  tags, properties, backlinks, resolve, graph; mọi route giữ auth guard, method guard và readable root `docs/`,
+  không mở mutation. Verify: 22 Netlify + 18 Cloudflare + 7 web tests pass; server/web/Netlify/Cloudflare
+  typecheck sạch; contribution build + Wrangler dry-run sạch; smoke thật staging: search `贡献` = 16 hits,
+  graph = 186 nodes / 181 edges.
 - 2026-06-27 (security fix — leo thang quyền qua token share): `verifyToken()` (server/src/services/auth.ts)
   chỉ kiểm tra chữ ký nên **mọi** token ký bằng `auth.jwtSecret` đều được chấp nhận như phiên owner. Endpoint
   public `POST /public/shares/:id/unlock` ký unlock-cookie bằng cùng secret → người được chia sẻ (có mật khẩu

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { useStore } from '../lib/store';
 import { api } from '../lib/api';
 import type { ContributionReview } from '../lib/api';
@@ -11,14 +11,19 @@ import {
   forgetCreatedNote,
   loadDraft,
   loadContribution,
-  saveContribution,
 } from '../lib/drafts';
 import { removeDraftAssets } from '../lib/draftAssets';
+import {
+  clearContributionWorkspace,
+  getContributionWorkspace,
+  subscribeContributionWorkspace,
+} from '../lib/contributionWorkspace';
 
 export default function StatusBar() {
   const content = useStore((s) => s.content);
   const activePath = useStore((s) => s.activePath);
   const dirty = useStore((s) => s.dirty);
+  const save = useStore((s) => s.save);
   const loadTree = useStore((s) => s.loadTree);
   const notify = useStore((s) => s.notify);
   const [git, setGit] = useState<any>(null);
@@ -26,6 +31,12 @@ export default function StatusBar() {
   const [contributionOpen, setContributionOpen] = useState(false);
   const [review, setReview] = useState<ContributionReview | null>(null);
   const [reviewVersion, setReviewVersion] = useState(0);
+  const workspace = useSyncExternalStore(
+    subscribeContributionWorkspace,
+    getContributionWorkspace,
+    () => null,
+  );
+  const workspaceReview = workspace?.kind === 'existing' ? workspace.review : null;
 
   const refresh = () => api.gitStatus().then(setGit).catch(() => setGit(null));
   useEffect(() => {
@@ -36,33 +47,25 @@ export default function StatusBar() {
   }, []);
 
   useEffect(() => {
-    if (!contributionMode || !activePath || !/\.(md|markdown)$/i.test(activePath)) {
+    if (!contributionMode || !activePath || !/\.(md|markdown)$/i.test(activePath) || !workspaceReview) {
       setReview(null);
       return;
     }
     let cancelled = false;
     const syncReview = async () => {
       try {
-        const { items } = await api.listContributions(activePath);
+        const { items } = await api.listContributions(undefined, workspaceReview.branch);
         if (cancelled) return;
         const local = loadContribution(activePath);
-        const open = items.find((item) => item.status === 'open' && item.branch === local?.branch)
-          ?? items.find((item) => item.status === 'open');
+        const open = items.find((item) => item.status === 'open' && item.branch === workspaceReview.branch);
         if (open) {
-          saveContribution(activePath, {
-            branch: open.branch,
-            pullNumber: open.pullNumber,
-            pullUrl: open.pullUrl,
-            title: open.title,
-            submittedContent: local?.branch === open.branch ? local.submittedContent : undefined,
-          });
           setReview(open);
           return;
         }
 
-        const completed = local
-          ? items.find((item) => item.branch === local.branch && item.status !== 'open')
-          : undefined;
+        const completed = items.find(
+          (item) => item.branch === workspaceReview.branch && item.status !== 'open',
+        );
         if (completed?.status === 'merged') {
           const state = useStore.getState();
           const draft = loadDraft(activePath);
@@ -72,6 +75,7 @@ export default function StatusBar() {
             && (!state.dirty || state.content === submittedContent);
           clearContribution(activePath);
           forgetCreatedNote(activePath);
+          clearContributionWorkspace();
           setReview(completed);
           if (draftIsSubmittedVersion) {
             clearDraft(activePath);
@@ -82,14 +86,19 @@ export default function StatusBar() {
             await state.openFile(activePath);
           } else {
             notify(`PR #${completed.pullNumber} 已合并；检测到较新的本地草稿，已保留`, 5000);
+            await state.loadTree();
+            await state.openFile(activePath);
           }
           return;
         }
         if (completed?.status === 'closed') {
           clearContribution(activePath);
+          clearContributionWorkspace();
           notify(`PR #${completed.pullNumber} 已关闭，本地草稿已保留`, 5000);
+          await useStore.getState().loadTree();
+          await useStore.getState().openFile(activePath);
         }
-        setReview(completed ?? items[0] ?? null);
+        setReview(completed ?? null);
       } catch {
         if (!cancelled) setReview(null);
       }
@@ -103,7 +112,12 @@ export default function StatusBar() {
       window.removeEventListener('focus', onFocus);
       window.clearInterval(id);
     };
-  }, [activePath, notify, reviewVersion]);
+  }, [activePath, notify, reviewVersion, workspaceReview?.branch]);
+
+  const switchContribution = async () => {
+    if (dirty) await save();
+    clearContributionWorkspace();
+  };
 
   const sync = async () => {
     if (syncing) return;
@@ -138,22 +152,28 @@ export default function StatusBar() {
       {contributionMode ? (
         isText && activePath && (
           <>
-            {review && (
+            {(review ?? workspaceReview) && (
               <a
                 className="clickable contribution-submit"
-                href={review.pullUrl}
+                href={(review ?? workspaceReview)!.pullUrl}
                 target="_blank"
                 rel="noreferrer"
                 title="在 GitHub 打开投稿 PR"
               >
                 <Icon name="git-pull-request" size={13} />
-                PR #{review.pullNumber} {review.status === 'open' ? '待审核' : review.status === 'merged' ? '已合并' : '已关闭'}
+                PR #{(review ?? workspaceReview)!.pullNumber} {(review ?? workspaceReview)!.status === 'open' ? '待审核' : (review ?? workspaceReview)!.status === 'merged' ? '已合并' : '已关闭'}
               </a>
             )}
+            {workspace?.kind === 'new' && <span className="contribution-submit">新投稿</span>}
             <span className="clickable contribution-submit" title="Create or update a review pull request" onClick={() => setContributionOpen(true)}>
               <Icon name="git-pull-request" size={13} />
-              {review?.status === 'open' ? '更新审核' : '提交审核'}
+              {workspaceReview ? '更新审核' : '提交审核'}
             </span>
+            {workspace && (
+              <span className="clickable" title="Switch contribution workspace" onClick={() => void switchContribution()}>
+                切换投稿
+              </span>
+            )}
           </>
         )
       ) : (

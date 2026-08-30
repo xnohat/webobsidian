@@ -10,6 +10,18 @@ open contributions discoverable on another browser or device without relying on
 `localStorage`. The status bar links directly to the matching GitHub pull request and
 refreshes when the window regains focus or after one minute.
 
+The pull request is selected before editing starts. If the document already belongs to
+one or more open editor-created pull requests, a blocking workspace chooser lets the
+visitor continue one of those pull requests or start a separate contribution from the
+`contributions` branch. Continuing a pull request loads its complete fork branch tree,
+Markdown, and images before the editor becomes writable. The final submission dialog
+cannot change that target.
+
+Workspace reads use `GET /api/files/?branch=...` and
+`GET /api/files/content?path=...&branch=...`. The Worker accepts only an editor-shaped
+`contrib/YYYYMMDD-xxxxxxxx` branch that still has an open pull request from the configured
+fork into the configured staging branch.
+
 After a pull request is merged, its saved association is removed automatically. A local
 draft is also removed when it still matches the exact content submitted from that
 browser. If the draft contains newer edits, the editor preserves it. Closed, unmerged
@@ -115,6 +127,10 @@ That push starts verification and deploys only if every check succeeds.
 - `/api/*` and `/auth/*` run through `cloudflare/worker.ts` first.
 - Other requests are served from `server/public` with SPA fallback to `index.html`.
 - Unknown API routes return JSON `404`, never the SPA document.
+- Search, match contexts, tags, properties, backlinks, wikilink resolution, and graph data
+  are read-only views of Markdown under `docs/` on the staging branch. The Worker batches
+  GitHub GraphQL blob reads and caches the parsed model by Git tree SHA for 30 seconds.
+- File mutation routes remain closed; contributions are still the only public write path.
 - Password-protected deployments limit login to 5 requests per minute per source
   address and Cloudflare location. Public mode does not call the login endpoint.
 - Contribution submission is limited to 10 requests per minute per source address and
