@@ -87,8 +87,27 @@ export async function updateLinkGraphForFile(rel: string, removed = false): Prom
   }
 }
 
+/** Resolve a wikilink target key to a known graph key.
+ *
+ *  Obsidian-style resolution: a link written with a folder prefix that is not
+ *  vault-relative (e.g. `contenedores/duckdns` inside a note under `homelab/`)
+ *  must still resolve to the note by basename. Try the exact (path) key first
+ *  so `Server kike/Red` and `Motoledo/Red` keep resolving independently, then
+ *  fall back to the basename key.
+ */
+function lookupLinkKey(target: string): string | undefined {
+  const exact = linkKey(target);
+  if (graph.keyToPath.has(exact)) return exact;
+  if (target.includes("/")) {
+    const base = exact.split("/").pop();
+    if (base && graph.keyToPath.has(base)) return base;
+  }
+  return undefined;
+}
+
 export function resolveLink(target: string): string | undefined {
-  return graph.keyToPath.get(linkKey(target));
+  const k = lookupLinkKey(target);
+  return k ? graph.keyToPath.get(k) : undefined;
 }
 
 /** Notes that link *to* the given vault-relative path. */
@@ -157,7 +176,8 @@ export function graphData(): GraphData {
 
   for (const [source, targets] of graph.rawLinks) {
     for (const target of targets) {
-      const dest = graph.keyToPath.get(linkKey(target));
+      const k = lookupLinkKey(target);
+      const dest = k ? graph.keyToPath.get(k) : undefined;
       if (dest) {
         addEdge(source, dest);
       } else if (ATTACHMENT_RE.test(target)) {
