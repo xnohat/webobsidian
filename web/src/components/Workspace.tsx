@@ -83,7 +83,6 @@ export default function Workspace() {
   const content = useStore((s) => s.content);
   const setContent = useStore((s) => s.setContent);
   const notify = useStore((s) => s.notify);
-  const toggleLeft = useStore((s) => s.toggleLeft);
   const toggleRight = useStore((s) => s.toggleRight);
   const setMobileDrawer = useStore((s) => s.setMobileDrawer);
   const isMobile = useIsMobile();
@@ -428,13 +427,15 @@ export default function Workspace() {
   return (
     <div className="workspace" onPaste={onPaste} onDrop={onDrop} onDragOver={(e) => e.preventDefault()}>
       <div className="tab-bar">
-        <span
-          className="tab-new tab-ctl"
-          title={isMobile ? 'Open menu' : 'Toggle left sidebar (⌘\\)'}
-          onClick={() => (isMobile ? setMobileDrawer('left') : toggleLeft())}
-        >
-          <Icon name={isMobile ? 'menu' : 'panel-left'} size={isMobile ? 20 : 16} />
-        </span>
+        {isMobile && (
+          <span
+            className="tab-new tab-ctl"
+            title="Open menu"
+            onClick={() => setMobileDrawer('left')}
+          >
+            <Icon name="menu" size={20} />
+          </span>
+        )}
         <div className="tab-scroll">
           {tabs.map((t) => (
             <div

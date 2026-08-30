@@ -39,14 +39,9 @@ export function setLivePreviewMenuHandler(fn: (m: { x: number; y: number; items:
   openMenu = fn;
 }
 
-export interface PropSuggestion {
+interface PropSuggestion {
   key: string;
   type: string;
-  count: number;
-}
-let propertyProvider: () => Promise<PropSuggestion[]> = async () => [];
-export function setLivePreviewPropertyProvider(fn: () => Promise<PropSuggestion[]>) {
-  propertyProvider = fn;
 }
 
 // Per-vault property type registry (mirrors Obsidian's `.obsidian/types.json`).
@@ -1420,6 +1415,13 @@ const PROP_TYPE_OPTIONS: { label: string; dt: string }[] = [
   { label: 'Date & time', dt: 'datetime' },
 ];
 
+const BUILT_IN_PROP_SUGGESTIONS: PropSuggestion[] = [
+  { key: 'text', type: 'text' },
+  { key: 'draft', type: 'checkbox' },
+  { key: 'date', type: 'date' },
+  { key: 'order', type: 'number' },
+];
+
 class FrontmatterWidget extends WidgetType {
   /** `ro` = reading mode: display-only properties. */
   constructor(readonly yaml: string, readonly ro: boolean) {
@@ -1808,8 +1810,8 @@ class FrontmatterWidget extends WidgetType {
     addBtn.className = 'cm-props-add';
     addBtn.textContent = '+ Add property';
 
-    // Add a property with a name-suggester dropdown (existing vault keys), like Obsidian.
-    const startAdd = async () => {
+    // Add one of the frontmatter fields supported by the USC Wiki editor.
+    const startAdd = () => {
       addBtn.style.display = 'none';
       const editorRow = document.createElement('div');
       editorRow.className = 'prop-row prop-newrow';
@@ -1827,8 +1829,8 @@ class FrontmatterWidget extends WidgetType {
       box.insertBefore(dd, addBtn);
       input.focus();
 
-      const existing = new Set(readProps().map((p) => p.key));
-      const all = (await propertyProvider()).filter((p) => !existing.has(p.key));
+      const existing = new Set(readProps().map((p) => p.key.toLowerCase()));
+      const all = BUILT_IN_PROP_SUGGESTIONS.filter((p) => !existing.has(p.key));
 
       let done = false;
       const choose = (key: string, type: string) => {
@@ -1839,7 +1841,15 @@ class FrontmatterWidget extends WidgetType {
           cleanup();
           return;
         }
-        mutate((ps) => ps.push({ key: k, values: type === 'list' ? [] : [''], list: type === 'list' }));
+        if (type !== 'text') {
+          const obsType = dtToObs(type, k);
+          setLivePreviewPropertyTypes({ ...propTypeRegistry, [k]: obsType });
+          void persistPropertyType(k, obsType)
+            .then((types) => setLivePreviewPropertyTypes(types))
+            .catch(() => {});
+        }
+        const values = type === 'list' ? [] : [type === 'checkbox' ? 'false' : ''];
+        mutate((ps) => ps.push({ key: k, values, list: type === 'list' }));
       };
       const cleanup = () => {
         if (box.contains(editorRow)) editorRow.remove();
@@ -1872,7 +1882,9 @@ class FrontmatterWidget extends WidgetType {
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
-          choose(input.innerText, 'text');
+          const key = input.innerText.trim();
+          const preset = all.find((p) => p.key.toLowerCase() === key.toLowerCase());
+          choose(key, preset?.type ?? 'text');
         } else if (e.key === 'Escape') {
           e.preventDefault();
           done = true;
@@ -1883,7 +1895,11 @@ class FrontmatterWidget extends WidgetType {
         // Allow a dropdown mousedown to win first; otherwise cancel an empty add.
         setTimeout(() => {
           if (!done) {
-            if (input.innerText.trim()) choose(input.innerText, 'text');
+            if (input.innerText.trim()) {
+              const key = input.innerText.trim();
+              const preset = all.find((p) => p.key.toLowerCase() === key.toLowerCase());
+              choose(key, preset?.type ?? 'text');
+            }
             else cleanup();
           }
         }, 160);
@@ -1891,7 +1907,7 @@ class FrontmatterWidget extends WidgetType {
     };
     addBtn.addEventListener('mousedown', (e) => {
       e.preventDefault();
-      void startAdd();
+      startAdd();
     });
     if (!this.ro) box.appendChild(addBtn);
     // Reading mode: strip any remaining editing affordances (pill texts, inputs).

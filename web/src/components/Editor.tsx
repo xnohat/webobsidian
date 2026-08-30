@@ -32,7 +32,6 @@ import {
   setLivePreviewLinkHandler,
   setLivePreviewMenuHandler,
   setLivePreviewNoteEmbedProvider,
-  setLivePreviewPropertyProvider,
   setLivePreviewPropertyTypes,
   setLivePreviewPropertyTypeSetter,
   setLivePreviewTagProvider,
@@ -81,7 +80,6 @@ export default function Editor() {
 
   useEffect(() => {
     setLivePreviewMenuHandler(openContextMenu);
-    setLivePreviewPropertyProvider(() => api.properties().then((r) => r.properties).catch(() => []));
     setLivePreviewTagProvider(() => api.tags().then((r) => r.tags.map((t) => t.tag)).catch(() => []));
     // ![[note]] transclusion: resolve + render with the same pipeline as Reading.
     const resolveEmbed = async (target: string) => {

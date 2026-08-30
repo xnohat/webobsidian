@@ -115,3 +115,32 @@ test('accepts reviewed image attachments only as base64 under docs', () => {
     /attachments folder/,
   );
 });
+
+test('validates contribution file and folder moves inside docs', () => {
+  const result = validateContributionInput({
+    title: '整理目录',
+    contributor: { name: 'Lucas' },
+    files: [{ path: 'docs/指南/说明.md', content: '# 说明' }],
+    moves: [
+      { from: 'docs/旧目录/文章.md', to: 'docs/新目录/文章.md' },
+      { from: 'docs/旧目录/attachments', to: 'docs/新目录/attachments' },
+    ],
+  });
+
+  assert.deepEqual(result.moves, [
+    { from: 'docs/旧目录/文章.md', to: 'docs/新目录/文章.md' },
+    { from: 'docs/旧目录/attachments', to: 'docs/新目录/attachments' },
+  ]);
+  assert.throws(() => validateContributionInput({
+    title: '越界移动',
+    contributor: { name: 'Lucas' },
+    files: [{ path: 'docs/a.md', content: 'a' }],
+    moves: [{ from: 'docs/a.md', to: '.github/a.md' }],
+  }), /move path/);
+  assert.throws(() => validateContributionInput({
+    title: '移动到自身',
+    contributor: { name: 'Lucas' },
+    files: [{ path: 'docs/a.md', content: 'a' }],
+    moves: [{ from: 'docs/a.md', to: 'docs/a.md' }],
+  }), /different/);
+});

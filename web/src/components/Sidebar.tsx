@@ -15,6 +15,7 @@ const TITLES: Record<string, string> = {
 
 export default function Sidebar() {
   const leftPanel = useStore((s) => s.leftPanel);
+  const setLeftPanel = useStore((s) => s.setLeftPanel);
   const newNote = useStore((s) => s.newNote);
   const newCanvas = useStore((s) => s.newCanvas);
   const newFolder = useStore((s) => s.newFolder);
@@ -85,17 +86,43 @@ export default function Sidebar() {
     });
   };
 
+  const openMoreMenu = (e: React.MouseEvent) => {
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    openContextMenu({
+      x: r.left,
+      y: r.bottom + 4,
+      items: [
+        { label: 'New canvas', icon: 'layout-dashboard', onClick: () => newCanvas() },
+        {
+          label: autoReveal ? 'Disable auto reveal' : 'Enable auto reveal',
+          icon: autoReveal ? 'check' : 'crosshair',
+          onClick: () => toggleAutoReveal(),
+        },
+        { label: '', separator: true },
+        { label: 'Trash', icon: 'trash', onClick: () => setTrash(true) },
+      ],
+    });
+  };
+
   return (
     <div className="sidebar">
-      <div className="nav-header">
+      <div className="sidebar-switcher" aria-label="Left sidebar panels">
+        <button className={leftPanel === 'files' ? 'active' : ''} title="Files" onClick={() => setLeftPanel('files')}>
+          <Icon name="folder" size={18} />
+        </button>
+        <button className={leftPanel === 'search' ? 'active' : ''} title="Search" onClick={() => setLeftPanel('search')}>
+          <Icon name="search" size={18} />
+        </button>
+        <button className={leftPanel === 'bookmarks' ? 'active' : ''} title="Bookmarks and recent" onClick={() => setLeftPanel('bookmarks')}>
+          <Icon name="bookmark" size={18} />
+        </button>
+      </div>
+      <div className={`nav-header ${leftPanel === 'files' ? 'is-files' : ''}`}>
         <span className="nav-title">{TITLES[leftPanel]}</span>
         {leftPanel === 'files' && (
           <>
             <button className="nav-action" title="New note" onClick={() => newNote()}>
               <Icon name="square-pen" size={16} />
-            </button>
-            <button className="nav-action" title="New canvas" onClick={() => newCanvas()}>
-              <Icon name="layout-dashboard" size={16} />
             </button>
             <button className="nav-action" title="New folder" onClick={() => newFolder()}>
               <Icon name="folder-plus" size={16} />
@@ -104,21 +131,14 @@ export default function Sidebar() {
               <Icon name="arrow-up-narrow-wide" size={16} />
             </button>
             <button
-              className={`nav-action ${autoReveal ? 'active' : ''}`}
-              title="Auto reveal current file"
-              onClick={() => toggleAutoReveal()}
-            >
-              <Icon name="crosshair" size={16} />
-            </button>
-            <button
               className="nav-action"
               title={allCollapsed ? 'Expand all' : 'Collapse all'}
               onClick={toggleCollapseAll}
             >
               <Icon name={allCollapsed ? 'chevrons-up-down' : 'chevrons-down-up'} size={16} />
             </button>
-            <button className="nav-action" title="Trash" onClick={() => setTrash(true)}>
-              <Icon name="trash" size={16} />
+            <button className="nav-action" title="More options" onClick={openMoreMenu}>
+              <Icon name="more-horizontal" size={16} />
             </button>
           </>
         )}

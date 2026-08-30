@@ -287,7 +287,9 @@ function applyPersisted(s: any, set: (p: any) => void): void {
     leftPanel: ['files', 'search', 'tags', 'bookmarks'].includes(s.leftPanel) ? s.leftPanel : 'files',
     rightPanel: ['backlinks', 'outgoing', 'tags', 'outline'].includes(s.rightPanel) ? s.rightPanel : 'backlinks',
     leftOpen: s.leftOpen !== false,
-    rightOpen: s.rightOpen !== false,
+    // Keep the low-value auxiliary panel out of the primary editing layout.
+    // It remains available from the workspace toggle when explicitly needed.
+    rightOpen: false,
     graphSettings: migrateGraphSettings(s.graphSettings),
   });
 }
@@ -433,7 +435,7 @@ export const useStore = create<AppState>()(
       searchQuery: '',
       searchFor: (q) => set({ searchQuery: q, leftPanel: 'search', leftOpen: true }),
       leftOpen: true,
-      rightOpen: true,
+      rightOpen: false,
       toggleLeft: () => set((s) => ({ leftOpen: !s.leftOpen })),
       toggleRight: () => set((s) => ({ rightOpen: !s.rightOpen })),
       mobileDrawer: null,

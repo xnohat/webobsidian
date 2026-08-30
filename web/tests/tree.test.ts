@@ -4,6 +4,7 @@ import type { TreeNode } from '../src/lib/api.js';
 import {
   addDraftAssetToTree,
   addDraftNoteToTree,
+  moveTreeNode,
   resolveAssetPath,
   resolveWikilinkPath,
 } from '../src/lib/tree.js';
@@ -81,6 +82,28 @@ test('adds a dropped image and its attachments folder beside the active note', (
   assert.equal(
     resolveAssetPath(next, '课表.png', 'docs/学习指南/入学准备.md'),
     'docs/学习指南/attachments/课表.png',
+  );
+});
+
+test('moves a file between folders without mutating the original tree', () => {
+  const next = moveTreeNode(
+    tree,
+    'docs/学习指南/入学准备.md',
+    'docs/新生入门/入学准备-学习指南.md',
+  );
+
+  assert.equal(findFileNames(tree, 'docs/学习指南').includes('入学准备.md'), true);
+  assert.equal(findFileNames(next, 'docs/学习指南').includes('入学准备.md'), false);
+  assert.equal(findFileNames(next, 'docs/新生入门').includes('入学准备-学习指南.md'), true);
+});
+
+test('moves a folder and rewrites every descendant path', () => {
+  const next = moveTreeNode(tree, 'docs/学习指南', 'docs/新生入门/学习指南');
+
+  assert.equal(findFileNames(next, 'docs/新生入门/学习指南').includes('入学准备.md'), true);
+  assert.equal(
+    resolveWikilinkPath(next, '新生入门/学习指南/入学准备'),
+    'docs/新生入门/学习指南/入学准备.md',
   );
 });
 

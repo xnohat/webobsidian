@@ -124,6 +124,55 @@ test('creates Git blobs for binary contribution attachments', async (context) =>
   ]);
 });
 
+test('moves an existing folder with Git tree entries in the same contribution commit', async (context) => {
+  const originalFetch = globalThis.fetch;
+  const requests: Array<{ url: string; body?: unknown }> = [];
+  const responses = [
+    { object: { sha: 'base-sha' } },
+    { tree: { sha: 'base-tree' } },
+    { ref: 'refs/heads/contrib/20260819-feedface' },
+    {
+      sha: 'base-tree',
+      truncated: false,
+      tree: [
+        { path: 'docs/旧目录/a.md', mode: '100644', type: 'blob', sha: 'a-sha' },
+        { path: 'docs/旧目录/attachments/a.png', mode: '100644', type: 'blob', sha: 'img-sha' },
+      ],
+    },
+    { sha: 'new-tree' },
+    { sha: 'new-commit' },
+    { ref: 'refs/heads/contrib/20260819-feedface' },
+    { number: 44, html_url: 'https://github.com/hzxyayaya/USC-wiki/pull/44' },
+  ];
+  globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+    requests.push({
+      url,
+      body: typeof init?.body === 'string' ? JSON.parse(init.body) : undefined,
+    });
+    const body = responses.shift();
+    assert.ok(body, `Unexpected GitHub request: ${url}`);
+    return Response.json(body);
+  }) as typeof fetch;
+  context.after(() => { globalThis.fetch = originalFetch; });
+
+  await createContribution(config, {
+    title: '整理目录',
+    contributorName: 'Lucas',
+    files: [{ path: 'docs/说明.md', content: '# 说明' }],
+    moves: [{ from: 'docs/旧目录', to: 'docs/新目录' }],
+  }, 'contrib/20260819-feedface');
+
+  const treeRequest = requests[4].body as { tree: Array<{ path: string; sha?: string | null }> };
+  assert.deepEqual(treeRequest.tree, [
+    { path: 'docs/旧目录/a.md', sha: null },
+    { path: 'docs/新目录/a.md', mode: '100644', type: 'blob', sha: 'a-sha' },
+    { path: 'docs/旧目录/attachments/a.png', sha: null },
+    { path: 'docs/新目录/attachments/a.png', mode: '100644', type: 'blob', sha: 'img-sha' },
+    { path: 'docs/说明.md', mode: '100644', type: 'blob', content: '# 说明' },
+  ]);
+});
+
 test('lists only open editor contribution branches from the configured fork', async (context) => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (async () => Response.json([
