@@ -26,6 +26,8 @@ interface GNode {
   y?: number;
   vx?: number;
   vy?: number;
+  fx?: number;
+  fy?: number;
 }
 interface GLink {
   source: GNode | string;
@@ -128,7 +130,8 @@ export default function GraphView() {
   const flyNode = useRef<GNode | null>(null);
   const adjRef = useRef<Map<GNode, Set<GNode>>>(new Map());
   const hover = useRef<GNode | null>(null);
-  const drag = useRef<{ px: number; py: number; moved: number } | null>(null);
+  const drag = useRef<{ px: number; py: number; moved: number; dragNode?: GNode } | null>(null);
+  const dragNode = useRef<GNode | null>(null);
   const rafRef = useRef<number>();
   const fullDirty = useRef(false);
   const edgesDirty = useRef(false);
@@ -903,12 +906,14 @@ export default function GraphView() {
     if (!canvas) return;
     const st: {
       pts: Map<number, { x: number; y: number }>;
-      mode: 'pan' | 'pinch' | null;
+      mode: 'pan' | 'pinch' | 'node' | null;
       px: number;
       py: number;
       moved: number;
       dist: number;
-    } = { pts: new Map(), mode: null, px: 0, py: 0, moved: 0, dist: 0 };
+      grabNode?: GNode | null;
+      timer?: number;
+    } = { pts: new Map(), mode: null, px: 0, py: 0, moved: 0, dist: 0, grabNode: null };
 
     const twoPts = () => {
       const v = [...st.pts.values()];
@@ -932,7 +937,30 @@ export default function GraphView() {
         st.px = p.x;
         st.py = p.y;
         st.moved = 0;
+        // Long-press on a node grabs it for dragging (d3 fx/fy), like the
+        // mouse drag; moving or lifting before the timer just pans/taps.
+        const n = nodeAt(p.x, p.y);
+        st.grabNode = n && n.kind !== 'tag' ? n : null;
+        if (st.grabNode) {
+          st.timer = window.setTimeout(() => {
+            st.timer = undefined;
+            if (st.mode === 'pan' && st.moved < 12 && st.grabNode) {
+              st.mode = 'node';
+              const w = toWorld(st.px, st.py);
+              st.grabNode.fx = w.x;
+              st.grabNode.fy = w.y;
+              simRef.current?.alphaTarget(0.3).restart();
+              flyNode.current = null;
+              setHover(st.grabNode); // keep the node's relations lit while dragging
+            }
+          }, 300);
+        }
       } else if (st.pts.size >= 2) {
+        if (st.timer) { clearTimeout(st.timer); st.timer = undefined; }
+        if (st.grabNode) {
+          if (st.mode === 'node') { st.grabNode.fx = undefined; st.grabNode.fy = undefined; simRef.current?.alphaTarget(0); setHover(null); }
+          st.grabNode = null;
+        }
         const m = mid();
         st.mode = 'pinch';
         st.px = m.x;
@@ -946,7 +974,17 @@ export default function GraphView() {
       if (!st.mode) return;
       for (const t of Array.from(e.changedTouches)) if (st.pts.has(t.identifier)) st.pts.set(t.identifier, { x: t.clientX, y: t.clientY });
       flyNode.current = null; // manual gesture cancels a fly-to-node in progress
-      if (st.mode === 'pinch' && st.pts.size >= 2) {
+      if (st.mode === 'node' && st.grabNode && st.pts.size === 1) {
+        const p = [...st.pts.values()][0];
+        const w = toWorld(p.x, p.y);
+        st.grabNode.fx = w.x;
+        st.grabNode.fy = w.y;
+        st.px = p.x;
+        st.py = p.y;
+        st.moved = 999; // never treat as a tap
+        userMoved.current = true;
+        scheduleRender(true);
+      } else if (st.mode === 'pinch' && st.pts.size >= 2) {
         const m = mid();
         const d = spread();
         cam.current.x += m.x - st.px;
@@ -973,6 +1011,14 @@ export default function GraphView() {
       e.preventDefault();
       for (const t of Array.from(e.changedTouches)) st.pts.delete(t.identifier);
       if (st.pts.size === 0) {
+        if (st.timer) { clearTimeout(st.timer); st.timer = undefined; }
+        if (st.mode === 'node' && st.grabNode) {
+          st.grabNode.fx = undefined;
+          st.grabNode.fy = undefined;
+          st.grabNode = null;
+          simRef.current?.alphaTarget(0);
+          setHover(null); // touch has no mousemove to clear the highlight
+        }
         if (st.mode === 'pan' && st.moved < 10) {
           const t0 = e.changedTouches[0];
           const n = nodeAt(t0.clientX, t0.clientY);
@@ -983,6 +1029,7 @@ export default function GraphView() {
         }
         st.mode = null;
       } else if (st.pts.size === 1 && st.mode === 'pinch') {
+        st.grabNode = null; // a leftover finger after pinch just pans
         st.mode = 'pan'; // one finger left after a pinch: keep panning
         const p = [...st.pts.values()][0];
         st.px = p.x;
@@ -1054,8 +1101,25 @@ export default function GraphView() {
     scheduleRender(false);
   };
 
+  // Node drag (dragNode): pinching a node with the mouse sets d3 fx/fy and
+  // reheats the sim (alphaTarget .3, like Obsidian's panel); releasing clears
+  // the pin so physics resumes. Clicks without movement still open the note.
+  const toWorld = (clientX: number, clientY: number) => {
+    const rect = canvasRef.current!.getBoundingClientRect();
+    const { x: cx, y: cy, k } = cam.current;
+    return { x: (clientX - rect.left - cx) / k, y: (clientY - rect.top - cy) / k };
+  };
   const onDown = (e: React.MouseEvent) => {
-    drag.current = { px: e.clientX, py: e.clientY, moved: 0 };
+    const n = nodeAt(e.clientX, e.clientY);
+    drag.current = { px: e.clientX, py: e.clientY, moved: 0, dragNode: n ?? undefined };
+    if (n && n.kind !== 'tag') {
+      const w = toWorld(e.clientX, e.clientY);
+      n.fx = w.x; n.fy = w.y;
+      dragNode.current = n;
+      simRef.current?.alphaTarget(0.3).restart();
+      flyNode.current = null;
+      setHover(n); // highlight the node + its edges while dragging (Obsidian parity)
+    }
   };
   const onMove = (e: React.MouseEvent) => {
     if (drag.current) {
@@ -1064,11 +1128,19 @@ export default function GraphView() {
       drag.current.px = e.clientX;
       drag.current.py = e.clientY;
       drag.current.moved += Math.abs(dx) + Math.abs(dy);
-      cam.current.x += dx;
-      cam.current.y += dy;
-      flyNode.current = null; // manual pan cancels a fly-to-node in progress
-      userMoved.current = true;
-      scheduleRender(false);
+      if (dragNode.current) {
+        const w = toWorld(e.clientX, e.clientY);
+        dragNode.current.fx = w.x;
+        dragNode.current.fy = w.y;
+        userMoved.current = true;
+        scheduleRender(true);
+      } else {
+        cam.current.x += dx;
+        cam.current.y += dy;
+        flyNode.current = null; // manual pan cancels a fly-to-node in progress
+        userMoved.current = true;
+        scheduleRender(false);
+      }
     } else {
       setHover(nodeAt(e.clientX, e.clientY));
     }
@@ -1076,6 +1148,12 @@ export default function GraphView() {
   const onUp = (e: React.MouseEvent) => {
     const d = drag.current;
     drag.current = null;
+    if (dragNode.current) {
+      dragNode.current.fx = undefined;
+      dragNode.current.fy = undefined;
+      dragNode.current = null;
+      simRef.current?.alphaTarget(0);
+    }
     if (d && d.moved < 5) {
       const n = nodeAt(e.clientX, e.clientY);
       if (!n) return;
