@@ -6,13 +6,15 @@
   "workspaces": [
     "server",
     "web",
-    "desktop"
+    "desktop",
+    "packages/webo"
   ],
   "scripts": {
     "dev": "concurrently -n server,web -c blue,magenta \"npm:dev:server\" \"npm:dev:web\"",
     "dev:server": "npm --workspace server run dev",
     "dev:web": "npm --workspace web run dev",
-    "build": "npm --workspace web run build && npm --workspace server run build",
+    "build": "npm --workspace web run build && npm --workspace server run build && npm --workspace packages/webo run build",
+    "webo": "node packages/webo/dist/bin.js",
     "start": "npm --workspace server run start",
     "typecheck": "npm --workspace server run typecheck && npm --workspace web run typecheck",
     "desktop": "npm run build && npm --workspace desktop run dev",

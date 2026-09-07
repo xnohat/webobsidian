@@ -100,10 +100,28 @@ The desktop app bundles the whole server, picks your vault folder on first launc
 Open on macOS). Build it yourself with `npm run desktop:dist`; see
 [`desktop/README.md`](desktop/README.md) for details.
 
-> 🔑 **Default password is `123456`.** Log in right away, then change it in
-> **Settings → Account**. To seed a different password on first run, set
-> `WEBOBSIDIAN_PASSWORD` in `.env`. Forgot it? Set `WEBOBSIDIAN_PASSWORD` (plaintext) or
-> `auth.passwordHash` (scrypt) as a recovery override.
+## 🛠️ Process Manager CLI (`webo`)
+
+Want to manage WebObsidian without Docker as a lightweight background daemon? Install the `webo` command line tool:
+
+```bash
+npm run build
+npm run webo install    # symlinks 'webo' executable to PATH and scaffolds ~/.webobsidian/.env
+```
+
+Now you can control the WebObsidian background service directly from anywhere:
+
+```bash
+webo start             # Start WebObsidian as a background daemon
+webo status            # Check process PID, port, and health check (/healthz)
+webo logs -f           # Tail server logs (~/.webobsidian/webo.log)
+webo restart           # Restart the daemon
+webo stop              # Gracefully stop the server daemon
+webo config            # Inspect active environment config (~/.webobsidian/.env)
+webo uninstall         # Remove 'webo' symlink from PATH
+```
+
+---
 
 ### Point it at your own vault
 

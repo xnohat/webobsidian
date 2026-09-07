@@ -14,6 +14,8 @@ coverage/
 # Desktop (Electron) build artifacts
 desktop/.gen/
 desktop/release/
+# CLI package build output (built via `npm run build`)
+packages/*/dist/
 # Local agent runbooks/skills — may contain server creds; never commit.
 .claude/skills/
 report.md

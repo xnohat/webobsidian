@@ -32,3 +32,12 @@ async function tick(): Promise<void> {
 }
 
 let lastRun: number | null = null;
+
+/** Stop the periodic autosync timer (for graceful shutdown). */
+export function stopAutoSync(): void {
+  if (timer) {
+    clearInterval(timer);
+    timer = null;
+  }
+  running = false;
+}

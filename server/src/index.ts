@@ -31,7 +31,7 @@ import { buildLinkGraph, updateLinkGraphForFile } from './services/links.js';
 import { buildFileIndex, indexFile, unindexFile } from './services/fileindex.js';
 import { setBroadcaster, broadcast } from './services/realtime.js';
 import { getVaultRoot, ensureVault, invalidateStat } from './services/vault.js';
-import { startAutoSync } from './services/autosync.js';
+import { startAutoSync, stopAutoSync } from './services/autosync.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -138,8 +138,8 @@ async function main() {
   console.log('[boot] index ready');
 
   const server = http.createServer(app);
-  setupWebsocket(server);
-  await setupWatcher();
+  const wss = setupWebsocket(server);
+  const watcher = await setupWatcher();
   startAutoSync();
 
   server.listen(config.port, config.host, () => {
@@ -147,6 +147,40 @@ async function main() {
     console.log(`  Vault: ${config.defaultVaultPath}`);
     console.log(`  Data:  ${config.dataDir}\n`);
   });
+
+  // --- Graceful shutdown ---
+  // The CLI (`packages/webo`) sends SIGTERM to stop a background daemon cleanly.
+  // Without these handlers a SIGTERM would just kill the process — watcher + autosync
+  // would be left dangling and in-flight requests could be aborted mid-response.
+  let shuttingDown = false;
+  async function shutdown(signal: string) {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(`\n[shutdown] received ${signal} — closing server...`);
+    try {
+      server.close(() => {
+        console.log('[shutdown] HTTP server closed');
+      });
+      wss.close(() => {
+        console.log('[shutdown] WebSocket server closed');
+      });
+      // chokidar watcher — gracefully close, best-effort (it may be in polling mode).
+      watcher.close().catch(() => {});
+      console.log('[shutdown] file watcher closed');
+      // autosync periodic timer.
+      stopAutoSync();
+      console.log('[shutdown] autosync stopped');
+    } catch (err) {
+      console.error('[shutdown] error during teardown:', err);
+    }
+    // Give in-flight HTTP requests a moment to finish before we force-exit.
+    setTimeout(() => {
+      console.log('[shutdown] force-exiting after timeout');
+      process.exit(128 + (signal === 'SIGTERM' ? 15 : 2));
+    }, 8000).unref();
+  }
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
 // --- WebSocket: broadcast filesystem & UI-state events to connected clients ----
@@ -186,6 +220,7 @@ function setupWebsocket(server: http.Server) {
       if (client.readyState === 1) client.send(data);
     }
   });
+  return wss;
 }
 
 /** Parse a single cookie value out of a raw `Cookie:` header (no cookie-parser on upgrade). */
@@ -209,10 +244,10 @@ async function setupWatcher() {
   // WEBOBSIDIAN_WATCH: 'auto' (default) = native inotify with automatic polling
   // fallback when the host watch limit is exceeded; 'polling' = force polling.
   const forcePolling = (process.env.WEBOBSIDIAN_WATCH ?? 'auto').toLowerCase() === 'polling';
-  startWatcher(root, forcePolling);
+  return startWatcher(root, forcePolling);
 }
 
-function startWatcher(root: string, usePolling: boolean) {
+export function startWatcher(root: string, usePolling: boolean): chokidar.FSWatcher {
   const watcher = chokidar.watch(root, {
     // Ignore VCS/dep/trash dirs AND `.obsidian` — the desktop Obsidian app
     // rewrites its workspace/state files constantly, which otherwise floods the

@@ -1,7 +1,8 @@
 # PRD — WebObsidian
 
 > Product Requirements Document
-> Phiên bản: 1.5 · Cập nhật: 2026-06-22 · Trạng thái: Draft
+> Phiên bản: 1.6 · Cập nhật: 2026-09-07 · Trạng thái: Draft
+> Changelog 1.6 (FR-14 — Command-line process manager `webo`): bổ sung **FR-14** — CLI `webo` nằm trong workspace `packages/webo` quản lý tiến trình server WebObsidian dưới dạng background daemon (PID file + log file + graceful shutdown). Cung cấp các lệnh: `install`, `start`, `stop`, `restart`, `status`, `logs`, `config`, `uninstall`. Môi trường cấu hình lưu tập trung tại `~/.webobsidian/.env`.
 > Changelog 1.5 (FR-13 — Desktop app Electron đa nền tảng, theo yêu cầu người dùng): bổ sung **FR-13** —
 > đóng gói WebObsidian thành **app cài đặt** macOS/Windows/Linux (arm64/x64/ia32). Workspace mới `desktop/`
 > là **Electron shell** spawn đúng server Express hiện có như tiến trình con (qua `ELECTRON_RUN_AS_NODE`,
