@@ -4,7 +4,7 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-06-27 (security fix — chặn leo thang quyền token share; merge fix F-03 rate-limit, giữ `trust proxy` mặc định bật)
+Cập nhật lần cuối: 2026-09-13 (issue #20 — English copy for Settings → Account)
 
 ---
 
@@ -26,6 +26,7 @@ Cập nhật lần cuối: 2026-06-27 (security fix — chặn leo thang quyền
 - [x] M2.3 Middleware auth guard (httpOnly cookie), bảo vệ route
 - [x] M2.4 First-run setup flow (UI + env seed `WEBOBSIDIAN_PASSWORD`)
 - [x] M2.5 Pass mặc định 123456 + đổi mật khẩu (Settings→Account) + override khôi phục (`auth.passwordHash`/`WEBOBSIDIAN_PASSWORD`); migration pass cũ → `userPasswordHash`
+- [x] M2.6 Issue #20: translate Settings → Account labels, guidance, and password-change messages into English.
 
 ## Phase 3 — Vault filesystem — FR-1
 - [x] M3.1 Service vault: list tree, read, write, create, rename/move, delete→trash
@@ -430,6 +431,9 @@ Cập nhật lần cuối: 2026-06-27 (security fix — chặn leo thang quyền
       `desktop/release`.
 
 ### Nhật ký tiến độ
+- 2026-09-13: Fixed issue #20 — replaced Vietnamese copy in Settings → Account with English,
+  including password validation, save feedback, default-password guidance, and recovery instructions.
+  Verified with `npm run typecheck` and `npm run build`.
 - 2026-06-27 (security fix — leo thang quyền qua token share): `verifyToken()` (server/src/services/auth.ts)
   chỉ kiểm tra chữ ký nên **mọi** token ký bằng `auth.jwtSecret` đều được chấp nhận như phiên owner. Endpoint
   public `POST /public/shares/:id/unlock` ký unlock-cookie bằng cùng secret → người được chia sẻ (có mật khẩu
