@@ -376,6 +376,7 @@ body.wo-col-resizing .sidebar, body.wo-col-resizing .right-sidebar { transition:
 }
 .tab.active { background: var(--tab-active-bg); color: var(--text-normal); }
 .tab .title { overflow: hidden; text-overflow: ellipsis; }
+.tab.preview .title { font-style: italic; }
 .tab .close { opacity: 0; border-radius: var(--radius-s); width: 20px; height: 20px;
   display: grid; place-items: center; color: var(--text-faint); }
 .tab:hover .close { opacity: 1; }

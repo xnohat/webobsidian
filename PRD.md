@@ -1,7 +1,10 @@
 # PRD — WebObsidian
 
 > Product Requirements Document
-> Phiên bản: 1.5 · Cập nhật: 2026-06-22 · Trạng thái: Draft
+> Phiên bản: 1.6 · Cập nhật: 2026-09-13 · Trạng thái: Draft
+> Changelog 1.6 (FR-2 — Preview tabs, requested to reduce tab clutter while browsing): selecting a
+> note reuses one italicized preview tab. Double-clicking its tab title keeps it open. Editing a
+> preview or creating a note also keeps its tab open; preview state persists with the workspace.
 > Changelog 1.5 (FR-13 — Desktop app Electron đa nền tảng, theo yêu cầu người dùng): bổ sung **FR-13** —
 > đóng gói WebObsidian thành **app cài đặt** macOS/Windows/Linux (arm64/x64/ia32). Workspace mới `desktop/`
 > là **Electron shell** spawn đúng server Express hiện có như tiến trình con (qua `ELECTRON_RUN_AS_NODE`,
@@ -183,6 +186,12 @@ webobsidian/
 - Tương thích cấu trúc `.obsidian/` (config, plugins, themes).
 
 ### FR-2 · Editor & rendering
+- **Preview tabs**: opening a file uses a single reusable tab with an italic title. Opening another
+  file replaces that preview in place; selecting an already-open file activates its existing tab.
+  Double-clicking the tab title makes it permanent and removes italics. Editing a preview keeps it
+  open automatically, and newly created notes/canvases open permanently. Permanent tabs and the
+  Graph view are never replaced by previews. Persist the preview flag with workspace tabs; tabs
+  saved before this feature remain permanent. Back/forward navigation follows the same reuse rules.
 - CodeMirror 6: syntax highlight Markdown, keybindings cơ bản.
 - Live preview / Reading view chuyển đổi.
 - Wikilinks `[[note]]`, embeds `![[file]]`, tags `#tag`, callouts, tasks `- [ ]`.

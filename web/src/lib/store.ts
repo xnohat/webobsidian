@@ -18,6 +18,8 @@ export const GRAPH_PATH = 'graph://view';
 export interface Tab {
   path: string;
   title: string;
+  /** Reusable until kept open or edited. Missing on older, permanent tabs. */
+  preview?: boolean;
 }
 
 /** A color group in the graph (nodes matching `query` are tinted `color`). */
@@ -189,7 +191,8 @@ interface AppState {
   /** Show a toast. ms=0 keeps it until another notify() replaces it. */
   notify: (msg: string, ms?: number) => void;
 
-  openFile: (path: string) => Promise<void>;
+  openFile: (path: string, options?: { preview?: boolean }) => Promise<void>;
+  keepTab: (path: string) => void;
   openWikilink: (target: string) => Promise<void>;
   closeTab: (path: string) => void;
   setContent: (c: string) => void;
@@ -269,6 +272,9 @@ function applyPersisted(s: any, set: (p: any) => void): void {
 
 /** When true, openFile/openGraph won't push a new history entry (we're replaying one). */
 let navByHistory = false;
+
+/** Ignore older reads when notes are selected faster than the server responds. */
+let openRequest = 0;
 
 /** Push `path` onto the back/forward stack (truncating any forward entries). */
 function pushHistory(s: { history: string[]; histIndex: number }, path: string): { history: string[]; histIndex: number } {
@@ -414,7 +420,9 @@ export const useStore = create<AppState>()(
         else get().closeTab(GRAPH_PATH);
       },
       openGraph: async () => {
+        const request = ++openRequest;
         if (get().dirty) await get().save();
+        if (request !== openRequest) return;
         set((s) => ({
           tabs: s.tabs.some((t) => t.path === GRAPH_PATH)
             ? s.tabs
@@ -476,9 +484,11 @@ export const useStore = create<AppState>()(
         }
       },
 
-      openFile: async (path) => {
+      openFile: async (path, { preview = true } = {}) => {
         if (path === GRAPH_PATH) return get().openGraph();
+        const request = ++openRequest;
         if (get().dirty) await get().save();
+        if (request !== openRequest) return;
         // A folder path (e.g. deep-link /note/<folder>) opens a folder content
         // view — never read it as a note nor pollute Recent with it.
         const isFolder = findNode(get().tree, path)?.type === 'folder';
@@ -487,13 +497,32 @@ export const useStore = create<AppState>()(
           const r = await api.read(path);
           content = typeof r === 'string' ? r : r.content;
         }
+        if (request !== openRequest) return;
+        // The user may have edited the previous note while this read was pending.
+        if (get().dirty) await get().save();
+        if (request !== openRequest) return;
         const title = path.split('/').pop() ?? path;
         set((s) => {
-          const tabs = s.tabs.find((t) => t.path === path) ? s.tabs : [...s.tabs, { path, title }];
+          const existing = s.tabs.find((t) => t.path === path);
+          let tabs = s.tabs;
+          if (existing) {
+            // Selecting an open tab never turns a permanent tab back into a preview.
+            if (!preview && existing.preview) {
+              tabs = tabs.map((t) => t.path === path ? { ...t, preview: false } : t);
+            }
+          } else {
+            const tab = { path, title, preview };
+            const replace = preview ? tabs.findIndex((t) => t.preview) : -1;
+            tabs = replace < 0 ? [...tabs, tab] : tabs.map((t, i) => i === replace ? tab : t);
+          }
           const recent = isFolder ? s.recent : [path, ...s.recent.filter((p) => p !== path)].slice(0, 20);
           return { tabs, activePath: path, content, dirty: false, recent, ...pushHistory(s, path) };
         });
       },
+
+      keepTab: (path) => set((s) => ({
+        tabs: s.tabs.map((t) => t.path === path && t.preview ? { ...t, preview: false } : t),
+      })),
 
       openWikilink: async (target) => {
         try {
@@ -519,20 +548,24 @@ export const useStore = create<AppState>()(
           return { tabs, activePath, ...(wasActive ? { content: '', dirty: false } : {}) };
         }),
 
-      setContent: (c) => set({ content: c, dirty: true }),
+      setContent: (c) => set((s) => ({
+        content: c,
+        dirty: true,
+        tabs: s.tabs.map((t) => t.path === s.activePath && t.preview ? { ...t, preview: false } : t),
+      })),
 
       save: async () => {
         const { activePath, content, dirty } = get();
         if (!activePath || !dirty) return;
         if (!TEXT_RE.test(activePath)) return;
         await api.write(activePath, content);
-        set({ dirty: false });
+        set((s) => s.activePath === activePath && s.content === content ? { dirty: false } : {});
       },
 
       createNote: async (path, body) => {
         await api.write(path, body ?? '');
         await get().loadTree();
-        await get().openFile(path);
+        await get().openFile(path, { preview: false });
       },
 
       newNote: async (dir) => {

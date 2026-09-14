@@ -9,6 +9,7 @@
     "desktop"
   ],
   "scripts": {
+    "test": "node --import tsx --test web/tests/store.test.ts",
     "dev": "concurrently -n server,web -c blue,magenta \"npm:dev:server\" \"npm:dev:web\"",
     "dev:server": "npm --workspace server run dev",
     "dev:web": "npm --workspace web run dev",

@@ -4,7 +4,7 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-06-27 (security fix — chặn leo thang quyền token share; merge fix F-03 rate-limit, giữ `trust proxy` mặc định bật)
+Cập nhật lần cuối: 2026-09-13 (FR-2 — preview tabs for note browsing)
 
 ---
 
@@ -82,6 +82,8 @@ Cập nhật lần cuối: 2026-06-27 (security fix — chặn leo thang quyền
 - [x] M9.9 Theme Obsidian-like (dark/light)
 - [x] M9.10 Navigation back/forward (toolbar ←/→ trên mọi view, history stack)
 - [x] M9.11 Search: filter/sort (match case, collapse, more context, sort) + sticky query box
+- [x] M9.12 Preview tabs: reuse one italicized tab while browsing; double-click or edit to keep open;
+      preserve permanent tabs and workspace state, and verify navigation and rapid note selection.
 
 ## Phase 10 — Docker & docs — FR-9
 - [x] M10.1 Multi-stage `Dockerfile` (web build → server runtime, git+git-lfs)
@@ -430,6 +432,10 @@ Cập nhật lần cuối: 2026-06-27 (security fix — chặn leo thang quyền
       `desktop/release`.
 
 ### Nhật ký tiến độ
+- 2026-09-13: Completed M9.12 (PRD 1.6, FR-2) — reusable preview tabs for browsing notes,
+  double-click to keep open, automatic promotion on edit/create, and persisted preview state.
+  Latest note selection wins when reads finish out of order. Verified 11 store regression tests,
+  `npm run typecheck`, `npm run build`, and browser checks of reuse, double-click, edits, and reload.
 - 2026-06-27 (security fix — leo thang quyền qua token share): `verifyToken()` (server/src/services/auth.ts)
   chỉ kiểm tra chữ ký nên **mọi** token ký bằng `auth.jwtSecret` đều được chấp nhận như phiên owner. Endpoint
   public `POST /public/shares/:id/unlock` ký unlock-cookie bằng cùng secret → người được chia sẻ (có mật khẩu

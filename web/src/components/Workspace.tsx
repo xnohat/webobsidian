@@ -60,6 +60,7 @@ export default function Workspace() {
   const activePath = useStore((s) => s.activePath);
   const openFile = useStore((s) => s.openFile);
   const closeTab = useStore((s) => s.closeTab);
+  const keepTab = useStore((s) => s.keepTab);
   const dirty = useStore((s) => s.dirty);
   const viewMode = useStore((s) => s.viewMode);
   const setViewMode = useStore((s) => s.setViewMode);
@@ -300,10 +301,11 @@ export default function Workspace() {
           {tabs.map((t) => (
             <div
               key={t.path}
-              className={`tab ${activePath === t.path ? 'active' : ''}`}
+              className={`tab ${activePath === t.path ? 'active' : ''} ${t.preview ? 'preview' : ''}`}
               onClick={() => openFile(t.path)}
+              onDoubleClick={() => keepTab(t.path)}
               onAuxClick={(e) => e.button === 1 && closeTab(t.path)}
-              title={t.path}
+              title={t.preview ? `${t.path} (preview — double-click to keep open)` : t.path}
             >
               {t.path === GRAPH_PATH && (
                 <Icon name="graph" size={13} style={{ marginRight: 4, flexShrink: 0 }} />
