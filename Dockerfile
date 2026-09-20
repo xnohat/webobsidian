@@ -37,7 +37,9 @@ ENV PORT=8787 \
 VOLUME ["/vault", "/data"]
 EXPOSE 8787
 
+# IPv4 literal: "localhost" resolves to ::1 in this image while the server binds IPv4 only,
+# and busybox wget does not fall back to the next address, so the probe fails forever.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
-  CMD wget -qO- http://localhost:8787/healthz || exit 1
+  CMD wget -qO- http://127.0.0.1:8787/healthz || exit 1
 
 CMD ["node", "server/dist/index.js"]

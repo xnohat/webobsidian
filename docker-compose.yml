@@ -29,7 +29,11 @@ services:
       # Persisted settings.json + search index
       - webobsidian-data:/data
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8787/healthz"]
+      # IPv4 literal on purpose. Inside the container "localhost" resolves to ::1 (IPv6)
+      # while the server binds 0.0.0.0 (IPv4 only), and busybox wget does not fall back to
+      # the next address — the probe then fails on every interval and the container reports
+      # "unhealthy" while the API serves every request normally.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8787/healthz"]
       interval: 30s
       timeout: 5s
       retries: 3
