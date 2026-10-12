@@ -229,6 +229,15 @@
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
 .theme-light, .theme-dark { height: 100%; }
+/* body resolves --text-normal against :root (light), so themed wrappers must re-apply colors
+   or everything inheriting from body stays dark-on-dark. */
+.theme-light, .theme-dark { color: var(--text-normal); background: var(--bg-primary); }
+.modal, .context-menu, .toast { color: var(--text-normal); }
+.setting-row label { color: var(--text-normal); }
+/* CodeMirror draws its own cursor (border-left, default black). */
+.cm-editor .cm-cursor, .cm-editor .cm-dropCursor { border-left-color: var(--text-normal); }
+.cm-editor .cm-cursor-primary { border-left-color: var(--text-normal); }
+.theme-dark .cm-editor .cm-cursor, .theme-dark .cm-editor .cm-dropCursor { border-left-color: #fff; }
 body {
   font-family: var(--font-ui);
   color: var(--text-normal);

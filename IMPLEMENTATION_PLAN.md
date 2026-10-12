@@ -4,7 +4,7 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-06-27 (security fix — chặn leo thang quyền token share; merge fix F-03 rate-limit, giữ `trust proxy` mặc định bật)
+Cập nhật lần cuối: 2026-10-12 (bug #19 — dark mode contrast + con trỏ editor; trước đó: security fix — chặn leo thang quyền token share; merge fix F-03 rate-limit, giữ `trust proxy` mặc định bật)
 
 ---
 
@@ -430,6 +430,8 @@ Cập nhật lần cuối: 2026-06-27 (security fix — chặn leo thang quyền
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-10-12 (Bug #19 — dark mode contrast): chữ tối trên nền tối trong modal/Settings do `body` resolve `--text-normal` theo `:root` (light) nên con kế thừa màu tối; con trỏ CodeMirror mặc định đen. Fix CSS (`obsidian.css`): đặt `color`/`background` trên `.theme-light/.theme-dark`, `.modal`, `.context-menu`, `.toast`; đặt `border-left-color` cho `.cm-cursor`/`.cm-dropCursor` (trắng ở dark). Typecheck OK; chưa kiểm chứng trực quan.
 - 2026-06-27 (security fix — leo thang quyền qua token share): `verifyToken()` (server/src/services/auth.ts)
   chỉ kiểm tra chữ ký nên **mọi** token ký bằng `auth.jwtSecret` đều được chấp nhận như phiên owner. Endpoint
   public `POST /public/shares/:id/unlock` ký unlock-cookie bằng cùng secret → người được chia sẻ (có mật khẩu

@@ -4,6 +4,11 @@
 
 # WebObsidian
 
+> **This repository is a community-maintained fork of WebObsidian.** The original project
+> appears to be inactive, so this fork continues development, fixes, and releases
+> independently.
+> **Original project:** [xnohat/webobsidian](https://github.com/xnohat/webobsidian)
+
 **A self-hosted, Obsidian-compatible web app for your Markdown "second brain".**
 
 Point it at a folder of Markdown files and edit your notes from any browser — with a
