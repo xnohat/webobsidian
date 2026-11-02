@@ -112,7 +112,7 @@ before(async () => {
             try {
               window.open = url => { openedLinks.push(url); return null; };
               for (const anchor of view.contentDOM.querySelectorAll('.cm-md-link.external-link')) {
-                (anchor.querySelector('a') ?? anchor).dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+                (anchor.querySelector('a') ?? anchor).dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));(anchor.querySelector('a') ?? anchor).click();
               }
             } finally { window.open = originalOpen; }
             view.dispatch({ selection: { anchor: source.includes('AIDA64') ? source.indexOf('AIDA64') : source.indexOf('<') + 1 } });

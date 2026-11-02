@@ -45,7 +45,7 @@ test('PDF embeds have working page, zoom and thumbnail controls in live, reading
     const beforePdf=auditSnapshot();
     for(const mode of ['live','reading','preview']){
      useStore.setState({activePath:mode+'.md',content:'# PDF\\n\\n![[sample.pdf]]\\n\\nAfter PDF',viewMode:mode==='preview'?'reading':mode,showInlineTitle:false,locked:false,dirty:false,save:async()=>{}});
-     root.render(mode==='preview'?<Preview/>:<Editor/>);
+     root.render(mode==='preview'?<Preview/>:<Editor/>);await wait();await wait();
      await until(()=>document.querySelector('.pdf-toolbar'),'own PDF toolbar mounted');
      await until(()=>document.querySelector('.pdf-reader[data-ready="true"]'),'PDF document loaded');
      check(auditSnapshot()===beforePdf,'PDF loading leaves outside tabs, titles, sidebar, selected items, inputs and buttons unchanged');
@@ -87,7 +87,7 @@ test('PDF embeds have working page, zoom and thumbnail controls in live, reading
     }
     for(const mode of ['live','reading','preview']){
      useStore.setState({activePath:mode+'.md',content:'# PDF\\n\\n![[sample.pdf#page=2&height=400]]',viewMode:mode==='preview'?'reading':mode,locked:false});
-     root.render(mode==='preview'?<Preview/>:<Editor/>);
+     root.render(mode==='preview'?<Preview/>:<Editor/>);await wait();await wait();
      await until(()=>document.querySelector('.pdf-reader[data-ready="true"]'),'fragment PDF loaded');
      await until(()=>document.querySelector('.pdf-reader [aria-label="Номер страницы"]')?.value==='2',mode+': PDF opens requested page');
      const expectedHeight=mode==='live'?400:400+document.querySelector('.pdf-reader .pdf-toolbar').getBoundingClientRect().height;
@@ -98,13 +98,21 @@ test('PDF embeds have working page, zoom and thumbnail controls in live, reading
     }
     for(const mode of ['live','reading','preview']){
      let opened;useStore.setState({activePath:'Host.md',content:'# Host\\n\\n![[Child]]',viewMode:mode==='preview'?'reading':mode,locked:false,openFile:async(path)=>{opened={path}}});
-     root.render(mode==='preview'?<Preview/>:<Editor/>);
+     root.render(mode==='preview'?<Preview/>:<Editor/>);await wait();await wait();
      await until(()=>document.querySelector('.pdf-reader[data-ready="true"]'),mode+': PDF inside embedded note has a viewer');
      await until(()=>document.querySelector('.pdf-reader [aria-label="Номер страницы"]')?.value==='2',mode+': nested PDF keeps page option');
      document.querySelector('.pdf-reader [data-pdf-action="file-menu"]').click();await until(()=>document.querySelector('.pdf-menu-panel'),'nested PDF file menu');document.querySelector('.pdf-menu-panel button').click();await wait();
      check(opened?.path==='Lab/sample.pdf'&&attachmentLookups.at(-1)?.from==='Lab/Child.md',mode+': nested PDF opens relative to its own note');
      root.render(<div/>);await wait();
     }
+    useStore.setState({activePath:'same-file.md',content:'# Same PDF\\n\\n![[sample.pdf#height=180]]\\n\\n![[sample.pdf#page=2&height=180]]\\n\\n![[sample.pdf#page=2&rect=100,150,400,350&height=180]]',viewMode:'live',locked:false});root.render(<Editor/>);await wait();await wait();
+    await until(()=>document.querySelectorAll('.pdf-reader[data-ready="true"]').length===3,'three instances of the same PDF loaded');
+    const sameFile=[...document.querySelectorAll('.pdf-reader')];
+    for(const [index,reader] of sameFile.entries()){
+     const expected=index===0?'1':'2';await until(()=>reader.querySelector('[aria-label="Номер страницы"]').value===expected,'same file instance '+index+' keeps its own page');
+     await until(()=>reader.querySelector('.page[data-page-number="'+expected+'"] .textLayer')?.textContent.includes(index===0?'First PDF page':'Second PDF page'),'same file instance '+index+' actually renders the requested page');
+    }
+    root.render(<div/>);await wait();
     useStore.setState({activePath:'adjacent.md',content:'# PDFs\\n\\n![[one.pdf]]![[two.pdf]]',viewMode:'live',locked:false});root.render(<Editor/>);
     await until(()=>document.querySelectorAll('.pdf-reader[data-ready="true"]').length===2,'adjacent PDF viewers loaded');
     document.querySelectorAll('[aria-label="Редактировать блок"]')[1].click();await wait();
@@ -138,6 +146,15 @@ test('PDF embeds have working page, zoom and thumbnail controls in live, reading
     check(Math.abs(document.querySelector('.workspace').getBoundingClientRect().left-document.querySelector('.ribbon').getBoundingClientRect().right)<2,'closed sidebar leaves no gap');
     root.render(shell());await wait();await wait();assertLayout(252);
     check(auditSnapshot()===beforePdf,'PDF interactions and removal do not restyle the rest of the app');audit.remove();
+    const originalRawUrl=api.rawUrl;api.rawUrl=()=>'/missing.pdf';
+    for(const mode of ['live','reading','preview']){
+     const missing='# Missing PDF\\n\\n![[Attachments/document.pdf#page=3&height=1000]]';
+     useStore.setState({activePath:'missing-'+mode+'.md',content:missing,viewMode:mode==='preview'?'reading':mode,locked:false});root.render(mode==='preview'?<Preview/>:<Editor/>);await wait();await wait();
+     await until(()=>!!document.querySelector('.pdf-reader[data-missing="true"]'),'HTTP 404 becomes compact missing-file state '+mode);
+     const reader=document.querySelector('.pdf-reader');check(reader.getBoundingClientRect().height<80&&!reader.querySelector('.pdf-toolbar'),mode+': no empty PDF viewer or toolbar '+JSON.stringify({rect:reader.getBoundingClientRect().toJSON(),display:getComputedStyle(reader).display,font:getComputedStyle(reader).font,lineHeight:getComputedStyle(reader).lineHeight,viewport:{width:innerWidth,height:innerHeight},html:reader.outerHTML}));
+     check(reader.textContent.includes('Attachments/document.pdf#page=3&height=1000'),mode+': missing label keeps original path and fragment');check(useStore.getState().content===missing,mode+': missing file rendering preserves source');
+    }
+    api.rawUrl=originalRawUrl;
     if(window.capturePreview){
       useStore.setState({activePath:'preview.md',content:'# PDF\\n\\n![[sample.pdf]]\\n\\nAfter PDF',viewMode:'reading'});root.render(<Editor/>);
       await until(()=>document.querySelector('.pdf-reader[data-ready="true"] .textLayer')?.textContent.includes('First PDF page'),'screenshot ready');
@@ -152,10 +169,10 @@ test('PDF embeds have working page, zoom and thumbnail controls in live, reading
   await cp(join(pkg,'web/images'),join(assetDir,'images'),{recursive:true});
   for(const name of ['cmaps','standard_fonts','wasm'])await cp(join(pkg,name),join(assetDir,name),{recursive:true});
   await writeFile(join(dir,'sample.pdf'),samplePdf());
-  await writeFile(join(dir,'index.html'),'<meta charset="utf-8"><link rel="stylesheet" href="fixture.css"><body class="theme-dark"><div id="root" style="width:900px;height:1000px"></div><script src="fixture.js"></script>');
+  await writeFile(join(dir,'index.html'),'<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="fixture.css"><body class="theme-dark"><div id="root" style="width:900px;height:1000px"></div><script src="fixture.js"></script>');
   await writeFile(join(dir,'runner.cjs'),`const {app,BrowserWindow}=require('electron'),http=require('node:http'),fs=require('node:fs'),path=require('node:path');app.setPath('userData',${JSON.stringify(join(dir,'profile'))});app.whenReady().then(async()=>{
-   const dir=${JSON.stringify(dir)},server=http.createServer((req,res)=>{const name=decodeURIComponent(req.url.split('?')[0]),p=path.resolve(dir,'.'+(name==='/'?'/index.html':name==='/api/files/content'?'/sample.pdf':name));if(!p.startsWith(dir+path.sep)){res.writeHead(403).end();return}try{res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self'; connect-src 'self'; img-src 'self' data: blob:; font-src 'self' data:; object-src 'none'" );res.setHeader('Content-Type',({'.mjs':'text/javascript','.js':'text/javascript','.css':'text/css','.pdf':'application/pdf','.html':'text/html'})[path.extname(p)]||'application/octet-stream');res.end(fs.readFileSync(p))}catch{res.writeHead(404).end()}});await new Promise(r=>server.listen(0,'127.0.0.1',r));
-   const w=new BrowserWindow({show:false,width:1100,height:1600,webPreferences:{backgroundThrottling:false}});w.webContents.on('console-message',(_e,l,m)=>{if(l>=2)console.error(m)});await w.loadURL('http://127.0.0.1:'+server.address().port);await w.webContents.executeJavaScript('window.capturePreview='+Boolean(process.env.WEBO_PDF_PREVIEW));console.log(await w.webContents.executeJavaScript('window.run()'));if(process.env.WEBO_PDF_PREVIEW){fs.writeFileSync(process.env.WEBO_PDF_PREVIEW,(await w.webContents.capturePage()).toPNG());await w.webContents.executeJavaScript('window.cleanup()')}w.destroy();server.close();app.quit()}).catch(e=>{console.error(e);app.exit(1)});`);
+   const dir=${JSON.stringify(dir)},server=http.createServer((req,res)=>{const url=new URL(req.url,'http://fixture');if(url.pathname==='/api/files/content'&&url.searchParams.get('path')==='Attachments/document.pdf'){res.writeHead(404).end();return}const name=decodeURIComponent(req.url.split('?')[0]),p=path.resolve(dir,'.'+(name==='/'?'/index.html':name==='/api/files/content'?'/sample.pdf':name));if(!p.startsWith(dir+path.sep)){res.writeHead(403).end();return}try{res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self'; connect-src 'self'; img-src 'self' data: blob:; font-src 'self' data:; object-src 'none'" );res.setHeader('Content-Type',({'.mjs':'text/javascript','.js':'text/javascript','.css':'text/css','.pdf':'application/pdf','.html':'text/html'})[path.extname(p)]||'application/octet-stream');res.end(fs.readFileSync(p))}catch{res.writeHead(404).end()}});await new Promise(r=>server.listen(0,'127.0.0.1',r));
+   const w=new BrowserWindow({show:false,width:1100,height:1600,webPreferences:{backgroundThrottling:false}});w.webContents.on('console-message',(_e,l,m)=>{if(l>=2)console.error(m)});await w.loadURL('http://127.0.0.1:'+server.address().port);w.webContents.debugger.attach('1.3');await w.webContents.debugger.sendCommand('Emulation.setDeviceMetricsOverride',{width:1100,height:1600,deviceScaleFactor:1,mobile:false});await w.webContents.executeJavaScript('window.capturePreview='+Boolean(process.env.WEBO_PDF_PREVIEW));console.log(await w.webContents.executeJavaScript('window.run()'));if(process.env.WEBO_PDF_PREVIEW){fs.writeFileSync(process.env.WEBO_PDF_PREVIEW,(await w.webContents.capturePage()).toPNG());await w.webContents.executeJavaScript('window.cleanup()')}w.destroy();server.close();app.quit()}).catch(e=>{console.error(e);app.exit(1)});`);
   const env={...process.env};delete env.ELECTRON_RUN_AS_NODE;
   const {stdout}=await promisify(execFile)(createRequire(import.meta.url)('electron'),[...(process.platform==='linux'?['--ozone-platform=headless']:[]),join(dir,'runner.cjs')],{env,windowsHide:true,timeout:90000});
   assert.match(stdout,/PDF_VIEWER_PASS/);

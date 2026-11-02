@@ -55,3 +55,20 @@ it('preserves CRLF block targets, ordered lists and quotes without leaking betwe
  expect(html).toMatch(/<ol[^>]*data-block-id="ordered"/);expect(html).toMatch(/<li[^>]*data-block-id="item"/);expect(html).toMatch(/<blockquote[^>]*data-block-id="quote"/);expect(html).toMatch(/<h2[^>]*data-block-id="heading"/);
  expect(await renderNoteHtml('Normal paragraph',p=>p)).not.toContain('data-block-id');
 });
+
+
+it('preserves inert inline HTML styles and legacy font color from native notes',async()=>{
+ const html=await renderNoteHtml('<span style="color: #e63946; font-weight: bold;">Red</span>\n\n<span style="color: #2a9d8f; background-color: #264653; padding: 2px 6px; border-radius: 4px;">Green</span>\n\n<font color="royalblue">Blue</font>\n\n<mark style="background: #ffbe0b; color: #000;">Marked</mark>',p=>p);
+ expect(html).toContain('font-weight: bold');expect(html).toContain('padding: 2px 6px');expect(html).toContain('border-radius: 4px');expect(html).toContain('royalblue');expect(html).toContain('#ffbe0b');expect(html).toContain('#e63946');
+});
+
+it('keeps safe declarations without retaining layout injection, resource URLs or handlers',async()=>{
+ const html=await renderNoteHtml('<span style="color: red; position: fixed; z-index: 99999; background: url(https://invalid.example/x); padding: 99999px; border-radius: expression(alert(1))" onclick="alert(1)">Safe</span>\n\n<font color="url(https://invalid.example/x)" onmouseover="alert(1)">Bad</font>',p=>p);
+ expect(html).toContain('color: red');expect(html).not.toMatch(/position:|z-index:|url\(|expression\(|99999|onclick|onmouseover/);
+});
+
+it('does not turn CSS escapes, variables, comments or important overrides into trusted inline styles',async()=>{
+ const html=await renderNoteHtml('<span style="color:var(--private); background: u\\72l(https://invalid.example/x); font-weight:bold !important; padding:calc(1px + 2px); border-radius:4px/**/">Untrusted</span>\n\n<span style="color:rgb(42, 157, 143);background:rgba(10,20,30,.5);font-style:italic;padding:0 .25em;border-radius:0 4px">Safe</span>',p=>p);
+ expect(html).not.toMatch(/var\(|private|invalid.example|!important|calc\(|\/\*\*\//);
+ expect(html).toContain('color: rgb(42, 157, 143)');expect(html).toContain('background-color: rgba(10,20,30,.5)');expect(html).toContain('font-style: italic');expect(html).toContain('border-radius: 0 4px');
+});

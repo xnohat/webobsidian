@@ -6,17 +6,20 @@ import {
   ViewUpdate,
   WidgetType,
 } from '@codemirror/view';
+import {mermaidConfig} from './mermaidConfig';
 import { frontmatterTitle } from './title';
+import {propertyIconSvg} from './propertyPresentation';
 import {createPdfViewer,destroyPdfViewer} from './pdfViewer';
 import {pdfFileActions} from './pdfFileActions';
 import {createNoteEmbedOpenButton,addNoteEmbedOpenButtons} from './noteEmbed';
 import {mountPdfEmbeds} from './pdfEmbeds';
 import {createCanvasEmbed,destroyCanvasEmbed,mountCanvasEmbeds} from './canvasEmbed';
-import {embedTokenAt,imageLabelEnd,revealEmbedSource,imageActions,mountImageActions} from './embedActions';
+import {embedAction,embedTokenAt,imageLabelEnd,revealEmbedSource,imageActions,mountImageActions} from './embedActions';
 import { renderMarkdownBody, renderPreparedMarkdown,isGenericFileEmbed } from '../../../server/src/services/markdownRendering';
 import { StateField, StateEffect, type EditorState, type Range, type Text } from '@codemirror/state';
-import { syntaxTree } from '@codemirror/language';
-import { markdownImages,markdownEmbedTarget,type MarkdownImage,isEscaped, preserveLiteralTags, findObsidianComments, stripObsidianComments, footnoteRanges, type SourceRange } from '../../../server/src/services/markdownContext';
+import { syntaxTree,LanguageDescription } from '@codemirror/language';
+import {languages} from '@codemirror/language-data';
+import { markdownLiteralRanges,markdownImages,markdownEmbedTarget,type MarkdownImage,isEscaped, preserveLiteralTags, findObsidianComments, stripObsidianComments, footnoteRanges, type SourceRange } from '../../../server/src/services/markdownContext';
 import { editableFrontmatter } from '../../../server/src/services/frontmatterPolicy';
 import { CALLOUT_SLOT, CALLOUT_RE, calloutDefaultTitle, calloutIconSvg } from './callouts';
 import { openLightbox } from './imageLightbox';
@@ -161,19 +164,11 @@ class WikilinkWidget extends WidgetType {
     if (yamlEmbed) a.className += ' internal-embed file-embed mod-generic';
     a.textContent = yamlEmbed ? (this.kind==='markdown'?decodeLinkTarget(this.target.split('#')[0]):this.target.split('#')[0]).split('/').pop()! : this.label;
     if (this.aria) a.setAttribute('aria-label', this.aria);
-    a.onmousedown = (e) => {
-      e.preventDefault();
-      if(!yamlEmbed)openLink(this.target,this.kind);
-    };
-    if(yamlEmbed){
-      a.href='#';
-      a.onclick=e=>{e.preventDefault();e.stopPropagation();openLink(this.target,this.kind)};
-    }
+    a.href='#';a.onmousedown=e=>{e.preventDefault();e.stopPropagation()};
+    a.onclick=e=>{e.preventDefault();e.stopPropagation();openLink(this.target,this.kind)};
     return a;
   }
-  ignoreEvent() {
-    return this.embed&&isGenericFileEmbed(this.target);
-  }
+  ignoreEvent() {return true;}
 }
 
 class MdLinkWidget extends WidgetType {
@@ -184,7 +179,7 @@ class MdLinkWidget extends WidgetType {
     return o.label === this.label && o.href === this.href;
   }
   toDOM() {
-    const external = /^https?:\/\//i.test(this.href);
+    const external = /^(?:https?:|obsidian:)\/\//i.test(this.href);
     const a = document.createElement('a');
     a.className = 'cm-md-link' + (external ? ' external-link' : ' internal-link');
     // Parse in link-label context: standalone Markdown would turn "1. Title"
@@ -197,17 +192,11 @@ class MdLinkWidget extends WidgetType {
     for (const code of a.querySelectorAll('code')) code.classList.add('cm-code');
     a.title = this.href;
     if (external) a.appendChild(externalLinkIcon());
-    a.onmousedown = (e) => {
-      e.preventDefault();
-      if (external) window.open(this.href, '_blank', 'noopener');
-      else if (this.href.startsWith('#')) { /* in-note anchor — no-op */ }
-      else openLink(this.href, 'markdown');
-    };
+    a.href=external?this.href:'#';a.onmousedown=e=>{e.preventDefault();e.stopPropagation()};
+    a.onclick=e=>{e.preventDefault();e.stopPropagation();if(external)window.open(this.href,'_blank','noopener');else openLink(this.href,'markdown')};
     return a;
   }
-  ignoreEvent() {
-    return false;
-  }
+  ignoreEvent() {return true;}
 }
 
 class BareUrlWidget extends WidgetType {
@@ -506,8 +495,8 @@ class PdfEmbedWidget extends WidgetType {
     wrap.className = 'cm-embed-pdf pdf-embed';
     const name = (this.kind==='markdown'?decodeLinkTarget(this.path):this.path).split('/').pop() ?? this.path;
     const edit=this.canEditSource?()=>revealEmbedSource(view,wrap,this.sourceVisible):undefined;
-    const target=this.path+(this.src.includes('#')?this.src.slice(this.src.indexOf('#')):'');
-    wrap.append(createPdfViewer(this.src,name,()=>{void (this.kind==='markdown'?useStore.getState().openWikilink(target,'markdown',this.origin):useStore.getState().openAttachment(target,this.origin))},edit,{fixedHeightIncludesToolbar:!this.reading,fileActions:pdfFileActions(target,this.origin,{linkKind:this.kind})}));
+    const target=this.path+(this.path.includes('#')?'':this.src.includes('#')?this.src.slice(this.src.indexOf('#')):'');
+    wrap.append(createPdfViewer(this.src,name,()=>{void (this.kind==='markdown'?useStore.getState().openWikilink(target,'markdown',this.origin):useStore.getState().openAttachment(target,this.origin))},edit,{fixedHeightIncludesToolbar:!this.reading,fileActions:pdfFileActions(target,this.origin,{linkKind:this.kind}),missingLabel:target}));
     return wrap;
   }
   destroy(dom:HTMLElement){const reader=dom.querySelector<HTMLElement>('.pdf-reader');if(reader)destroyPdfViewer(reader)}
@@ -547,22 +536,24 @@ class CalloutHeadWidget extends WidgetType {
       t.textContent = this.defaultTitle;
       span.appendChild(t);
     }
-    if (this.fold) {
-      const ch = document.createElement('span');
-      ch.className = 'cm-callout-fold' + (this.folded ? ' is-folded' : '');
-      ch.innerHTML =
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
-      ch.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        view.dispatch({ effects: toggleCalloutFold.of(this.titleFrom) });
-      });
-      span.appendChild(ch);
-    }
     return span;
   }
   ignoreEvent(e: Event) {
     return e.type === 'mousedown';
   }
+}
+
+class CalloutFoldWidget extends WidgetType {
+  constructor(readonly folded:boolean,readonly from:number){super()}
+  eq(o:CalloutFoldWidget){return o.folded===this.folded&&o.from===this.from}
+  toDOM(view:EditorView){const ch=document.createElement('span');ch.className='cm-callout-fold'+(this.folded?' is-folded':'');ch.setAttribute('role','button');ch.setAttribute('aria-label','Toggle callout');ch.setAttribute('aria-expanded',String(!this.folded));ch.tabIndex=0;ch.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>';const toggle=()=>view.dispatch({effects:toggleCalloutFold.of(this.from)});ch.onmousedown=e=>{e.preventDefault();toggle()};ch.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}};return ch}
+  ignoreEvent(){return true}
+}
+class CalloutSourceWidget extends WidgetType {
+  constructor(readonly from:number,readonly to:number){super()}
+  eq(o:CalloutSourceWidget){return o.from===this.from&&o.to===this.to}
+  toDOM(view:EditorView){const wrap=document.createElement('span');wrap.className='cm-callout-source';const button=embedAction('Edit callout','source',()=>{if(view.state.readOnly)return;view.dispatch({selection:{anchor:this.from,head:this.to},effects:EditorView.scrollIntoView(this.from),userEvent:'select'});view.focus()});button.classList.add('cm-callout-edit');wrap.append(button);return wrap}
+  ignoreEvent(){return true}
 }
 
 /* ---------------- math (KaTeX, lazy-loaded like Obsidian's MathJax) ---------------- */
@@ -577,29 +568,32 @@ function ensureKatex() {
   return katexPromise;
 }
 
+function addBlockSourceAction(root:HTMLElement,view:EditorView,range:SourceRange){
+ const actions=document.createElement('span');actions.className='cm-block-actions';
+ const button=embedAction('Edit block','source',()=>{if(view.state.readOnly)return;view.dispatch({selection:{anchor:range.from,head:range.to},effects:EditorView.scrollIntoView(range.from),userEvent:'select'});view.focus()});button.classList.add('cm-block-edit');actions.append(button);root.append(actions);
+}
 class MathWidget extends WidgetType {
-  constructor(readonly tex: string, readonly display: boolean) {
+  constructor(readonly tex: string, readonly display: boolean,readonly source?:SourceRange,readonly canEditSource=false) {
     super();
   }
   eq(o: MathWidget) {
-    return o.tex === this.tex && o.display === this.display;
+    return o.tex === this.tex && o.display === this.display&&o.source?.from===this.source?.from&&o.source?.to===this.source?.to&&o.canEditSource===this.canEditSource;
   }
-  toDOM() {
+  toDOM(view:EditorView) {
     const span = document.createElement('span');
     span.className = 'cm-math-rendered' + (this.display ? ' math-block' : ' math-inline');
     span.textContent = this.tex; // shown until KaTeX loads
     void ensureKatex().then((katex) => {
       try {
         katex.render(this.tex, span, { throwOnError: false, displayMode: this.display });
+        if(this.display&&this.source&&this.canEditSource)addBlockSourceAction(span,view,this.source);if(span.isConnected)view.requestMeasure();
       } catch {
         /* keep raw tex */
       }
     });
     return span;
   }
-  ignoreEvent() {
-    return false;
-  }
+  ignoreEvent(event:Event) {return !!(event.target as HTMLElement|null)?.closest?.('.cm-block-actions');}
 }
 
 class HrWidget extends WidgetType {
@@ -614,6 +608,20 @@ class HrWidget extends WidgetType {
   }
 }
 
+function buildDisplayMath(state:EditorState):DecorationSet{
+ if(!state.field(livePreviewState,false))return Decoration.none;
+ const doc=state.doc,readonly=state.field(livePreviewReadonly,false)??false,literal=[...documentLiteralRanges(state),...documentComments(state)],ranges:Range<Decoration>[]=[];
+ const fm=doc.toString().match(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/)?.[0].length??0;
+ for(let n=1;n<=doc.lines;n++){
+  const line=doc.line(n);if(line.from<fm||!/^ {0,3}\$\$[ \t]*$/.test(line.text)||literal.some(r=>line.from>=r.from&&line.from<r.to))continue;
+  let end=n+1;while(end<=doc.lines&&!/^ {0,3}\$\$[ \t]*$/.test(doc.line(end).text))end++;
+  if(end>doc.lines)continue;
+  const from=line.from,to=doc.line(end).to,touched=!readonly&&state.selection.ranges.some(r=>r.from<=to&&r.to>=from);
+  if(!touched){const tex=doc.sliceString(line.to+1,doc.line(end).from).trim();ranges.push(Decoration.replace({widget:new MathWidget(tex,true,{from,to},!readonly),block:true}).range(from,to))}n=end;
+ }return Decoration.set(ranges,true);
+}
+export const displayMathField=StateField.define<DecorationSet>({create:buildDisplayMath,update(value,tr){return tr.docChanged||tr.selection||tr.effects.some(e=>e.is(setLivePreviewEnabled)||e.is(setLivePreviewReadonly))?buildDisplayMath(tr.state):value.map(tr.changes)},provide:field=>EditorView.decorations.from(field)});
+
 /* ---------------- note embeds (transclusion, like Obsidian ![[note]]) ---------------- */
 
 // Injected from Editor.tsx: resolves a wikilink target and returns rendered,
@@ -625,7 +633,7 @@ export function setLivePreviewNoteEmbedProvider(fn: (target: string,kind?:'wiki'
 
 function embedNotFound(el: HTMLElement, target: string) {
   el.classList.add('cm-embed-missing');
-  el.textContent = `"${target}" could not be found.`;
+  el.textContent = /^ru(?:-|$)/i.test(navigator.language)?`«${target}» не может быть найдена.`:`“${target}” could not be found.`;
 }
 
 class CanvasEmbedWidget extends WidgetType{
@@ -666,9 +674,10 @@ class NoteEmbedWidget extends WidgetType {
     void noteEmbedProvider(this.target,this.kind).then((res) => {
       if(destroyed)return;
       if (!res) {
-        box.textContent = '';
-        embedNotFound(box, this.target);
-        return;
+        content.remove();
+        const at=this.target.indexOf('#'),fragment=at<0?'':this.target.slice(at+1),name=title.textContent||notePath.replace(/\.(md|markdown)$/i,'').split('/').pop()||'';
+        if(fragment){const ru=/^ru(?:-|$)/i.test(navigator.language);title.textContent=ru?`Не удалось найти «${fragment}» в ${name}`:`Could not find “${fragment}” in ${name}`;box.append(title)}
+        box.classList.add('is-unresolved');return;
       }
       content.innerHTML = res.html; // sanitized upstream (rehype-sanitize)
       content.dataset.embedSource=res.path??origin;
@@ -705,10 +714,7 @@ let mermaidPromise: Promise<typeof import('mermaid')['default']> | null = null;
 function ensureMermaid() {
   if (!mermaidPromise) {
     mermaidPromise = import('mermaid').then((m) => {
-      m.default.initialize({
-        startOnLoad: false,
-        theme: document.querySelector('.theme-dark') ? 'dark' : 'default',
-      });
+      m.default.initialize(mermaidConfig);
       return m.default;
     });
   }
@@ -717,23 +723,23 @@ function ensureMermaid() {
 let mermaidSeq = 0;
 
 class MermaidWidget extends WidgetType {
-  constructor(readonly code: string) {
+  constructor(readonly code: string,readonly source:SourceRange,readonly canEditSource:boolean) {
     super();
   }
   eq(o: MermaidWidget) {
-    return o.code === this.code;
+    return o.code === this.code&&o.source.from===this.source.from&&o.source.to===this.source.to&&o.canEditSource===this.canEditSource;
   }
   ignoreEvent() {
     return true;
   }
-  toDOM() {
+  toDOM(view:EditorView) {
     const div = document.createElement('div');
     div.className = 'mermaid cm-mermaid';
     div.textContent = '…';
     void ensureMermaid()
       .then((mermaid) => mermaid.render(`cm-mmd-${++mermaidSeq}`, this.code))
       .then(({ svg }) => {
-        div.innerHTML = svg;
+        div.innerHTML = svg;if(this.canEditSource)addBlockSourceAction(div,view,this.source);if(div.isConnected)view.requestMeasure();
       })
       .catch((err) => {
         div.classList.add('mod-error');
@@ -774,7 +780,7 @@ function buildMermaid(state: EditorState): DecorationSet {
       }
     if (!touched) {
       const code = end > n + 1 ? doc.sliceString(doc.line(n + 1).from, doc.line(end - 1).to) : '';
-      ranges.push(Decoration.replace({ widget: new MermaidWidget(code), block: true }).range(from, to));
+      ranges.push(Decoration.replace({ widget: new MermaidWidget(code,{from,to},!ro), block: true }).range(from, to));
     }
     n = end;
   }
@@ -978,7 +984,7 @@ function buildCalloutFolds(state: EditorState): DecorationSet {
                 break;
               }
             }
-          if (!touched) ranges.push(Decoration.replace({ block: true }).range(line.to, to));
+          if (!touched) ranges.push(Decoration.replace({ block: true, inclusiveStart:false }).range(line.to, to));
           n = last;
           continue;
         }
@@ -1036,25 +1042,17 @@ function documentComments(state: EditorState): SourceRange[] {
   return ranges;
 }
 
+const literalRangeCache=new WeakMap<Text,ReturnType<typeof markdownLiteralRanges>>();
+function documentLiteralRanges(state:EditorState){let ranges=literalRangeCache.get(state.doc);if(!ranges){ranges=markdownLiteralRanges(state.doc.toString());literalRangeCache.set(state.doc,ranges)}return ranges}
 const multilineCodeCache = new WeakMap<Text, (SourceRange & { size: number })[]>();
 function liveMultilineCodeRanges(state: EditorState): (SourceRange & { size: number })[] {
   if (state.field(livePreviewReadonly, false)) return [];
   const cached = multilineCodeCache.get(state.doc);
   if (cached) return cached;
   const source = state.doc.toString();
-  const blocks: SourceRange[] = [];
-  const owned: SourceRange[] = [...documentComments(state)];
-  const frontmatter = source.match(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/);
-  if (frontmatter) owned.push({ from: 0, to: frontmatter[0].length });
-  syntaxTree(state).iterate({ enter(node) {
-    if (node.name === 'FencedCode' || node.name === 'CodeBlock') {
-      blocks.push({from:node.from,to:node.to}); return false;
-    }
-    if (node.name === 'HTMLTag' || node.name === 'HTMLBlock') {
-      const raw = source.slice(node.from, node.to);
-      if (HTML_TAG_START_RE.test(raw) || raw.startsWith('<!--')) owned.push({from:node.from,to:node.to});
-    }
-  } });
+  const literal=documentLiteralRanges(state),blocks:SourceRange[]=literal.filter(r=>r.kind==='code');
+  const owned:SourceRange[]=[...documentComments(state),...literal.filter(r=>r.kind==='html')];
+  const frontmatter=source.match(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/);if(frontmatter)owned.push({from:0,to:frontmatter[0].length});
   const ranges: (SourceRange & { size: number })[] = [];
   let opening: { from: number; size: number } | null = null;
   for (const token of source.matchAll(/`+/g)) {
@@ -1731,7 +1729,8 @@ class FrontmatterWidget extends WidgetType {
         // the value control to match the new type (e.g. date → number input).
         const ic = row.querySelector('.prop-icon') as HTMLElement | null;
         if (ic) {
-          ic.textContent = TYPE_GLYPH[dt] ?? 'T';
+          ic.innerHTML = propertyIconSvg(dt,key);
+          row.dataset.propType=dt;
           ic.title = dt;
         }
         const valCell = row.querySelector('.prop-val');
@@ -1772,7 +1771,11 @@ class FrontmatterWidget extends WidgetType {
 
     const header = document.createElement('div');
     header.className = 'cm-props-header';
-    header.textContent = 'Properties';
+    const ru=/^ru(?:-|$)/i.test(navigator.language);
+    header.textContent = ru?'Свойства':'Properties';
+    header.setAttribute('role','button');header.tabIndex=0;header.setAttribute('aria-expanded','true');
+    const toggleProperties=()=>{const collapsed=box.classList.toggle('is-collapsed');header.setAttribute('aria-expanded',String(!collapsed));view.requestMeasure()};
+    header.onclick=toggleProperties;header.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleProperties()}};
     box.appendChild(header);
 
     const editable = (el: HTMLElement, onCommit: () => void) => {
@@ -1873,7 +1876,7 @@ class FrontmatterWidget extends WidgetType {
       const commitChange = () => mutate(() => {});
       if (dt === 'number') {
         const inp = document.createElement('input');
-        inp.type = 'number';
+        inp.type = 'number';inp.disabled=this.ro;
         inp.className = 'prop-val-field prop-input';
         inp.value = value;
         inp.dataset.raw = value;
@@ -1885,7 +1888,7 @@ class FrontmatterWidget extends WidgetType {
       }
       if (dt === 'checkbox') {
         const inp = document.createElement('input');
-        inp.type = 'checkbox';
+        inp.type = 'checkbox';inp.disabled=this.ro;
         inp.className = 'prop-val-field prop-checkbox';
         const on = /^(true|yes|1)$/i.test(value);
         inp.checked = on;
@@ -1898,7 +1901,7 @@ class FrontmatterWidget extends WidgetType {
       }
       if (dt === 'date' || dt === 'datetime') {
         const inp = document.createElement('input');
-        inp.type = dt === 'date' ? 'date' : 'datetime-local';
+        inp.type = dt === 'date' ? 'date' : 'datetime-local';inp.disabled=this.ro;
         inp.className = 'prop-val-field prop-input';
         if (dt === 'date') {
           inp.value = value.slice(0, 10);
@@ -1911,7 +1914,11 @@ class FrontmatterWidget extends WidgetType {
           inp.dataset.raw = inp.value;
           commitChange();
         });
-        return inp;
+        const wrap=document.createElement('span');wrap.className='prop-date-wrap';
+        const calendar=document.createElement('button');calendar.type='button';calendar.className='prop-date-calendar';calendar.innerHTML=propertyIconSvg(dt);calendar.setAttribute('aria-label',ru?'Выбрать дату':'Choose date');calendar.disabled=this.ro;
+        calendar.onclick=e=>{e.preventDefault();try{inp.showPicker()}catch{inp.focus()}};
+        const link=document.createElement('button');link.type='button';link.className='prop-date-link';link.innerHTML=propertyIconSvg('link');link.setAttribute('aria-label',ru?'Открыть заметку даты':'Open date note');link.onclick=e=>{e.preventDefault();if(inp.value)openLink(inp.value.slice(0,10))};
+        wrap.append(calendar,inp,link);return wrap;
       }
       // text (default)
       const span = document.createElement('span');
@@ -1938,6 +1945,7 @@ class FrontmatterWidget extends WidgetType {
     // Add an item to a list property via a typed input + suggestion dropdown
     // (vault tags for the `tags` property; free text otherwise), like Obsidian.
     const startAddItem = async (key: string, idx: number, container: HTMLElement, addBtn: HTMLElement) => {
+      if(container.querySelector('.prop-pill-input'))return;
       addBtn.style.display = 'none';
       const inp = document.createElement('span');
       inp.className = 'prop-pill-input';
@@ -2027,7 +2035,8 @@ class FrontmatterWidget extends WidgetType {
 
       const icon = document.createElement('span');
       icon.className = 'prop-icon';
-      icon.textContent = TYPE_GLYPH[renderAsList ? 'list' : dt] ?? 'T';
+      icon.innerHTML = propertyIconSvg(renderAsList ? 'list' : dt,p.key);
+      row.dataset.propertyKey=p.key;row.dataset.propType=renderAsList?'list':dt;
       icon.title = renderAsList ? 'list' : dt;
 
       const k = document.createElement('span');
@@ -2061,7 +2070,7 @@ class FrontmatterWidget extends WidgetType {
           const txt = document.createElement('span');
           txt.className = 'prop-pill-text';
           txt.textContent = val;
-          txt.setAttribute('contenteditable', 'true');
+          if(!this.ro)txt.setAttribute('contenteditable', 'true');
           txt.spellcheck = false;
           txt.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
@@ -2081,7 +2090,7 @@ class FrontmatterWidget extends WidgetType {
           });
           const x = document.createElement('span');
           x.className = 'prop-pill-x';
-          x.textContent = '×';
+          x.innerHTML=propertyIconSvg('close');x.setAttribute('role','button');x.setAttribute('aria-label',ru?'Удалить значение':'Remove value');
           x.addEventListener('mousedown', (e) => {
             e.preventDefault();
             mutate((ps) => {
@@ -2096,13 +2105,14 @@ class FrontmatterWidget extends WidgetType {
         }
         const add = document.createElement('span');
         add.className = 'prop-pill-add';
-        add.textContent = '+';
+        add.textContent = '';add.tabIndex=0;add.setAttribute('role','button');add.setAttribute('aria-label',ru?'Добавить значение':'Add item');
         add.title = 'Add item';
         add.addEventListener('mousedown', (e) => {
           e.preventDefault();
           void startAddItem(p.key, idx, v, add);
         });
         v.appendChild(add);
+        if(!this.ro){v.addEventListener('mousedown',e=>{if(e.target===v){e.preventDefault();void startAddItem(p.key,idx,v,add)}});add.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();void startAddItem(p.key,idx,v,add)}}}
       } else {
         v.appendChild(makeScalarField(dt, p.values[0] ?? '', p.key, pageType));
       }
@@ -2122,7 +2132,7 @@ class FrontmatterWidget extends WidgetType {
 
     const addBtn = document.createElement('div');
     addBtn.className = 'cm-props-add';
-    addBtn.textContent = '+ Add property';
+    addBtn.textContent = ru?'+ Добавить свойство':'+ Add property';
 
     // Add a property with a name-suggester dropdown (existing vault keys), like Obsidian.
     const startAdd = async () => {
@@ -2131,7 +2141,7 @@ class FrontmatterWidget extends WidgetType {
       editorRow.className = 'prop-row prop-newrow';
       const icon = document.createElement('span');
       icon.className = 'prop-icon';
-      icon.textContent = 'T';
+      icon.innerHTML = propertyIconSvg('text');
       const input = document.createElement('span');
       input.className = 'prop-key prop-new-key';
       input.setAttribute('contenteditable', 'true');
@@ -2171,7 +2181,7 @@ class FrontmatterWidget extends WidgetType {
           it.className = 'cm-props-dd-item';
           const ic = document.createElement('span');
           ic.className = 'prop-icon';
-          ic.textContent = TYPE_GLYPH[p.type] ?? 'T';
+          ic.innerHTML = propertyIconSvg(p.type,p.key);
           const nm = document.createElement('span');
           nm.textContent = p.key;
           it.append(ic, nm);
@@ -2437,18 +2447,21 @@ function buildDecorations(view: EditorView): DecorationSet {
           const first = doc.lineAt(node.from).number;
           const last = doc.lineAt(Math.min(node.to, doc.length)).number;
           const blockTouched = touches(node.from, Math.min(node.to, doc.length));
+          // Shorter or different fence strings inside a block are literal code.
+          // Only parser-owned delimiters may disappear, including at EOF.
+          const fenceLines = new Set(node.node.getChildren('CodeMark').map(mark => doc.lineAt(mark.from).number));
           // language from the fence info-string (§7) → flair label top-right
           const lang = doc.line(first).text.match(/^\s*(?:`{3,}|~{3,})[ \t]*([\w/+#-]*)/)?.[1] ?? '';
           for (let i = first; i <= last; i++) {
             const l = doc.line(i);
-            const isFence = /^\s*(`{3,}|~{3,})/.test(l.text);
+            const isFence = fenceLines.has(i);
             all.push(
               Decoration.line({
                 class:
                   'HyperMD-codeblock HyperMD-codeblock-bg' +
                   (i === first ? ' HyperMD-codeblock-begin' : '') +
-                  (i === last ? ' HyperMD-codeblock-end' : ''),
-                attributes: i === first && lang ? { 'data-lang': lang } : undefined,
+                  (i === last ? ' HyperMD-codeblock-end' : '')+(!blockTouched&&isFence?' cm-code-fence-hidden':''),
+                attributes: i===first&&lang&&!blockTouched?{'data-lang':LanguageDescription.matchLanguageName(languages,lang,true)?.name??lang}:undefined,
               }).range(l.from, l.from),
             );
             if (!blockTouched && isFence && (i === first || i === last) && l.to > l.from) {
@@ -2584,10 +2597,11 @@ function buildDecorations(view: EditorView): DecorationSet {
         const titleLineFrom = doc.line(firstLn).from;
         const firstInner = doc.line(firstLn).text.replace(QUOTE_MARKERS_RE, '');
         const cm = firstInner.match(CALLOUT_RE);
-        if (cm) {
+        const editingCallout=cm&&!readonly&&touches(titleLineFrom,doc.line(lastLn).to);
+        if (cm&&!editingCallout) {
           const type = cm[1].split('|')[0].trim().toLowerCase().replace(/\s+/g, '-');
           const slot = CALLOUT_SLOT[type] ?? 'default';
-          const attributes = { style: `--callout-color: var(--callout-${slot})` };
+          const attributes = { style: `--callout-color: var(--callout-${slot})`, 'data-callout-start': String(titleLineFrom) };
           const folded = cm[2] ? isCalloutFolded(view.state, titleLineFrom, cm[2]) : false;
           all.push(
             Decoration.line({
@@ -2619,11 +2633,15 @@ function buildDecorations(view: EditorView): DecorationSet {
             if (title) {
               all.push(Decoration.mark({ class: 'cm-callout-title' }).range(line.from + markLen, line.to));
             }
+            if(cm[2])all.push(Decoration.widget({widget:new CalloutFoldWidget(folded,titleLineFrom),side:-2}).range(line.to));
+            if(!readonly)all.push(Decoration.widget({widget:new CalloutSourceWidget(titleLineFrom,doc.line(lastLn).to),side:-1}).range(line.to));
             bodyStart = markLen; // list handling applies to the rest of the title line
           } else if (!lineActive(line.from)) {
             pushReplace(line.from, line.from + bodyStart, hidden);
           }
-        } else {
+        } else if(editingCallout){
+          const end=line.from+prefix.length+(ln===firstLn?cm![0].length:0);if(end>line.from)all.push(Decoration.mark({class:'cm-formatting-quote'}).range(line.from,Math.min(end,line.to)));
+        } else if(!cm) {
           // Plain quote: depth via background bars (data-quote-depth) — nested
           // `> >` renders one bar per level like Obsidian.
           all.push(
@@ -2643,28 +2661,19 @@ function buildDecorations(view: EditorView): DecorationSet {
       // non-space status counts as checked (no hard-coded custom-state list).
       const body = bodyStart ? text.slice(bodyStart) : text;
       const bodyFrom = line.from + bodyStart;
-      // Indentation guides for nested lists (one cm-indent per tab / 4-space unit).
+      // Only a complete tab/four-space group has a fixed indent width. A two-space
+      // child keeps its partial spacing, so it cannot collapse onto a four-space child.
+      const indentParts=(ws:string)=>[...ws.matchAll(/\t| {4}| {1,3}/g)].map(m=>({from:m.index!,text:m[0]}));
       const indentGuides = (ws: string) => {
-        let i = 0;
-        while (i < ws.length) {
-          const end = Math.min(i + (ws[i] === '\t' ? 1 : 4), ws.length);
-          all.push(Decoration.mark({ class: 'cm-indent' }).range(bodyFrom + i, bodyFrom + end));
-          i = end;
+        for(const part of indentParts(ws)){
+          const full=part.text==='\t'||part.text.length===4;
+          all.push(Decoration.mark({class:full?'cm-indent':'cm-indent-spacing',...(full?{}:{attributes:{style:`--indent-spacing:${part.text.length*.275}em`}})}).range(bodyFrom+part.from,bodyFrom+part.from+part.text.length));
         }
       };
-      // Hanging indent: wrapped lines align with the text after the marker. Indent
-      // units and the marker widget have fixed widths (see .HyperMD-hang in CSS).
-      // Build the prefix by addition because CSS calc multiplication is not supported
-      // by all browsers. `markerW` varies with digit count for ordered lists.
       const hang = (ws: string, markerW?: string, orderedTask = false): Record<string, string> => {
         if (bodyStart) return {};
-        let units = 0;
-        for (let i = 0; i < ws.length; i += ws[i] === '\t' ? 1 : 4) units++;
-        const prefix = [...Array.from({ length: units }, () => 'var(--hang-indent-w)'), 'var(--hang-marker-w)',
-          ...(orderedTask ? ['var(--font-text-size)', '6px'] : [])].join(' + ');
-        // `--hang-marker-w` must be set on the line itself: the ordered-list marker box
-        // (.cm-ol-marker) reads it for its width, so it has to match what the prefix uses.
-        return { style: `${markerW ? `--hang-marker-w:${markerW};` : ''}--hang-prefix:calc(${prefix})` };
+        const prefix=[...indentParts(ws).map(p=>p.text==='\t'||p.text.length===4?'var(--hang-indent-w)':`${p.text.length*.275}em`),'var(--hang-marker-w)',...(orderedTask?['var(--font-text-size)','6px']:[])].join(' + ');
+        return {style:`${markerW?`--hang-marker-w:${markerW};`:''}--hang-prefix:calc(${prefix})`};
       };
       const task = body.match(/^(\s*)([-*+]|\d{1,9}[.)])(\s+)\[(.)\](\s+|$)/);
       if (task) {
@@ -2788,7 +2797,7 @@ function buildDecorations(view: EditorView): DecorationSet {
         const s = line.from + m.index;
         const e = s + m[0].length;
         if (inCode(s, e)) continue;
-        if (!touches(s, e)) pushReplace(s, e, Decoration.replace({ widget: new MathWidget(m[1], true) }));
+        if (!touches(s, e)) pushReplace(s, e, Decoration.replace({ widget: new MathWidget(m[1],true,{from:s,to:e},!readonly) }));
         else all.push(Decoration.mark({ class: 'cm-math' }).range(s, e));
       }
 
@@ -3184,8 +3193,32 @@ export const htmlBlockField = StateField.define<DecorationSet>({
 export const livePreviewPlugin = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
-    constructor(view: EditorView) {
+    private hoveredCallout: HTMLElement | null = null;
+    private readonly clearHover = () => {
+      this.hoveredCallout?.classList.remove('is-hovered');
+      this.hoveredCallout = null;
+    };
+    private readonly onPointerOver = (event: PointerEvent) => {
+      const line = event.target instanceof Element ? event.target.closest<HTMLElement>('.cm-callout-line') : null;
+      const first = line && this.view.contentDOM.contains(line)
+        ? this.view.contentDOM.querySelector<HTMLElement>(`.cm-callout-first[data-callout-start="${line.dataset.calloutStart}"] .cm-callout-source`)
+        : null;
+      if (first === this.hoveredCallout) return;
+      this.clearHover();
+      this.hoveredCallout = first;
+      first?.classList.add('is-hovered');
+    };
+    constructor(private readonly view: EditorView) {
       this.decorations = view.state.field(livePreviewState) ? buildDecorations(view) : Decoration.none;
+      // Callout bodies occupy sibling CodeMirror lines. Capture also covers
+      // interactive widgets whose ignoreEvent prevents editor event handlers.
+      view.dom.addEventListener('pointerover', this.onPointerOver, true);
+      view.dom.addEventListener('pointerleave', this.clearHover);
+    }
+    destroy() {
+      this.clearHover();
+      this.view.dom.removeEventListener('pointerover', this.onPointerOver, true);
+      this.view.dom.removeEventListener('pointerleave', this.clearHover);
     }
     update(u: ViewUpdate) {
       if (!u.state.field(livePreviewState)) {
@@ -3377,6 +3410,7 @@ export const livePreviewTheme = EditorView.baseTheme({
     textDecorationThickness: '1px',
     textUnderlineOffset: '2px',
     display: 'inline-block',
+    textIndent: '0',
     verticalAlign: 'baseline',
   },
   '.cm-wikilink:hover, .cm-md-link:hover': { textDecoration: 'underline' },
@@ -3391,7 +3425,7 @@ export const livePreviewTheme = EditorView.baseTheme({
     top: '1px',
   },
   '.cm-task-checkbox': { verticalAlign: 'middle', marginRight: '4px', cursor: 'pointer' },
-  '.cm-embed-image': { maxWidth: '100%', borderRadius: '6px', display: 'block', margin: '6px 0' },
+  '.cm-embed-image': { maxWidth: '100%', borderRadius: '6px', display: 'block', margin: '0' },
   '.cm-properties': { padding: '0 0 18px' },
   // The measured shell above owns the block's vertical spacing (padding); the visual
   // box inside it keeps its own border-bottom/padding but must not re-add a margin.

@@ -1,4 +1,5 @@
 /** Raw web frames are reconstructed after sanitization with an opaque origin. */
+import {resolveExternalEmbed,EMBED_SANDBOX} from './embeds.js';
 export const WEB_FRAME_SANDBOX='allow-forms allow-scripts allow-presentation';
 
 interface HNode{
@@ -46,9 +47,12 @@ export function rehypeRestoreWebFrames(){
     const p=child.properties??{};
     if(child.type==='element'&&child.tagName==='a'&&p.dataWebFrame==='1'){
      const src=webUrl(p.href);if(!src)return [];
-     return [{type:'element',tagName:'iframe',properties:{className:['web-embed'],src,
+     // Rebuild known player URLs from validated IDs, using the same permissions
+     // as URL-based YouTube embeds. Arbitrary authored frames stay opaque.
+     const resolved=resolveExternalEmbed(src),player=resolved?.provider==='youtube'?resolved:null;
+     return [{type:'element',tagName:'iframe',properties:{className:['web-embed'],src:player?.src??src,
       title:typeof p.title==='string'?p.title:'Embedded web page',width:dimension(p.dataWebFrameWidth),height:dimension(p.dataWebFrameHeight),
-      sandbox:WEB_FRAME_SANDBOX,referrerPolicy:'no-referrer',loading:'lazy',
+      sandbox:player?EMBED_SANDBOX:WEB_FRAME_SANDBOX,referrerPolicy:player?'strict-origin-when-cross-origin':'no-referrer',loading:'lazy',
       allowFullScreen:p.dataWebFrameFullscreen==='1'},children:[]}];
     }
     visit(child);return [child];

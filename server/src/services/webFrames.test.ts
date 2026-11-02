@@ -38,3 +38,18 @@ it('does not copy invalid layout values into a reconstructed frame',()=>{
  const html=renderPreparedMarkdown('<iframe src="http://example.org/" width="calc(100% + 100px)" height="1;position:fixed"></iframe>');
  expect(html).toMatch(/<iframe\b/);expect(html).not.toMatch(/calc\(|position:fixed/);
 });
+
+
+it('uses the existing trusted YouTube player policy for validated authored embed URLs',()=>{
+ const html=renderPreparedMarkdown('<iframe src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ" width="560" height="315" title="Video" allowfullscreen srcdoc="<script>parent.bad=1</script>" onload="parent.bad=1"></iframe>');
+ expect(html).toContain('src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ"');
+ expect(html).toContain('sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"');
+ expect(html).toContain('referrerpolicy="strict-origin-when-cross-origin"');
+ expect(html).toContain('width="560"');expect(html).toContain('height="315"');
+ expect(html).not.toMatch(/srcdoc|onload|parent.bad/);
+});
+
+it.each(['https://www.youtube-nocookie.com.evil.invalid/embed/dQw4w9WgXcQ','https://youtube-nocookie.com/not-an-embed/dQw4w9WgXcQ','https://example.org/embed/dQw4w9WgXcQ'])('keeps untrusted lookalike player %s opaque',src=>{
+ const html=renderPreparedMarkdown(`<iframe src="${src}"></iframe>`);
+ expect(html).toContain('sandbox="allow-forms allow-scripts allow-presentation"');expect(html).not.toContain('allow-same-origin');
+});

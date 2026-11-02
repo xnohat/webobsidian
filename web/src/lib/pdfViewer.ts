@@ -2,6 +2,7 @@
 import {pdfAssetBase as assets} from './pdfAssets';
 import {openPdfMenu,type PdfMenuItem} from './pdfMenu';
 import {parsePdfFragment,mountPdfFragment} from './pdfFragments';
+import {embedAction} from './embedActions';
 export type {PdfMenuItem} from './pdfMenu';
 let library: Promise<{core:typeof import('pdfjs-dist'); viewer:typeof import('pdfjs-dist/web/pdf_viewer.mjs')}> | undefined;
 let stylesheet: Promise<void> | undefined;
@@ -29,7 +30,7 @@ const icons={
   code:'<path d="m16 18 6-6-6-6M8 6l-6 6 6 6M14 4l-4 16"/>',
 };
 
-export function createPdfViewer(src:string,name:string,onOpen?:()=>void,onEdit?:()=>void,options:{fixedHeightIncludesToolbar?:boolean;fillContainer?:boolean;fileActions?:()=>Promise<PdfMenuItem[]>}={}):HTMLElement{
+export function createPdfViewer(src:string,name:string,onOpen?:()=>void,onEdit?:()=>void,options:{fixedHeightIncludesToolbar?:boolean;fillContainer?:boolean;fileActions?:()=>Promise<PdfMenuItem[]>;missingLabel?:string}={}):HTMLElement{
   const root=document.createElement('div');root.className='pdf-reader';root.dataset.ready='false';
   const fragment=src.includes('#')?src.slice(src.indexOf('#')+1):'';
   const fragmentTarget=parsePdfFragment(fragment);
@@ -193,6 +194,11 @@ export function createPdfViewer(src:string,name:string,onOpen?:()=>void,onEdit?:
     [thumbs,sidebarOptions,displayOptions,minus,plus,page].forEach(el=>el.disabled=false);
   }).catch(error=>{
     if(destroyed)return;
+    if(error?.status===404||error?.name==='MissingPDFException'){
+      cleanup();root.classList.remove('pdf-fill-container');root.classList.add('pdf-missing');root.style.removeProperty('height');root.dataset.missing='true';root.setAttribute('role','note');
+      const label=options.missingLabel??name,ru=/^ru(?:-|$)/i.test(navigator.language);root.replaceChildren(document.createTextNode(ru?`«${label}» не может быть найдена.`:`“${label}” could not be found.`));
+      if(onEdit){const edit=embedAction('Edit embed','source',onEdit);edit.classList.add('pdf-missing-edit');root.append(edit)}return;
+    }
     cleanup();status.textContent='Не удалось отобразить PDF. ';
     const link=document.createElement('a');link.href=src;link.textContent='Открыть PDF';link.target='_blank';link.rel='noopener noreferrer';status.append(link);
     console.warn('PDF viewer:',error);

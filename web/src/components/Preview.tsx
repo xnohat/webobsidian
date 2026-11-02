@@ -1,6 +1,7 @@
+import {mermaidConfig} from '../lib/mermaidConfig';
 import {pdfFileActions} from '../lib/pdfFileActions';
 import {processPluginMarkdown,usePluginRevision} from '../lib/plugins/registry';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { highlightCode, classHighlighter } from '@lezer/highlight';
 import { LanguageDescription } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
@@ -56,10 +57,7 @@ const loadKatex = () =>
 let mermaidP: Promise<typeof import('mermaid')['default']> | null = null;
 const loadMermaid = () =>
   (mermaidP ??= import('mermaid').then((m) => {
-    m.default.initialize({
-      startOnLoad: false,
-      theme: document.querySelector('.theme-dark') ? 'dark' : 'default',
-    });
+    m.default.initialize(mermaidConfig);
     return m.default;
   }));
 let mmdSeq = 0;
@@ -281,7 +279,7 @@ export default function Preview({ source }: { source?: string }) {
   const showTitle = showInlineTitle && !!title && !(h1 && h1[1].trim().toLowerCase() === title.trim().toLowerCase());
 
   return (
-    <div className={`markdown-preview${preferences.values.readableLineLength?' is-readable-line-width':''}`} onClick={onClick} onContextMenu={onContextMenu}>
+    <div className={`markdown-preview${preferences.values.readableLineLength?' is-readable-line-width':''}`} style={{'--font-text-size':`${preferences.values.baseFontSize??16}px`} as CSSProperties} onClick={onClick} onContextMenu={onContextMenu}>
       <div className="preview-inner">
         {showTitle && <div className="inline-title">{title}</div>}
         <div ref={bodyRef} dangerouslySetInnerHTML={{ __html: html }} />

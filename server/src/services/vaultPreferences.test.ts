@@ -47,3 +47,24 @@ it('reports blocked uploads instead of claiming a fallback rule for malformed at
   await expect(getAttachmentFolderSetting()).rejects.toThrow(/app.json|attachmentFolderPath/);
  }
 });
+
+
+it('imports fresh appearance font size without treating it as an app setting or changing files',async()=>{
+ await app({baseFontSize:40});const file=path.join(root,'.obsidian','appearance.json');
+ const {getVaultPreferences}=await import('./vaultPreferences.js');expect((await getVaultPreferences()).values).toHaveProperty('baseFontSize',16);
+ await fs.writeFile(file,JSON.stringify({baseFontSize:19,accentColor:'unchanged'}));const before=await fs.readFile(file,'utf8');
+ const r=await getVaultPreferences();expect(r.values).toHaveProperty('baseFontSize',19);expect(r.sources).toHaveProperty('baseFontSize','obsidian');expect(await fs.readFile(file,'utf8')).toBe(before);
+ await fs.writeFile(file,JSON.stringify({baseFontSize:22}));expect((await getVaultPreferences()).values).toHaveProperty('baseFontSize',22);
+ for(const value of [-1,10000,'19']){await fs.writeFile(file,JSON.stringify({baseFontSize:value}));const r=await getVaultPreferences();expect(r.values).toHaveProperty('baseFontSize',16);expect(r.warnings.join(' ')).toMatch(/baseFontSize/)}
+ await fs.writeFile(file,'{invalid');const invalid=await getVaultPreferences();expect(invalid.warnings.join(' ')).toMatch(/appearance.json/);expect(invalid.blocked?.attachmentUpload).toBeUndefined();
+});
+
+it('refuses appearance configuration resolving outside the captured vault',async()=>{
+ await app({});const original=fs.realpath.bind(fs),file=path.join(root,'.obsidian','appearance.json');
+ const realpath=vi.spyOn(fs,'realpath').mockImplementation((async p=>String(p)===file?path.resolve(root,'..','outside-appearance.json'):original(p)) as typeof fs.realpath);
+ try{
+  const result=await(await import('./vaultPreferences.js')).getVaultPreferences();
+  expect(result.values.baseFontSize).toBe(16);expect(result.warnings.join(' ')).toMatch(/appearance.json.*outside the vault/);
+  expect(result.blocked?.attachmentUpload).toBeUndefined();
+ }finally{realpath.mockRestore()}
+});

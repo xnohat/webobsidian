@@ -125,11 +125,12 @@ test('background around a colored subset can be recolored and reset without losi
   assert.equal(view.state.doc.toString(), colored);
 });
 
-test('Markdown preview preserves only hex text/background styles and Markdown emphasis', async () => {
+test('Markdown preview preserves toolbar hex colors, inert named colors and Markdown emphasis', async () => {
   const html = await renderMarkdown('<span style="color:#ff0000;background-color:#ffff00">**bold**</span>\n\n<span style="position:fixed;color:red" onclick="alert(1)">unsafe</span>', { rawUrl: p => p });
   assert.match(html, /style="color:#ff0000;background-color:#ffff00"/);
   assert.match(html, /<strong>bold<\/strong>/);
-  assert.doesNotMatch(html, /position:|onclick|color:red/);
+  assert.match(html, /style="color: red"/);
+  assert.doesNotMatch(html, /position:|onclick/);
 });
 
 test('coloring multiline lists, tasks, headings and quotes preserves Markdown structure', async () => {

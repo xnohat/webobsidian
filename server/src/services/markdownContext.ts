@@ -6,6 +6,14 @@ import { inlineFootnoteRanges } from './markdownDialect.js';
 
 const parser = unified().use(remarkParse).use(remarkGfm);
 export interface SourceRange { from: number; to: number }
+/** Complete literal ranges, independent of the editor's incremental parse window. */
+export function markdownLiteralRanges(source:string): (SourceRange&{kind:'code'|'inlineCode'|'html'})[]{
+ const ranges:(SourceRange&{kind:'code'|'inlineCode'|'html'})[]=[];
+ const visit=(node:Node)=>{if(node.type==='code'||node.type==='inlineCode'||node.type==='html'){
+  const from=node.position?.start.offset,to=node.position?.end.offset;
+  if(from!==undefined&&to!==undefined)ranges.push({from,to,kind:node.type});return;
+ }node.children?.forEach(visit)};visit(parser.parse(source) as Node);return ranges;
+}
 interface Node {
   type: string;
   value?: string;

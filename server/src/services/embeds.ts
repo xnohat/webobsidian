@@ -30,6 +30,8 @@ const youtube: Matcher = (u) => {
   let layout: ExternalEmbed['layout'] = 'video';
   if (host === 'youtu.be') {
     id = seg[0] ?? null;
+  } else if (host === 'youtube-nocookie.com' && seg[0] === 'embed' && seg.length === 2) {
+    id = seg[1];
   } else if (host === 'youtube.com') {
     if (seg[0] === 'watch') id = u.searchParams.get('v');
     else if (seg[0] === 'shorts') {
@@ -38,7 +40,8 @@ const youtube: Matcher = (u) => {
     } else if (seg[0] === 'embed' || seg[0] === 'live' || seg[0] === 'v') id = seg[1] ?? null;
   }
   if (!id || !YT_ID.test(id)) return null;
-  return { provider: 'youtube', src: `https://www.youtube.com/embed/${id}`, title: 'YouTube video', layout };
+  const domain = host === 'youtube-nocookie.com' ? 'www.youtube-nocookie.com' : 'www.youtube.com';
+  return { provider: 'youtube', src: `https://${domain}/embed/${id}`, title: 'YouTube video', layout };
 };
 
 const instagram: Matcher = (u) => {

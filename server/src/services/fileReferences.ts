@@ -30,7 +30,9 @@ export function parseFileReferences(content:string,canvas=false):FileReference[]
  return refs.sort((a,b)=>a.from-b.from);
 }
 export function resolveReference(target:string,sourcePath:string,paths:string[],kind:FileReference['kind']='markdown'):string|null{
- const raw=target.split('#')[0];if(!raw||/^[a-z][a-z\d+.-]*:/i.test(raw)||raw.startsWith('//'))return null;
+ const raw=target.split('#')[0];
+ if(!raw)return target.startsWith('#')&&paths.includes(sourcePath)?sourcePath:null;
+ if(/^[a-z][a-z\d+.-]*:/i.test(raw)||raw.startsWith('//'))return null;
  if(kind==='wiki'){const literal=resolveReference(raw.split('/').map(s=>encodeURIComponent(s)).join('/'),sourcePath,paths,'markdown');if(literal)return literal;}
  let decoded:string;try{decoded=decodeURIComponent(raw);}catch{decoded=raw;}
  const candidates=[...(decoded.startsWith('/')?[]:[path.posix.normalize(path.posix.join(path.posix.dirname(sourcePath),decoded))]),path.posix.normalize(decoded.replace(/^\/+/ ,''))];

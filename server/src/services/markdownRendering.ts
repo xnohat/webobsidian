@@ -9,7 +9,7 @@ import remarkRehype from 'remark-rehype';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import rehypeStringify from 'rehype-stringify';
-import { COLOR_STYLE_RE } from './htmlPolicy.js';
+import {rehypeInlineStyles} from './htmlPolicy.js';
 import { editableFrontmatter } from './frontmatterPolicy.js';
 
 const VIDEO_EXT_RE = /\.(mp4|webm|ogv|mov|mkv)$/i;
@@ -33,7 +33,9 @@ export const markdownSchema = {
       ['dataWebFrame'],['dataWebFrameWidth'],['dataWebFrameHeight'],['dataWebFrameFullscreen'],
     ],
     div: [...(defaultSchema.attributes?.div ?? []).filter(x=>!(Array.isArray(x)&&x[0]==='align')&&x!=='align'), ['align','left','center','right','justify'], ['className'], ['dataCallout'], ['dataCalloutFold']],
-    span: [...(defaultSchema.attributes?.span ?? []), ['className'], ['dataTex'], ['dataTexDisplay'], ['dataCalloutIcon'], ['style', COLOR_STYLE_RE]],
+    span: [...(defaultSchema.attributes?.span ?? []), ['className'], ['dataTex'], ['dataTexDisplay'], ['dataCalloutIcon'], ['style']],
+    mark: [...(defaultSchema.attributes?.mark??[]),['style']],
+    kbd: [...(defaultSchema.attributes?.kbd??[]),['style']],
     li: [...(defaultSchema.attributes?.li ?? []), ['className'], ['dataTask']],
     input: [['type'], ['checked'], ['disabled'], ['className'], ['dataTask']],
     img: [...(defaultSchema.attributes?.img ?? []), ['src'], ['alt'], ['dataEmbed']],
@@ -172,6 +174,7 @@ const makeProcessor = (strictLineBreaks = false) => unified()
   .use(remarkRehype, { allowDangerousHtml: true })
   .use(rehypeRaw)
   .use(rehypePrepareWebFrames as any)
+  .use(rehypeInlineStyles)
   .use(rehypeSanitize, markdownSchema as any)
   .use(rehypeBlockIds)
   .use(rehypeRestoreWebFrames as any)

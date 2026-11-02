@@ -24,7 +24,7 @@ test('workspace note source buttons reveal headings and native block references 
    const filler=Array.from({length:45},(_,i)=>'Filler paragraph '+i).join('\\n\\n');
    const files={'Host.md':'# Host\\n\\n![[Target#Parent#Section]]\\n\\n![[Target#^task]]\\n\\n![[Target#^callout]]\\n\\n![[Target#^quote]]','Target.md':'# Target\\n\\n'+filler+'\\n\\n## Parent\\n\\n### **Section**\\n\\nSECTION_BODY\\n\\n'+filler+'\\n\\n- [x] TASK_BODY ^task\\n\\n'+filler+'\\n\\n> [!note] Title\\n> CALLOUT_BODY ^callout\\n\\n'+filler+'\\n\\n> QUOTE_BODY ^quote\\n\\n'+filler};
    api.tags=async()=>({tags:[]});api.propertyTypes=async()=>({types:{}});api.draftScope=async()=>({scopeId:'fixture-note-fragments'});
-   api.resolve=async(target,from,kind)=>{let path=target.split('#')[0];if(kind==='markdown')path=decodeURIComponent(path);path=path.replace(/^\\//,'');if(!path)path=from??useStore.getState().activePath;return {path:path.endsWith('.md')?path:path+'.md'}};
+
    let writes=0;api.read=async path=>({content:files[path]??'',version:'fixture'});api.write=async()=>{writes++;return {ok:true}};api.putUiState=async()=>({ok:true});
    const root=createRoot(document.querySelector('#root'));
    const wait=()=>new Promise(r=>setTimeout(r,50)),check=(ok,msg)=>{if(!ok)throw Error(msg)};
@@ -53,6 +53,7 @@ test('workspace note source buttons reveal headings and native block references 
      }
      await useStore.getState().openWikilink('Target#Parent#Section');await wait();
      if(mode!=='preview')await until(()=>getActiveEditor().state.selection.main.head===noteFragmentRange(files['Target.md'],'Parent#Section').from,mode+': repeated same-file reference');
+     await useStore.getState().openWikilink('#^quote');await until(()=>useStore.getState().noteNavigation?.fragment==='^quote'&&(mode==='preview'||getActiveEditor()?.state.selection.main.head===noteFragmentRange(files['Target.md'],'^quote').from),mode+': fragment-only source navigation');
      root.render(<div/>);await wait();
     }
     useStore.setState({activePath:'Host.md',content:files['Host.md'],viewMode:'live',noteNavigation:null});root.render(<Editor/>);await wait();history.replaceState(null,'','/note/Host.md');initUrlSync();
@@ -77,15 +78,16 @@ test('workspace note source buttons reveal headings and native block references 
    };
   `},bundle:true,format:'iife',platform:'browser',tsconfigRaw:{compilerOptions:{useDefineForClassFields:false,jsx:'react-jsx'}},
    loader:{'.woff2':'file','.woff':'file','.ttf':'file'},define:{'import.meta.env.DEV':'false'},outfile:join(dir,'fixture.js'),logLevel:'silent'});
+  await build({entryPoints:[fileURLToPath(new URL('../../server/src/services/fileReferences.ts',import.meta.url))],outfile:join(dir,'resolver.cjs'),bundle:true,platform:'node',format:'cjs',logLevel:'silent'});
   await writeFile(join(dir,'index.html'),'<meta charset="utf-8"><link rel="stylesheet" href="/fixture.css"><body class="theme-dark"><div id="root" style="width:700px;height:650px;display:flex;flex-direction:column"></div><script src="/fixture.js"></script>');
   await writeFile(join(dir,'runner.cjs'),`
    const {app,BrowserWindow}=require('electron'),http=require('node:http'),fs=require('node:fs'),path=require('node:path');
-   const dir=${JSON.stringify(dir)};
+   const dir=${JSON.stringify(dir)},resolveReference=require(${JSON.stringify(join(dir,'resolver.cjs'))}).resolveReference;
    app.setPath('userData',${JSON.stringify(join(dir,'profile'))});
    app.whenReady().then(async()=>{
     const win=new BrowserWindow({show:false,width:800,height:1200,webPreferences:{backgroundThrottling:false}});
     win.webContents.on('console-message',(_e,_level,message)=>{if(_level>=2)console.error(message)});
-    const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://fixture'),name=url.pathname.startsWith('/note/')||url.pathname==='/'?'index.html':path.basename(url.pathname);try{res.setHeader('Content-Type',name.endsWith('.js')?'text/javascript':name.endsWith('.css')?'text/css':name.endsWith('.html')?'text/html':'application/octet-stream');res.end(fs.readFileSync(path.join(dir,name)))}catch{res.writeHead(404).end()}});await new Promise(r=>server.listen(0,'127.0.0.1',r));
+    const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://fixture');if(url.pathname==='/api/resolve'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify({path:resolveReference(url.searchParams.get('target')??'',url.searchParams.get('from')??'',['Host.md','Target.md'],url.searchParams.get('kind')==='markdown'?'markdown':'wiki')}));return}const name=url.pathname.startsWith('/note/')||url.pathname==='/'?'index.html':path.basename(url.pathname);try{res.setHeader('Content-Type',name.endsWith('.js')?'text/javascript':name.endsWith('.css')?'text/css':name.endsWith('.html')?'text/html':'application/octet-stream');res.end(fs.readFileSync(path.join(dir,name)))}catch{res.writeHead(404).end()}});await new Promise(r=>server.listen(0,'127.0.0.1',r));
     await win.loadURL('http://127.0.0.1:'+server.address().port);
     win.webContents.focus();
     await win.webContents.executeJavaScript('window.run().catch(e=>{console.error(e.stack);throw e})');

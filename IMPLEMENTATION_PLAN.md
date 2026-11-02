@@ -2297,3 +2297,13 @@ Verification and scope: `docs/superpowers/plans/2026-10-30-drafts-conflicts-adap
 ## Remote MCP (2026-10-30)
 
 Implementation and validation ledger: [remote MCP plan](docs/superpowers/plans/2026-10-30-remote-mcp.md). Local stdio compatibility, shared operations, HTTP auth, packaging and docs are tracked there. Public HTTPS deployment and live Perplexity Pro smoke are separate acceptance steps.
+
+## Rendering polygon parity (2026-11-02)
+
+- [x] Import the vault note font size and match property presentation, partial list indentation, task ticks and inline-link geometry.
+- [x] Preserve bounded inert HTML formatting; match code fences, display math, Mermaid colors and source-edit actions.
+- [x] Keep embedded-note navigation and native missing-reference presentation; resolve same-note heading/block links and compact missing PDF embeds.
+- [x] Match consecutive image spacing and use validated YouTube player settings for authored privacy-domain iframes while keeping other frames isolated.
+- [x] Verify mouse hover, keyboard activation and unchanged note source against isolated native Obsidian fixtures.
+
+Validation details and explicit browser/native limitations: [polygon parity](docs/superpowers/plans/2026-11-02-render-polygon-parity.md), [marker/media follow-up](docs/superpowers/plans/2026-11-02-marker-media-parity.md). The implementation passed 390 server tests (10 Windows skips), 518 web tests, typecheck, full build, local integration smoke and isolated Linux integration smoke before the PR integration checks. Bases remain outside this parity pass.

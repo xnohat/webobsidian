@@ -1,5 +1,5 @@
 import {captureContext,executeCommand,commands as toolbarCommands} from '../lib/toolbar/registry';
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import DocOutline from './DocOutline';
 import { Compartment, EditorState, Prec } from '@codemirror/state';
 import { EditorView, keymap, highlightActiveLine, drawSelection, rectangularSelection, crosshairCursor } from '@codemirror/view';
@@ -26,6 +26,7 @@ import {
   htmlBlockField,
   markdownEmbedField,
   mermaidField,
+  displayMathField,
   htmlRenderedState,
   htmlPreviewField,
   calloutFoldState,
@@ -76,6 +77,7 @@ export default function Editor() {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const [editorView, setEditorView] = useState<EditorView | null>(null);
+  useEffect(()=>{view.current?.requestMeasure()},[preferences.values.baseFontSize]);
   const readonlyComp = useRef(new Compartment()).current;
   const applyingExternal = useRef(false);
   const activePath = useStore((s) => s.activePath);
@@ -239,6 +241,7 @@ export default function Editor() {
         htmlBlockField,
         markdownEmbedField,
         mermaidField,
+        displayMathField,
         htmlRenderedState,
         htmlPreviewField,
         calloutFoldState,
@@ -339,7 +342,7 @@ export default function Editor() {
         <LockBanner reason={lockReason} mode={unlockMode} onUnlock={unlockLocked} />
       )}
       <div className="cm-outline-wrap">
-        <div className={cls} ref={host} onContextMenu={onContextMenu} />
+        <div className={cls} style={{'--font-text-size':`${preferences.values.baseFontSize??16}px`} as CSSProperties} ref={host} onContextMenu={onContextMenu} />
         {viewMode !== 'source' && activePath && /\.(md|markdown)$/i.test(activePath) && (
           <DocOutline view={editorView} content={content} />
         )}

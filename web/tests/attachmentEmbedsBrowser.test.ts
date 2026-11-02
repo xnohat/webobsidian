@@ -66,6 +66,13 @@ test('attachment embeds preserve dimensions, native media controls and readonly 
        check(useStore.getState().content===source,'image source action preserves document');
       }else check(!document.querySelector('.cm-image-wrap [aria-label="Edit embed"],.image-embed-wrap [aria-label="Edit embed"]'),mode+': readonly images have no source-edit action');
      }
+     if(part==='images')for(const mode of ['live','reading']){
+      const source='# Host\\n\\n![[photo.png|120x75]]\\n![[photo.png|100x90]]\\n\\n![[photo.png|100x80]]';await mount(mode,source);
+      await until(()=>document.querySelectorAll('.cm-embed-image').length===3,mode+': image rows mounted');const imgs=[...document.querySelectorAll('.cm-embed-image')];await until(()=>imgs.every(e=>e.complete),mode+': image rows loaded');
+      const a=imgs[0].getBoundingClientRect(),b=imgs[1].getBoundingClientRect(),c=imgs[2].getBoundingClientRect();
+      check(Math.abs(b.top-a.bottom)<1,mode+': adjacent image rows have no extra gap: '+(b.top-a.bottom));
+      check(c.top-b.bottom>=15,mode+': authored blank line between images remains visible');check(useStore.getState().content===source,mode+': image spacing preserves source');
+     }
      if(part==='images'){
       const markdown='# Host\\n\\n![Picture|100](photo.png)';await mount('live',markdown);
       await until(()=>document.querySelector('.cm-image-wrap [aria-label="Edit embed"]'),'Markdown image source action');
@@ -85,6 +92,8 @@ test('attachment embeds preserve dimensions, native media controls and readonly 
       await until(()=>document.querySelector('audio')&&document.querySelector('video'),mode+': audio and video players mounted');
       const audioEl=document.querySelector('audio'),video=document.querySelector('video');
       check(audioEl.controls&&video.controls,mode+': native media controls enabled');
+      check(audioEl.getBoundingClientRect().height===42,mode+': native audio height');
+      check(Math.abs(audioEl.getBoundingClientRect().width-audioEl.parentElement.getBoundingClientRect().width)<1,mode+': audio fills the note column');
       check(audioEl.getAttribute('controlslist')==='nodownload',mode+': audio controls match the native download-button setting');
       check(video.width===180&&video.height===90,mode+': video dimensions preserved');
       const wideVideo=document.querySelectorAll('video')[1];

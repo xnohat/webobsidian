@@ -47,8 +47,8 @@ window.run=async()=>{
  const calls=[];const expected=[['shot%20one','wiki'],['shot%20one.md','markdown'],['shot%20%231.md','markdown']];
  setLivePreviewLinkHandler((target,kind='wiki')=>calls.push([target,kind]));
  const lp=new EditorView({state:EditorState.create({doc:source,extensions:[livePreviewState,livePreviewReadonly,livePreviewPlugin]}),parent:document.querySelector('#editor')});await wait();
- const widgets=[...document.querySelectorAll('.cm-wikilink,.cm-md-link')];check(widgets.length===3,'LP link widgets render');for(const anchor of widgets)anchor.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true}));
- check(JSON.stringify(calls)===JSON.stringify(expected),'LP click preserves syntax and encoded target: '+JSON.stringify(calls));lp.destroy();calls.length=0;
+ const widgets=[...document.querySelectorAll('.cm-wikilink,.cm-md-link')];check(widgets.length===3,'LP link widgets render');for(const anchor of widgets){anchor.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true}));anchor.click();}
+ check(JSON.stringify(calls)===JSON.stringify(expected),'LP click preserves syntax and encoded target: '+JSON.stringify(calls));calls.length=0;for(const anchor of widgets)anchor.click();check(JSON.stringify(calls)===JSON.stringify(expected),'keyboard-generated click opens links exactly once');lp.destroy();calls.length=0;
  useStore.setState({openWikilink:(target,kind='wiki')=>calls.push([target,kind])});
  const previewRoot=createRoot(document.querySelector('#root'));previewRoot.render(<Preview source={source}/>);await wait();await wait();
  const anchors=[...document.querySelectorAll('.preview-inner a[data-wikilink],.preview-inner a[data-link-kind="markdown"]')];check(anchors.length===3,'Preview link anchors render');for(const anchor of anchors)anchor.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}));

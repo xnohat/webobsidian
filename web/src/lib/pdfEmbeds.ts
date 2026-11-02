@@ -15,8 +15,8 @@ export function mountPdfEmbeds(root:HTMLElement,fallbackOrigin:string,onOpen?:(t
     const wrap=document.createElement('div');wrap.className='pdf-embed-wrap';
     const kind=link.dataset.linkKind==='markdown'?'markdown':'wiki';
     let name=target.split('/').pop()??target;if(kind==='markdown')try{name=decodeURIComponent(name)}catch{}
-    const fullTarget=target+(src.includes('#')?src.slice(src.indexOf('#')):'');
-    const reader=createPdfViewer(src,name,onOpen?()=>onOpen(fullTarget,origin,kind):undefined,undefined,{fixedHeightIncludesToolbar:false,fillContainer:!!link.closest('.public-canvas .canvas-pdf-card'),fileActions:fileActions?.(fullTarget,origin,kind)});
+    const fullTarget=target+(target.includes('#')?'':src.includes('#')?src.slice(src.indexOf('#')):'');
+    const reader=createPdfViewer(src,name,onOpen?()=>onOpen(fullTarget,origin,kind):undefined,undefined,{fixedHeightIncludesToolbar:false,fillContainer:!!link.closest('.public-canvas .canvas-pdf-card'),fileActions:fileActions?.(fullTarget,origin,kind),missingLabel:fullTarget});
     readers.push(reader);wrap.append(reader);link.replaceWith(wrap);
   }
   return ()=>readers.forEach(destroyPdfViewer);

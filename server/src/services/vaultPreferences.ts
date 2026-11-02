@@ -7,19 +7,19 @@ const preferenceSchemas = {
  attachmentFolderPath:z.string(),alwaysUpdateLinks:z.boolean(),newFileLocation:z.enum(['root','current','folder']),newFileFolderPath:z.string(),
  useMarkdownLinks:z.boolean(),newLinkFormat:z.enum(['shortest','relative','absolute']),userIgnoreFilters:z.array(z.string()),
  trashOption:z.enum(['local','system','none']),promptDelete:z.boolean(),deleteUnlinkedAttachments:z.enum(['ask','always','never']),
- showUnsupportedFiles:z.boolean(),readableLineLength:z.boolean(),mobileToolbarCommands:z.array(z.string()),deleteMode:z.enum(['trash','permanent']),
+ showUnsupportedFiles:z.boolean(),readableLineLength:z.boolean(),baseFontSize:z.number().finite().min(6).max(100),mobileToolbarCommands:z.array(z.string()),deleteMode:z.enum(['trash','permanent']),
 };
 export type VaultPreferences = {[K in keyof typeof preferenceSchemas]:z.infer<(typeof preferenceSchemas)[K]>};
 export type PreferenceSource = 'obsidian'|'webobsidian'|'default';
 export interface VaultPreferencesResult {values:VaultPreferences;sources:Record<keyof VaultPreferences,PreferenceSource>;warnings:string[];vaultPath:string;blocked?:{attachmentUpload?:string}}
 export const defaultVaultPreferences:VaultPreferences = {
  attachmentFolderPath:'./attachments',alwaysUpdateLinks:false,newFileLocation:'root',newFileFolderPath:'',useMarkdownLinks:false,newLinkFormat:'shortest',
- userIgnoreFilters:[],trashOption:'local',promptDelete:true,deleteUnlinkedAttachments:'ask',showUnsupportedFiles:false,readableLineLength:true,mobileToolbarCommands:[],deleteMode:'trash',
+ userIgnoreFilters:[],trashOption:'local',promptDelete:true,deleteUnlinkedAttachments:'ask',showUnsupportedFiles:false,readableLineLength:true,baseFontSize:16,mobileToolbarCommands:[],deleteMode:'trash',
 };
 
-async function readAppSettings(vaultPath:string):Promise<{raw:Record<string,unknown>;exists:boolean}>{
+async function readAppSettings(vaultPath:string,name:'app.json'|'appearance.json'='app.json'):Promise<{raw:Record<string,unknown>;exists:boolean}>{
  try{
-  const file=path.join(vaultPath,'.obsidian','app.json');
+  const file=path.join(vaultPath,'.obsidian',name);
   const real=await fs.realpath(file);const root=await fs.realpath(vaultPath);const relative=path.relative(root,real);
   if(relative.startsWith('..'+path.sep)||relative==='..'||path.isAbsolute(relative))throw Error('configuration resolves outside the vault');
   const parsed:unknown=JSON.parse(await fs.readFile(real,'utf8'));
@@ -27,7 +27,7 @@ async function readAppSettings(vaultPath:string):Promise<{raw:Record<string,unkn
   return {raw:parsed as Record<string,unknown>,exists:true};
  }catch(error){
   if((error as NodeJS.ErrnoException).code==='ENOENT')return {raw:{},exists:false};
-  throw Object.assign(Error(`Could not read .obsidian/app.json: ${error instanceof Error?error.message:String(error)}`),{status:400});
+  throw Object.assign(Error(`Could not read .obsidian/${name}: ${error instanceof Error?error.message:String(error)}`),{status:400});
  }
 }
 function attachmentRule(app:{raw:Record<string,unknown>;exists:boolean},attachmentDir:string):string{
@@ -62,11 +62,19 @@ export async function getVaultPreferences(capturedVaultPath?:string):Promise<Vau
    warnings.push(blocked.attachmentUpload);
  }
  for(const key of Object.keys(preferenceSchemas) as (keyof VaultPreferences)[]){
-   if(key==='deleteMode'||key==='attachmentFolderPath'||!(key in raw))continue;
+   if(key==='deleteMode'||key==='attachmentFolderPath'||key==='baseFontSize'||!(key in raw))continue;
    const parsed=preferenceSchemas[key].safeParse(raw[key]);
    if(parsed.success){Object.assign(values,{[key]:parsed.data});sources[key]='obsidian';}
    else warnings.push(`Invalid .obsidian/app.json value for ${key}; ${sources[key]} fallback is active.`);
  }
+ try{
+   const appearance=await readAppSettings(vaultPath,'appearance.json');
+   if('baseFontSize' in appearance.raw){
+     const parsed=preferenceSchemas.baseFontSize.safeParse(appearance.raw.baseFontSize);
+     if(parsed.success){values.baseFontSize=parsed.data;sources.baseFontSize='obsidian'}
+     else warnings.push('Invalid .obsidian/appearance.json value for baseFontSize; default fallback is active.');
+   }
+ }catch(error){warnings.push(error instanceof Error?error.message:String(error))}
  if(settings.vault.followObsidianDeletion){
    // A malformed/missing deletion rule always uses recoverable trash.
    values.deleteMode=values.trashOption==='none'&&sources.trashOption==='obsidian'?'permanent':'trash';

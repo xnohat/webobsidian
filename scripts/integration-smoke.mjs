@@ -89,6 +89,10 @@ try {
   assert.equal(resolved.path, 'notes/attachments/document.pdf');
   const localNote = await (await request('/api/resolve?target=neighbor&from=notes/editable.md')).json();
   assert.equal(localNote.path, 'notes/neighbor.md', 'note embeds resolve beside their source before basename fallback');
+  for(const target of ['#^quote-block-target','#11. Section']){
+    const self=await(await request('/api/resolve?target='+encodeURIComponent(target)+'&from=notes/editable.md')).json();
+    assert.equal(self.path,'notes/editable.md','fragment-only links retain the actual current note identity');
+  }
   const secondNote = await (await request('/api/resolve?target=neighbor&from=second/root.md')).json();
   assert.equal(secondNote.path, 'second/neighbor.md');
   const document = await request(relative);

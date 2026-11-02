@@ -16,6 +16,7 @@ import {renderPublicCanvasHtml} from '../services/publicCanvasRendering.js';
 import { embedLinkPreviews } from '../services/linkpreview.js';
 import { publicMarkdownScript } from '../services/publicMarkdown.js';
 import { canvasDescription, canvasFirstImage, canvasViewerScript } from '../services/rendercanvas.js';
+import {getVaultPreferences} from '../services/vaultPreferences.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -58,6 +59,7 @@ function page(opts: {
   /** Skip the narrow markdown-preview column (used by the full-width canvas view). */
   bare?: boolean;
   shareId?:string;
+  baseFontSize?:number;
 }): string {
   const inner = opts.bare
     ? opts.body
@@ -76,7 +78,7 @@ ${opts.body}
 ${opts.head ?? ''}<style>${opts.css}</style>
 </head>
 <body>
-<div class="theme-light public-page${opts.bare ? ' public-canvas' : ''}"${opts.shareId?` data-public-share="${escapeHtml(opts.shareId)}"`:''}>
+<div class="theme-light public-page${opts.bare ? ' public-canvas' : ''}" style="--font-text-size:${opts.baseFontSize??16}px"${opts.shareId?` data-public-share="${escapeHtml(opts.shareId)}"`:''}>
 ${inner}
 </div>
 </body>
@@ -179,6 +181,7 @@ document.getElementById('unlock-form').addEventListener('submit', async (e) => {
         css,
         bare: isCanvas,
         shareId:share.id,
+        baseFontSize:(await getVaultPreferences()).values.baseFontSize,
         body: isCanvas
           ? `<div class="public-canvas-title">${escapeHtml(title)}</div>\n${html}\n${canvasViewerScript(res.locals.cspNonce)}\n${publicMarkdownScript(res.locals.cspNonce)}\n${await embedsScript(res.locals.cspNonce)}`
           : `<div class="inline-title">${escapeHtml(title)}</div>\n${html}\n${publicMarkdownScript(res.locals.cspNonce)}\n${await embedsScript(res.locals.cspNonce)}`,
@@ -196,5 +199,5 @@ sharePageRouter.get('/:id/canvas',asyncHandler(async(req,res)=>{
   if(!target||!/\.canvas$/i.test(target)){error(404,'This canvas is not available.');return}
   const title=target.split('/').pop()!.replace(/\.canvas$/i,'');
   const html=await renderPublicCanvasHtml(await vault.readFileText(target),target,share,child=>isUnlocked(req,child),resolveSharedAttachments);
-  res.type('html').send(page({title,css,bare:true,shareId:share.id,noindex:true,body:`<div class="public-canvas-title">${escapeHtml(title)}</div>\n${html}\n${canvasViewerScript(res.locals.cspNonce)}\n${publicMarkdownScript(res.locals.cspNonce)}\n${await embedsScript(res.locals.cspNonce)}`}));
+  res.type('html').send(page({title,css,bare:true,shareId:share.id,baseFontSize:(await getVaultPreferences()).values.baseFontSize,noindex:true,body:`<div class="public-canvas-title">${escapeHtml(title)}</div>\n${html}\n${canvasViewerScript(res.locals.cspNonce)}\n${publicMarkdownScript(res.locals.cspNonce)}\n${await embedsScript(res.locals.cspNonce)}`}));
 }));

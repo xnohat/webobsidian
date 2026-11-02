@@ -13,6 +13,7 @@ vi.mock('../services/vault.js',()=>({exists:async(p:string)=>fixture.files.has(p
 vi.mock('../services/shares.js',()=>({getActiveShare:async(id:string)=>fixture.enabled&&id==='token'?{id,path:'Folder/Host.md',enabled:true,...(fixture.locked?{passwordHash:'protected'}:{})}:fixture.children.find(s=>s.id===id&&s.enabled)??null,listShares:async()=>[{id:'token',path:'Folder/Host.md',enabled:fixture.enabled,createdAt:'fixture',...(fixture.locked?{passwordHash:'protected'}:{})},...fixture.children]}));
 vi.mock('../services/fileindex.js',()=>({resolveFile:()=>null,indexedFilePaths:()=>[...fixture.files.keys()]}));
 vi.mock('../services/linkpreview.js',()=>({embedLinkPreviews:async(html:string)=>html}));
+vi.mock('../services/vaultPreferences.js',()=>({getVaultPreferences:async()=>({values:{baseFontSize:19}})}));
 import {sharePageRouter} from './sharepage.js';
 
 let server:Server,base:string;
@@ -28,6 +29,7 @@ it('adds a separate read-only module while retaining SSR PDF and Canvas fallback
  const r=await fetch(base+'/share/token');const html=await r.text();expect(r.status).toBe(200);
  expect(html).toMatch(/type="module"[^>]+src="\/assets\/public-embeds-test.js"/);
  expect(html).toContain('data-public-share="token"');
+ expect(html).toContain('--font-text-size:19px');
  expect(html).toContain('class="pdf-embed"');expect(html).toContain('class="canvas-embed"');
  expect(html).not.toContain('/api/files');
 });
