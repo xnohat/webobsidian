@@ -1,0 +1,154 @@
+{
+  "observations": [
+    {
+      "name": "spaces",
+      "text": "parent\n    child\n        grandchild\nsibling",
+      "indicators": [
+        {
+          "line": 1,
+          "offset": 0,
+          "left": 376,
+          "top": 159.046875,
+          "position": "absolute",
+          "right": "0px",
+          "topStyle": "0px"
+        },
+        {
+          "line": 2,
+          "offset": 4,
+          "left": 412,
+          "top": 183.046875,
+          "position": "absolute",
+          "right": "0px",
+          "topStyle": "0px"
+        }
+      ],
+      "gutter": false
+    },
+    {
+      "name": "tabs",
+      "text": "parent\n\tchild\n\t\tgrandchild\nsibling",
+      "indicators": [
+        {
+          "line": 1,
+          "offset": 0,
+          "left": 376,
+          "top": 159.046875,
+          "position": "absolute",
+          "right": "0px",
+          "topStyle": "0px"
+        },
+        {
+          "line": 2,
+          "offset": 1,
+          "left": 412,
+          "top": 183.046875,
+          "position": "absolute",
+          "right": "0px",
+          "topStyle": "0px"
+        }
+      ],
+      "gutter": false
+    },
+    {
+      "name": "abapSpaces",
+      "text": "```abap\nroot\n    call( EXPORTING start\n        IMPORTING begin ).\n\n    call( EXPORTING end\n        IMPORTING finish ).\n```",
+      "indicators": [
+        {
+          "line": 2,
+          "offset": 0,
+          "left": 392,
+          "top": 180.046875,
+          "position": "absolute",
+          "right": "0px",
+          "topStyle": "0px"
+        },
+        {
+          "line": 3,
+          "offset": 4,
+          "left": 423.5,
+          "top": 201.046875,
+          "position": "absolute",
+          "right": "0px",
+          "topStyle": "0px"
+        },
+        {
+          "line": 6,
+          "offset": 4,
+          "left": 423.5,
+          "top": 264.046875,
+          "position": "absolute",
+          "right": "0px",
+          "topStyle": "0px"
+        }
+      ],
+      "gutter": false
+    },
+    {
+      "name": "abapTabs",
+      "text": "```abap\nroot\n\tcall( EXPORTING start\n\t\tIMPORTING begin ).\n\n\tcall( EXPORTING end\n\t\tIMPORTING finish ).\n```",
+      "indicators": [
+        {
+          "line": 2,
+          "offset": 0,
+          "left": 392,
+          "top": 180.046875,
+          "position": "absolute",
+          "right": "0px",
+          "topStyle": "0px"
+        },
+        {
+          "line": 3,
+          "offset": 1,
+          "left": 423.5,
+          "top": 201.046875,
+          "position": "absolute",
+          "right": "0px",
+          "topStyle": "0px"
+        },
+        {
+          "line": 6,
+          "offset": 1,
+          "left": 423.5,
+          "top": 264.046875,
+          "position": "absolute",
+          "right": "0px",
+          "topStyle": "0px"
+        }
+      ],
+      "gutter": false
+    }
+  ],
+  "folded": {
+    "folds": [
+      {
+        "from": 2,
+        "to": 3
+      }
+    ],
+    "lines": 8
+  },
+  "beforeReopen": 1,
+  "afterReopen": 1,
+  "keyboard": {
+    "typed": [
+      {
+        "spacesTyped": 1,
+        "text": "parent\n child"
+      },
+      {
+        "spacesTyped": 2,
+        "text": "parent\n  child"
+      },
+      {
+        "spacesTyped": 3,
+        "text": "parent\n   child"
+      },
+      {
+        "spacesTyped": 4,
+        "text": "parent\n    child"
+      }
+    ],
+    "afterTab": "parent\n\t    child"
+  }
+}

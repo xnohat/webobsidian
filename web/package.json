@@ -12,15 +12,19 @@
   "dependencies": {
     "@codemirror/commands": "^6.7.1",
     "@codemirror/lang-markdown": "^6.3.1",
+    "@codemirror/lang-yaml": "^6.1.3",
     "@codemirror/language": "^6.10.6",
     "@codemirror/language-data": "^6.5.2",
+    "@codemirror/legacy-modes": "^6.5.5",
+    "@codemirror/merge": "6.12.3",
     "@codemirror/search": "^6.7.0",
     "@codemirror/state": "^6.4.1",
     "@codemirror/theme-one-dark": "^6.1.2",
     "@codemirror/view": "^6.34.2",
     "d3-force": "^3.0.0",
-    "katex": "^0.17.0",
-    "mermaid": "^11.15.0",
+    "katex": "0.18.10",
+    "pdfjs-dist": "5.4.624",
+    "pele": "1.8.0",
     "pixi.js": "^8.19.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -39,8 +43,9 @@
     "@types/katex": "^0.16.8",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.3",
+    "@vitejs/plugin-react": "^4.7.0",
+    "postcss": "8.5.32",
     "typescript": "^5.6.3",
-    "vite": "^5.4.11"
+    "vite": "^6.4.5"
   }
 }

@@ -1,6 +1,11 @@
 import { EditorView, ViewPlugin, ViewUpdate, keymap } from '@codemirror/view';
 import { Prec } from '@codemirror/state';
 import { prepareQuery, fuzzySearch, fuzzySearchPath, type FuzzyMatch } from './fuzzy';
+import { themedPopupHost } from './theme';
+import { formatInternalLink, isUserIgnored } from './vaultLinks';
+import { getCachedVaultPreferences } from './vaultPreferences';
+import { isSupportedVaultFile } from './media';
+import { useStore } from './store';
 
 /**
  * Editor suggesters (docs §9):
@@ -27,6 +32,8 @@ interface Item {
   note?: string; // secondary text (folder path)
   insert: string; // text replacing the query
   match: FuzzyMatch;
+  path?: string;
+  ignored?: boolean;
 }
 
 interface Ctx {
@@ -68,7 +75,9 @@ function computeItems(ctx: Ctx): Item[] {
   const pq = prepareQuery(ctx.query);
   const out: Item[] = [];
   if (ctx.mode === 'link') {
+    const preferences = getCachedVaultPreferences().values;
     for (const path of linkFiles()) {
+      if (!preferences.showUnsupportedFiles && !isSupportedVaultFile(path,useStore.getState().codeFileViewer)) continue;
       const target = path.replace(/\.md$/i, '');
       const m = ctx.query ? fuzzySearchPath(pq, target) : { score: 0, matches: [] as [number, number][] };
       if (!m) continue;
@@ -78,6 +87,8 @@ function computeItems(ctx: Ctx): Item[] {
         note: slash >= 0 ? target.slice(0, slash) : undefined,
         insert: target,
         match: m,
+        path,
+        ignored: isUserIgnored(path, preferences.userIgnoreFilters),
       });
     }
   } else {
@@ -87,7 +98,7 @@ function computeItems(ctx: Ctx): Item[] {
       out.push({ label: tag, insert: tag, match: m });
     }
   }
-  out.sort((x, y) => y.match.score - x.match.score);
+  out.sort((x, y) => Number(x.ignored ?? false) - Number(y.ignored ?? false) || y.match.score - x.match.score);
   return out.slice(0, 20);
 }
 
@@ -142,8 +153,10 @@ class SuggestState {
     if (!this.dom) {
       this.dom = document.createElement('div');
       this.dom.className = 'suggestion-container';
-      const host = (document.querySelector('.theme-light, .theme-dark') as HTMLElement) ?? document.body;
-      host.appendChild(this.dom);
+      // Mount inside the themed root (never `<body>`): the popup's CSS reads palette
+      // variables, which are declared on that wrapper — off it, the text renders black
+      // on the dark themes (see `themedPopupHost`).
+      themedPopupHost().appendChild(this.dom);
     }
     const dom = this.dom;
     dom.textContent = '';
@@ -215,9 +228,11 @@ class SuggestState {
       // consume a `]]` the user (or auto-pair) already typed after the cursor
       const after = view.state.sliceDoc(head, head + 2);
       const extra = after === ']]' ? 2 : 0;
+      const insert = formatInternalLink({ sourcePath: useStore.getState().activePath, targetPath: item.path!, embed: ctx.embed, preferences: getCachedVaultPreferences().values, knownPaths: linkFiles() });
+      const from = ctx.from - (ctx.embed ? 3 : 2);
       view.dispatch({
-        changes: { from: ctx.from, to: head + extra, insert: `${item.insert}]]` },
-        selection: { anchor: ctx.from + item.insert.length + 2 },
+        changes: { from, to: head + extra, insert },
+        selection: { anchor: from + insert.length },
         userEvent: 'input.complete',
       });
     } else {

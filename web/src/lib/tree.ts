@@ -1,5 +1,10 @@
 import type { TreeNode } from './api';
 
+export function treeFilePaths(root: TreeNode | null): string[] {
+  if (!root) return [];
+  return root.type === 'file' ? [root.path] : (root.children ?? []).flatMap(treeFilePaths);
+}
+
 /** Find a node by its vault-relative path anywhere in the tree (null if absent). */
 export function findNode(root: TreeNode | null, path: string): TreeNode | null {
   if (!root || !path) return null;

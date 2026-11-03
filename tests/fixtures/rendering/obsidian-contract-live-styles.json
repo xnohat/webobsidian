@@ -1,0 +1,15 @@
+{
+  "state": {
+    "file": "Contract.md",
+    "mode": "source",
+    "source": false
+  },
+  ".cm-content": {
+    "fontSize": "16px",
+    "lineHeight": "24px",
+    "fontWeight": "400"
+  },
+  "code": [],
+  "text": "Contract\nContract\nIS_PERIOD-BEGIN\nIS_PERIOD-END\n\n\n<LS_BEN>-IS_BENEFIT1_APPROVE-IS_ASSIGNMENT_PARAMS-IS_CONTRACTS_INFO-IS_WORKER_CONTRACT\nIS_PERIOD\nFLAG_ACT\n\n\n<LS_BEN>-IS_BENEFIT1_APPROVE-IS_ASSIGNMENT_PARAMS-IS_GPH_CONTRACT\nIS_PERIOD\n\n\n<LS_BEN>-IS_BENEFIT1_APPROVE-IS_ASSIGNMENT_PARAMS-IS_CONTRACTS_INFO-IS_WORKER_AND_GPH\nIIS_WORKER_CONTRACT\nIS_GPH_CONTRACT\n\n",
+  "contentHtml": "<div class=\"cm-line cm-active\" dir=\"auto\"><img class=\"cm-widgetBuffer\" aria-hidden=\"true\"><span contenteditable=\"false\"></span><img class=\"cm-widgetBuffer\" aria-hidden=\"true\"></div><div class=\"cm-line\" dir=\"ltr\">IS_PERIOD-BEGIN</div><div class=\"cm-line\" dir=\"ltr\">IS_PERIOD-END</div><div class=\"cm-line\" dir=\"ltr\"><br></div><div class=\"cm-line\" dir=\"ltr\">&lt;LS_BEN&gt;-IS_BENEFIT1_APPROVE-IS_ASSIGNMENT_PARAMS-IS_CONTRACTS_INFO-IS_WORKER_CONTRACT</div><div class=\"cm-line\" dir=\"ltr\">IS_PERIOD</div><div class=\"cm-line\" dir=\"ltr\">FLAG_ACT</div><div class=\"cm-line\" dir=\"ltr\"><br></div><div class=\"cm-line\" dir=\"ltr\">&lt;LS_BEN&gt;-IS_BENEFIT1_APPROVE-IS_ASSIGNMENT_PARAMS-IS_GPH_CONTRACT</div><div class=\"cm-line\" dir=\"ltr\">IS_PERIOD</div><div class=\"cm-line\" dir=\"ltr\"><br></div><div class=\"cm-line\" dir=\"ltr\">&lt;LS_BEN&gt;-IS_BENEFIT1_APPROVE-IS_ASSIGNMENT_PARAMS-IS_CONTRACTS_INFO-IS_WORKER_AND_GPH</div><div class=\"cm-line\" dir=\"ltr\">IIS_WORKER_CONTRACT</div><div class=\"cm-line\" dir=\"ltr\">IS_GPH_CONTRACT<img class=\"cm-widgetBuffer\" aria-hidden=\"true\"><span contenteditable=\"false\"></span><img class=\"cm-widgetBuffer\" aria-hidden=\"true\"></div><div class=\"cm-line\" dir=\"ltr\"><br></div>"
+}

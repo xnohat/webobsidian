@@ -17,5 +17,5 @@ export function errorHandler(err: any, _req: Request, res: Response, _next: Next
   // authenticated remote URL) before this message hits the client OR the logs.
   const message = redactUrlCreds(err?.message ?? 'Internal Server Error');
   if (status >= 500) console.error('[error]', message, err?.stack ? `\n${redactUrlCreds(err.stack)}` : '');
-  res.status(status).json({ error: message });
+  res.status(status).json({ error: message,...(err?.code==='rename_confirmation_required'?{code:err.code,affectedCount:err.affectedCount}:err?.code==='rename_conflict'?{code:err.code,...(err.journalPath?{journalPath:err.journalPath}:{})}:{} ) });
 }

@@ -1,0 +1,386 @@
+[
+  {
+    "upstreamId": "editing-toolbar:editor-undo",
+    "nativeId": "editing-toolbar:editor-undo",
+    "group": "Top",
+    "label": "Undo Edit"
+  },
+  {
+    "upstreamId": "editing-toolbar:editor-redo",
+    "nativeId": "editing-toolbar:editor-redo",
+    "group": "Top",
+    "label": "Redo Edit"
+  },
+  {
+    "upstreamId": "editing-toolbar:toggle-format-brush",
+    "nativeId": "editing-toolbar:toggle-format-brush",
+    "group": "Top",
+    "label": "Format Brush"
+  },
+  {
+    "upstreamId": "editing-toolbar:format-eraser",
+    "nativeId": "editing-toolbar:format-eraser",
+    "group": "Top",
+    "label": "Clear Text Formatting"
+  },
+  {
+    "upstreamId": "editing-toolbar:header2-text",
+    "nativeId": "editing-toolbar:header2-text",
+    "group": "Top",
+    "label": "Header 2"
+  },
+  {
+    "upstreamId": "editing-toolbar:header3-text",
+    "nativeId": "editing-toolbar:header3-text",
+    "group": "Top",
+    "label": "Header 3"
+  },
+  {
+    "upstreamId": "editing-toolbar:header1-text",
+    "nativeId": "editing-toolbar:header1-text",
+    "group": "SubmenuCommands-header",
+    "label": "Header 1"
+  },
+  {
+    "upstreamId": "editing-toolbar:header4-text",
+    "nativeId": "editing-toolbar:header4-text",
+    "group": "SubmenuCommands-header",
+    "label": "Header 4"
+  },
+  {
+    "upstreamId": "editing-toolbar:header5-text",
+    "nativeId": "editing-toolbar:header5-text",
+    "group": "SubmenuCommands-header",
+    "label": "Header 5"
+  },
+  {
+    "upstreamId": "editing-toolbar:header6-text",
+    "nativeId": "editing-toolbar:header6-text",
+    "group": "SubmenuCommands-header",
+    "label": "Header 6"
+  },
+  {
+    "upstreamId": "editing-toolbar:toggle-bold",
+    "nativeId": "editing-toolbar:toggle-bold",
+    "group": "Top",
+    "label": "Bold"
+  },
+  {
+    "upstreamId": "editing-toolbar:toggle-italics",
+    "nativeId": "editing-toolbar:toggle-italics",
+    "group": "Top",
+    "label": "Italic"
+  },
+  {
+    "upstreamId": "editing-toolbar:toggle-strikethrough",
+    "nativeId": "editing-toolbar:toggle-strikethrough",
+    "group": "Top",
+    "label": "Strikethrough"
+  },
+  {
+    "upstreamId": "editing-toolbar:underline",
+    "nativeId": "editing-toolbar:underline",
+    "group": "Top",
+    "label": "Underline"
+  },
+  {
+    "upstreamId": "editing-toolbar:toggle-highlight",
+    "nativeId": "editing-toolbar:toggle-highlight",
+    "group": "Top",
+    "label": "Highlight"
+  },
+  {
+    "upstreamId": "editing-toolbar:get-plain-text",
+    "nativeId": "editing-toolbar:get-plain-text",
+    "group": "SubmenuCommands-text-tools",
+    "label": "Get Plain Text"
+  },
+  {
+    "upstreamId": "editing-toolbar:smart-symbols",
+    "nativeId": "editing-toolbar:smart-symbols",
+    "group": "SubmenuCommands-text-tools",
+    "label": "Full Half Converter"
+  },
+  {
+    "upstreamId": "editing-toolbar:insert-blank-lines",
+    "nativeId": "editing-toolbar:insert-blank-lines",
+    "group": "SubmenuCommands-text-tools",
+    "label": "Insert Blank Lines"
+  },
+  {
+    "upstreamId": "editing-toolbar:remove-blank-lines",
+    "nativeId": "editing-toolbar:remove-blank-lines",
+    "group": "SubmenuCommands-text-tools",
+    "label": "Remove Blank Lines"
+  },
+  {
+    "upstreamId": "editing-toolbar:split-lines",
+    "nativeId": "editing-toolbar:split-lines",
+    "group": "SubmenuCommands-text-tools",
+    "label": "Split Lines"
+  },
+  {
+    "upstreamId": "editing-toolbar:merge-lines",
+    "nativeId": "editing-toolbar:merge-lines",
+    "group": "SubmenuCommands-text-tools",
+    "label": "Merge Lines"
+  },
+  {
+    "upstreamId": "editing-toolbar:dedupe-lines",
+    "nativeId": "editing-toolbar:dedupe-lines",
+    "group": "SubmenuCommands-text-tools",
+    "label": "Dedupe Lines"
+  },
+  {
+    "upstreamId": "editing-toolbar:add-wrap",
+    "nativeId": "editing-toolbar:add-wrap",
+    "group": "SubmenuCommands-text-tools",
+    "label": "Add Prefix/Suffix"
+  },
+  {
+    "upstreamId": "editing-toolbar:number-lines",
+    "nativeId": "editing-toolbar:number-lines",
+    "group": "SubmenuCommands-text-tools",
+    "label": "Number Lines (Custom)"
+  },
+  {
+    "upstreamId": "editing-toolbar:remove-whitespace-trim",
+    "nativeId": "editing-toolbar:remove-whitespace-trim",
+    "group": "SubmenuCommands-text-tools",
+    "label": "Trim Line Ends"
+  },
+  {
+    "upstreamId": "editing-toolbar:remove-whitespace-compress",
+    "nativeId": "editing-toolbar:remove-whitespace-compress",
+    "group": "SubmenuCommands-text-tools",
+    "label": "Shrink Extra Spaces"
+  },
+  {
+    "upstreamId": "editing-toolbar:remove-whitespace-all",
+    "nativeId": "editing-toolbar:remove-whitespace-all",
+    "group": "SubmenuCommands-text-tools",
+    "label": "Remove All Whitespace"
+  },
+  {
+    "upstreamId": "editing-toolbar:list-to-table",
+    "nativeId": "editing-toolbar:list-to-table",
+    "group": "SubmenuCommands-text-tools",
+    "label": "List to Table"
+  },
+  {
+    "upstreamId": "editing-toolbar:table-to-list",
+    "nativeId": "editing-toolbar:table-to-list",
+    "group": "SubmenuCommands-text-tools",
+    "label": "Table to List"
+  },
+  {
+    "upstreamId": "editing-toolbar:extract-between",
+    "nativeId": "editing-toolbar:extract-between",
+    "group": "SubmenuCommands-text-tools",
+    "label": "Extract Between Strings"
+  },
+  {
+    "upstreamId": "editing-toolbar:editor-cut",
+    "nativeId": "editing-toolbar:editor-cut",
+    "group": "SubmenuCommands-lucdf3en5",
+    "label": "Cut"
+  },
+  {
+    "upstreamId": "editing-toolbar:editor-copy",
+    "nativeId": "editing-toolbar:editor-copy",
+    "group": "SubmenuCommands-lucdf3en5",
+    "label": "Copy"
+  },
+  {
+    "upstreamId": "editing-toolbar:editor-paste",
+    "nativeId": "editing-toolbar:editor-paste",
+    "group": "SubmenuCommands-lucdf3en5",
+    "label": "Paste"
+  },
+  {
+    "upstreamId": "editing-toolbar:editor:swap-line-down",
+    "nativeId": "editing-toolbar:editor:swap-line-down",
+    "group": "SubmenuCommands-lucdf3en5",
+    "label": "Swap Line Down"
+  },
+  {
+    "upstreamId": "editing-toolbar:editor:swap-line-up",
+    "nativeId": "editing-toolbar:editor:swap-line-up",
+    "group": "SubmenuCommands-lucdf3en5",
+    "label": "Swap Line Up"
+  },
+  {
+    "upstreamId": "editing-toolbar:editor:attach-file",
+    "nativeId": "editing-toolbar:editor:attach-file",
+    "group": "Top",
+    "label": "Attach File"
+  },
+  {
+    "upstreamId": "editing-toolbar:editor:insert-table",
+    "nativeId": "editing-toolbar:editor:insert-table",
+    "group": "Top",
+    "label": "Insert Table"
+  },
+  {
+    "upstreamId": "editing-toolbar:editor:cycle-list-checklist",
+    "nativeId": "editing-toolbar:editor:cycle-list-checklist",
+    "group": "Top",
+    "label": "Cycle List and Checklist"
+  },
+  {
+    "upstreamId": "editing-toolbar:editor:toggle-blockquote",
+    "nativeId": "editing-toolbar:editor:toggle-blockquote",
+    "group": "SubmenuCommands-luc8efull",
+    "label": "Blockquote"
+  },
+  {
+    "upstreamId": "editing-toolbar:insert-callout",
+    "nativeId": "editing-toolbar:insert-callout",
+    "group": "SubmenuCommands-luc8efull",
+    "label": "Callout"
+  },
+  {
+    "upstreamId": "editing-toolbar:superscript",
+    "nativeId": "editing-toolbar:superscript",
+    "group": "SubmenuCommands-mdcmder",
+    "label": "Superscript"
+  },
+  {
+    "upstreamId": "editing-toolbar:subscript",
+    "nativeId": "editing-toolbar:subscript",
+    "group": "SubmenuCommands-mdcmder",
+    "label": "Subscript"
+  },
+  {
+    "upstreamId": "editing-toolbar:editor:toggle-code",
+    "nativeId": "editing-toolbar:editor:toggle-code",
+    "group": "SubmenuCommands-mdcmder",
+    "label": "Inline Code"
+  },
+  {
+    "upstreamId": "editing-toolbar:codeblock",
+    "nativeId": "editing-toolbar:codeblock",
+    "group": "SubmenuCommands-mdcmder",
+    "label": "Code Block"
+  },
+  {
+    "upstreamId": "editing-toolbar:editor:insert-wikilink",
+    "nativeId": "editing-toolbar:editor:insert-wikilink",
+    "group": "SubmenuCommands-mdcmder",
+    "label": "Wikilink"
+  },
+  {
+    "upstreamId": "editing-toolbar:editor:insert-embed",
+    "nativeId": "editing-toolbar:editor:insert-embed",
+    "group": "SubmenuCommands-mdcmder",
+    "label": "Embed"
+  },
+  {
+    "upstreamId": "editing-toolbar:insert-link",
+    "nativeId": "editing-toolbar:insert-link",
+    "group": "SubmenuCommands-mdcmder",
+    "label": "Link"
+  },
+  {
+    "upstreamId": "editing-toolbar:hrline",
+    "nativeId": "editing-toolbar:hrline",
+    "group": "SubmenuCommands-mdcmder",
+    "label": "Horizontal Divider"
+  },
+  {
+    "upstreamId": "editing-toolbar:toggle-inline-math",
+    "nativeId": "editing-toolbar:toggle-inline-math",
+    "group": "SubmenuCommands-mdcmder",
+    "label": "Inline Math"
+  },
+  {
+    "upstreamId": "editing-toolbar:editor:insert-mathblock",
+    "nativeId": "editing-toolbar:editor:insert-mathblock",
+    "group": "SubmenuCommands-mdcmder",
+    "label": "MathBlock"
+  },
+  {
+    "upstreamId": "editing-toolbar:editor:toggle-checklist-status",
+    "nativeId": "editing-toolbar:editor:toggle-checklist-status",
+    "group": "SubmenuCommands-list",
+    "label": "Checklist"
+  },
+  {
+    "upstreamId": "editing-toolbar:renumber-ordered-list",
+    "nativeId": "editing-toolbar:renumber-ordered-list",
+    "group": "SubmenuCommands-list",
+    "label": "Renumber Ordered List"
+  },
+  {
+    "upstreamId": "editing-toolbar:toggle-numbered-list",
+    "nativeId": "editing-toolbar:toggle-numbered-list",
+    "group": "SubmenuCommands-list",
+    "label": "Ordered List"
+  },
+  {
+    "upstreamId": "editing-toolbar:toggle-bullet-list",
+    "nativeId": "editing-toolbar:toggle-bullet-list",
+    "group": "SubmenuCommands-list",
+    "label": "Unordered List"
+  },
+  {
+    "upstreamId": "editing-toolbar:undent-list",
+    "nativeId": "editing-toolbar:undent-list",
+    "group": "SubmenuCommands-list",
+    "label": "Unindent List"
+  },
+  {
+    "upstreamId": "editing-toolbar:indent-list",
+    "nativeId": "editing-toolbar:indent-list",
+    "group": "SubmenuCommands-list",
+    "label": "Indent list"
+  },
+  {
+    "upstreamId": "editing-toolbar:justify",
+    "nativeId": "editing-toolbar:justify",
+    "group": "SubmenuCommands-aligin",
+    "label": "Justify Text"
+  },
+  {
+    "upstreamId": "editing-toolbar:left",
+    "nativeId": "editing-toolbar:left",
+    "group": "SubmenuCommands-aligin",
+    "label": "Align Text Left"
+  },
+  {
+    "upstreamId": "editing-toolbar:center",
+    "nativeId": "editing-toolbar:center",
+    "group": "SubmenuCommands-aligin",
+    "label": "Center Text"
+  },
+  {
+    "upstreamId": "editing-toolbar:right",
+    "nativeId": "editing-toolbar:right",
+    "group": "SubmenuCommands-aligin",
+    "label": "Align Text Right"
+  },
+  {
+    "upstreamId": "editing-toolbar:change-font-color",
+    "nativeId": "editing-toolbar:change-font-color",
+    "group": "Top",
+    "label": "Change Font Color"
+  },
+  {
+    "upstreamId": "editing-toolbar:change-background-color",
+    "nativeId": "editing-toolbar:change-background-color",
+    "group": "Top",
+    "label": "Change Background Color"
+  },
+  {
+    "upstreamId": "editing-toolbar:fullscreen-focus",
+    "nativeId": "editing-toolbar:fullscreen-focus",
+    "group": "Top",
+    "label": "Fullscreen Focus Mode"
+  },
+  {
+    "upstreamId": "editing-toolbar:workplace-fullscreen-focus",
+    "nativeId": "editing-toolbar:workplace-fullscreen-focus",
+    "group": "Top",
+    "label": "Workplace Fullscreen"
+  }
+]

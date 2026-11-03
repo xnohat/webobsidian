@@ -1,7 +1,8 @@
 services:
   webobsidian:
     build: .
-    image: webobsidian:latest
+    # WO_IMAGE lets deploy.sh control the tag it builds, tags for rollback and runs.
+    image: ${WO_IMAGE:-webobsidian:latest}
     container_name: webobsidian
     restart: unless-stopped
     ports:
@@ -13,14 +14,23 @@ services:
       WEBOBSIDIAN_PASSWORD: ${WEBOBSIDIAN_PASSWORD:-}
       # File-watch mode: auto (native + polling fallback) | polling. See .env.example.
       WEBOBSIDIAN_WATCH: ${WEBOBSIDIAN_WATCH:-auto}
+      WEBOBSIDIAN_RECONCILE_INTERVAL_MS: ${WEBOBSIDIAN_RECONCILE_INTERVAL_MS:-60000}
+      WEBOBSIDIAN_HASH_AUDIT_INTERVAL_MS: ${WEBOBSIDIAN_HASH_AUDIT_INTERVAL_MS:-1800000}
       # Proxy trust. Default "true" (trust immediate hop) so X-Forwarded-Proto
       # HTTPS cookie detection works behind a reverse proxy. Not a rate-limit risk
       # (limiter keys on the TCP socket addr, not X-Forwarded-For). Set "false" only
       # for a directly-exposed instance with no proxy. See .env.example.
       TRUST_PROXY: ${TRUST_PROXY:-true}
+      # Header with the real client IP from the proxy in front (e.g. CF-Connecting-IP
+      # behind a Cloudflare tunnel) so the login limit is per visitor, not shared by
+      # everyone arriving via the proxy. Empty = key on the socket address.
+      CLIENT_IP_HEADER: ${CLIENT_IP_HEADER:-}
       VAULT_PATH: /vault
       DATA_DIR: /data
       ALLOWED_ROOTS: /vault
+      WEBOBSIDIAN_MCP_ENABLED: ${WEBOBSIDIAN_MCP_ENABLED:-false}
+      WEBOBSIDIAN_MCP_PUBLIC_URL: ${WEBOBSIDIAN_MCP_PUBLIC_URL:-}
+      WEBOBSIDIAN_MCP_ALLOWED_ORIGINS: ${WEBOBSIDIAN_MCP_ALLOWED_ORIGINS:-}
       NODE_ENV: production
     volumes:
       # Your vault on the host (VAULT_HOST_PATH in .env) → /vault in the container.
@@ -29,7 +39,11 @@ services:
       # Persisted settings.json + search index
       - webobsidian-data:/data
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8787/healthz"]
+      # IPv4 literal on purpose. Inside the container "localhost" resolves to ::1
+      # (IPv6) while the server binds 0.0.0.0 (IPv4 only), and busybox wget does not
+      # fall back to the next address — the probe then fails forever and the
+      # container reports "unhealthy" while the API serves every request normally.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8787/healthz"]
       interval: 30s
       timeout: 5s
       retries: 3

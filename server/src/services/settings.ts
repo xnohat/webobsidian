@@ -3,8 +3,15 @@ import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { z } from 'zod';
 import { config, SETTINGS_FILE } from '../config.js';
+import { isDefaultPasswordActive } from './password-policy.js';
 
 /** ---- Schema (PRD §6) ---------------------------------------------------- */
+
+export const LanguagePackSchema = z.object({
+  version: z.literal(1),
+  name: z.string().min(1).max(255),
+  text: z.string().max(5_000_000),
+});
 
 const ApiKeySchema = z.object({
   id: z.string(),
@@ -16,28 +23,64 @@ const ApiKeySchema = z.object({
   lastUsed: z.string().nullable().default(null),
 });
 
+// Keep toolbar validation local to this field: a damaged toolbar must never reset
+// authentication, vault paths or other settings when loading an existing file.
+const ToolbarIconSchema = z.enum(['command','undo','redo','bold','italic','heading','palette','code','link','list','quote','paperclip','check-square','brackets','pencil','menu','more-horizontal','align-left','align-center','align-right','indent-increase','indent-decrease','hash','minus','columns','rows','crosshair','file-text','settings','paintbrush','eraser','type','strikethrough','underline','highlighter','maximize','table','copy','scissors','clipboard','arrow-up','arrow-down','list-ordered','message-square','superscript','subscript','align-justify']).catch('command');
+const ToolbarColorSchema = z.string().regex(/^#[\da-f]{6}(?:[\da-f]{2})?$/i).transform(v=>v.toLowerCase());
+type EditingToolbarNode =
+  | {type:'separator';instanceId:string}
+  | {type:'command';instanceId:string;commandId:string;label?:string;icon?:string;disabled?:boolean;disabledReason?:string}
+  | {type:'group';instanceId:string;label:string;icon?:string;style?:'menu'|'compact';children:EditingToolbarNode[]};
+function toolbarNodeSchema(depth:number):z.ZodType<EditingToolbarNode> {
+  const instanceId=z.string().min(1).max(160);
+  const command=z.object({type:z.literal('command'),instanceId,commandId:z.string().min(1).max(240),label:z.string().max(120).optional(),icon:ToolbarIconSchema.optional(),disabled:z.boolean().optional(),disabledReason:z.string().max(240).optional()});
+  const separator=z.object({type:z.literal('separator'),instanceId});
+  if(depth>=3)return z.union([command,separator]);
+  return z.union([command,separator,z.object({type:z.literal('group'),instanceId,label:z.string().max(120),icon:ToolbarIconSchema.optional(),style:z.enum(['menu','compact']).optional(),children:z.array(toolbarNodeSchema(depth+1)).max(200)})]);
+}
+const ToolbarLayoutSchema=z.object({
+  enabled:z.boolean(),
+  items:z.array(toolbarNodeSchema(0)).max(200).refine(items=>{
+    const count=(nodes:EditingToolbarNode[]):number=>nodes.reduce((sum,n)=>sum+1+(n.type==='group'?count(n.children):0),0);
+    return count(items)<=200;
+  },'At most 200 items per layout'),
+  position:z.object({x:z.number().min(0).max(1),y:z.number().min(0).max(1)}).optional(),
+});
+export const EditingToolbarSchema=z.object({
+  version:z.literal(1),
+  layouts:z.object({top:ToolbarLayoutSchema.optional().catch(undefined),following:ToolbarLayoutSchema.optional().catch(undefined),fixed:ToolbarLayoutSchema.optional().catch(undefined),mobile:ToolbarLayoutSchema.optional().catch(undefined)}),
+  appearance:z.object({iconSize:z.number().min(12).max(32).optional(),density:z.enum(['comfortable','compact']).optional(),showLabels:z.boolean().optional(),tooltips:z.boolean().optional(),overflow:z.enum(['menu','scroll','wrap']).optional(),style:z.enum(['standard','compact']).optional(),backgroundColor:ToolbarColorSchema.optional().catch(undefined),iconColor:ToolbarColorSchema.optional().catch(undefined)}).optional(),
+  customCommands:z.array(z.object({id:z.string().max(120).regex(/^custom:[\w:-]+$/),label:z.string().min(1).max(120),icon:ToolbarIconSchema,prefix:z.string().max(4096),suffix:z.string().max(4096)})).max(100).refine(items=>new Set(items.map(i=>i.id)).size===items.length,'Custom command IDs must be unique').optional(),
+  customColors:z.array(ToolbarColorSchema).max(100).optional(),
+});
+
+export const CodeFileViewerSchema=z.object({enabled:z.boolean(),lineNumbers:z.boolean(),extensionMap:z.record(z.string().max(64).regex(/^[a-z0-9_+-]+$/).refine(v=>!/^(md|markdown|canvas|pdf|png|jpe?g|gif|svg|webp|bmp|ico|avif|mp4|webm|ogv|mov|mkv|mp3|wav|m4a|3gp|flac|ogg|oga|opus|docx?|xlsx?|pptx?|odt|ods|odp|rtf|zip|7z|tar|gz|tgz|bz2|xz|__proto__|constructor|prototype)$/.test(v)),z.string().min(1).max(64).regex(/^[a-z0-9_+-]+$/)).refine(m=>Object.keys(m).length<=256)});
 const SettingsSchema = z.object({
   version: z.number().default(1),
   auth: z
     .object({
-      // Mật khẩu người dùng đã đổi. Rỗng = đang dùng mật khẩu mặc định (123456).
+      // The user's chosen password. Empty = still on the default password (123456).
       userPasswordHash: z.string().default(''),
-      // Mật khẩu override để khôi phục khi quên pass (sửa tay vào file). Rỗng = không có.
+      // Recovery/override password for a forgotten password (set by hand in the file). Empty = none.
       passwordHash: z.string().default(''),
       jwtSecret: z.string().default(''),
     })
-    .default({}),
+    .prefault({}),
   vault: z
     .object({
       path: z.string().default(''),
       allowedRoots: z.array(z.string()).default([]),
       trash: z.string().default('.trash'),
-      // Xoá file: 'trash' = chuyển vào thư mục .trash (khôi phục được);
-      // 'permanent' = xoá vĩnh viễn ngay.
+      // Delete behavior: 'trash' = move into the .trash folder (recoverable);
+      // 'permanent' = delete immediately and permanently.
       deleteMode: z.enum(['trash', 'permanent']).default('trash'),
+      followObsidianDeletion: z.boolean().default(false),
+      // Số ngày giữ item trong .trash (tính từ lúc item được chuyển vào trash) trước khi
+      // tự xoá vĩnh viễn. 0 = giữ mãi, không tự dọn.
+      trashRetentionDays: z.number().int().min(0).max(3650).default(0),
       attachmentDir: z.string().default('attachments'),
     })
-    .default({}),
+    .prefault({}),
   git: z
     .object({
       enabled: z.boolean().default(false),
@@ -53,32 +96,46 @@ const SettingsSchema = z.object({
         .array(z.string())
         .default(['*.png', '*.jpg', '*.jpeg', '*.gif', '*.pdf', '*.mp4', '*.mov', '*.zip']),
     })
-    .default({}),
+    .prefault({}),
   search: z
     .object({
       fuzzy: z.number().default(0.2),
       prefix: z.boolean().default(true),
       indexFrontmatter: z.boolean().default(true),
     })
-    .default({}),
+    .prefault({}),
   api: z
     .object({
       keys: z.array(ApiKeySchema).default([]),
       rateLimitPerMin: z.number().default(120),
     })
-    .default({}),
+    .prefault({}),
   ui: z
     .object({
-      theme: z.enum(['obsidian-dark', 'obsidian-light']).default('obsidian-light'),
+      theme: z
+        .enum([
+          'obsidian-dark',
+          'obsidian-light',
+          'catppuccin-mocha',
+          'catppuccin-macchiato',
+          'catppuccin-frappe',
+          'catppuccin-latte',
+        ])
+        .default('obsidian-light'),
       defaultView: z.enum(['live', 'source', 'reading']).default('live'),
+      // Obsidian's "Show inline title": the filename rendered above the note body.
+      showInlineTitle: z.boolean().default(true),
+      codeFileViewer: CodeFileViewerSchema.optional().catch(undefined),
+      editingToolbar: EditingToolbarSchema.optional().catch(undefined),
+      languagePack: LanguagePackSchema.nullable().optional().catch(undefined),
     })
-    .default({}),
+    .prefault({}),
   plugins: z
     .object({
       enabled: z.array(z.string()).default([]),
       installed: z.array(z.string()).default([]),
     })
-    .default({}),
+    .prefault({}),
 });
 
 export type Settings = z.infer<typeof SettingsSchema>;
@@ -87,6 +144,8 @@ export type ApiKeyRecord = z.infer<typeof ApiKeySchema>;
 /** ---- Store --------------------------------------------------------------- */
 
 let cache: Settings | null = null;
+let loading: Promise<Settings> | null = null;
+let updates: Promise<unknown> = Promise.resolve();
 
 function defaults(): Settings {
   const base = SettingsSchema.parse({});
@@ -132,25 +191,33 @@ async function persist(s: Settings): Promise<void> {
   } catch {
     /* no previous file */
   }
-  await fs.rename(tmp, SETTINGS_FILE);
+  try { await fs.rename(tmp, SETTINGS_FILE); }
+  finally { await fs.rm(tmp, { force: true }).catch(() => undefined); }
 }
 
 export async function loadSettings(): Promise<Settings> {
   if (cache) return cache;
+  if (loading) return loading;
+  loading = initializeSettings();
+  try { return await loading; } finally { loading = null; }
+}
+
+async function initializeSettings(): Promise<Settings> {
   await ensureDataDir();
+  let parsed: Settings;
+  let dirty = false;
   try {
     const raw = await fs.readFile(SETTINGS_FILE, 'utf8');
-    const parsed = SettingsSchema.parse(JSON.parse(raw));
+    parsed = SettingsSchema.parse(JSON.parse(raw));
     // Backfill secrets that may be empty in older files.
-    let dirty = false;
     if (!parsed.auth.jwtSecret) {
       parsed.auth.jwtSecret = randomBytes(48).toString('hex');
       dirty = true;
     }
-    // Migration: trước đây `passwordHash` là mật khẩu đăng nhập. Mô hình mới coi
-    // `passwordHash` là mật khẩu override và `userPasswordHash` là pass đăng nhập
-    // (rỗng = mặc định 123456). Để file cũ không bị backdoor bằng 123456, chuyển
-    // pass cũ sang `userPasswordHash` rồi xoá field override.
+    // Migration: `passwordHash` used to be the login password. The new model treats
+    // `passwordHash` as the override and `userPasswordHash` as the login password
+    // (empty = default 123456). So an old file can't be backdoored via 123456, move
+    // the old password into `userPasswordHash` and clear the override field.
     if (parsed.auth.passwordHash && !parsed.auth.userPasswordHash) {
       parsed.auth.userPasswordHash = parsed.auth.passwordHash;
       parsed.auth.passwordHash = '';
@@ -158,12 +225,12 @@ export async function loadSettings(): Promise<Settings> {
     }
     // Heal older files whose allowedRoots predate the current vault path.
     if (ensureVaultBrowsable(parsed)) dirty = true;
-    cache = parsed;
-    if (dirty) await persist(cache);
   } catch {
-    cache = defaults();
-    await persist(cache);
+    parsed = defaults();
+    dirty = true;
   }
+  if (dirty) await persist(parsed);
+  cache = parsed;
   return cache;
 }
 
@@ -175,13 +242,17 @@ export async function getSettings(): Promise<Settings> {
 export async function updateSettings(
   mutator: (draft: Settings) => void | Promise<void>,
 ): Promise<Settings> {
-  const current = await getSettings();
-  const draft: Settings = JSON.parse(JSON.stringify(current));
-  await mutator(draft);
-  const validated = SettingsSchema.parse(draft);
-  cache = validated;
-  await persist(validated);
-  return validated;
+  const next = updates.then(async () => {
+    const current = await getSettings();
+    const draft: Settings = JSON.parse(JSON.stringify(current));
+    await mutator(draft);
+    const validated = SettingsSchema.parse(draft);
+    await persist(validated);
+    cache = validated;
+    return validated;
+  });
+  updates = next.catch(() => undefined);
+  return next;
 }
 
 /** Redact secrets for sending to the client. */
@@ -189,8 +260,11 @@ export function redactSettings(s: Settings) {
   return {
     ...s,
     auth: {
-      // hasCustomPassword=false nghĩa là đang dùng mật khẩu mặc định (123456).
-      hasCustomPassword: Boolean(s.auth.userPasswordHash),
+      // hasCustomPassword=false means the instance is still on the default
+      // password (123456). Shares one condition with checkPassword: once an
+      // override is configured (auth.passwordHash / WEBOBSIDIAN_PASSWORD) the
+      // default no longer works, so the UI must stop warning that it does.
+      hasCustomPassword: !isDefaultPasswordActive(s.auth),
       hasOverridePassword: Boolean(s.auth.passwordHash),
     },
     git: { ...s.git, token: s.git.token ? '••••••••' : '' },

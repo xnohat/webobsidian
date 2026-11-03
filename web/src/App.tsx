@@ -1,6 +1,9 @@
+import {t as uiText, useLanguage} from "./lib/i18n/runtime";
+import DraftRecovery from './components/DraftRecovery';
+import {loadServerLanguage} from './lib/i18n/server';
 import { useEffect, useState } from 'react';
 import { api, ApiError } from './lib/api';
-import { useStore } from './lib/store';
+import { useStore,resetDraftScope } from './lib/store';
 import Login from './components/Login';
 import ForceChangePassword from './components/ForceChangePassword';
 import Ribbon from './components/Ribbon';
@@ -14,12 +17,25 @@ import VersionHistory from './components/VersionHistory';
 import TrashView from './components/TrashView';
 import ContextMenu from './components/ContextMenu';
 import FolderPicker from './components/FolderPicker';
-import { loadPlugins } from './lib/plugins';
-import { initUrlSync } from './lib/urlsync';
+import TemplatePicker from './components/TemplatePicker';
+import ConfirmDialog from './components/ConfirmDialog';
+import { loadPlugins,stopPlugins } from './lib/plugins';
+import { restoreWorkspaceFromUrl } from './lib/urlsync';
 import { useIsMobile } from './lib/useIsMobile';
+import { themeClass } from './lib/theme';
+import {applyIndexStatus,refreshIndexStatus,resetIndexStatus,useIndexStatus,indexStatusMessage} from './lib/indexStatus';
 
 export default function App() {
+  const languageRevision = useLanguage().revision;
+
   const authed = useStore((s) => s.authed);
+  useEffect(() => {
+    if (!authed) return;
+    const load = () => {void loadServerLanguage().catch(() => useStore.getState().notify('Could not load the server language. Open Language settings to retry.'));};
+    load();
+    window.addEventListener('focus',load);
+    return () => window.removeEventListener('focus',load);
+  },[authed]);
   const setAuthed = useStore((s) => s.setAuthed);
   const mustChangePassword = useStore((s) => s.mustChangePassword);
   const setMustChangePassword = useStore((s) => s.setMustChangePassword);
@@ -34,7 +50,9 @@ export default function App() {
   const save = useStore((s) => s.save);
   const toast = useStore((s) => s.toast);
   const [checking, setChecking] = useState(true);
-  const [theme, setTheme] = useState<'theme-dark' | 'theme-light'>('theme-light');
+  const {status:indexStatus}=useIndexStatus();
+  const theme = useStore((s) => s.theme);
+  const setTheme = useStore((s) => s.setTheme);
 
   useEffect(() => {
     api
@@ -50,36 +68,49 @@ export default function App() {
   }, [setAuthed, setMustChangePassword]);
 
   useEffect(() => {
-    if (!authed) return;
-    loadTree();
+    if (!authed) {resetDraftScope();resetIndexStatus();return;}
+    const treeReady=loadTree();
     // Deep link (/note/<path>) wins over the restored workspace's active note.
-    const deepLink = initUrlSync();
-    useStore
-      .getState()
-      .loadUiState() // restore workspace from server + open note(s)
-      .then(() => {
-        if (deepLink && deepLink !== useStore.getState().activePath) {
-          return useStore.getState().openFile(deepLink);
-        }
-      })
-      .catch(() => {});
+    const codeSettingsReady=api.getSettings().then(s=>{useStore.setState({codeFileViewer:s.ui.codeFileViewer??useStore.getInitialState().codeFileViewer});}).catch(()=>{useStore.setState({codeFileViewer:{...useStore.getInitialState().codeFileViewer,enabled:false}});useStore.getState().notify(uiText("webobsidian.could-not-load-code-viewer-settings-reload-to-re-f53504"),10000);});
+    const workspaceReady=restoreWorkspaceFromUrl(async()=>{
+      await codeSettingsReady;
+      await useStore.getState().loadUiState(true);
+    });
     api
       .getSettings()
-      .then((s) => setTheme(s?.ui?.theme === 'obsidian-dark' ? 'theme-dark' : 'theme-light'))
+      .then((s) => {
+        setTheme(themeClass(s?.ui?.theme));
+        useStore.getState().setShowInlineTitle(s?.ui?.showInlineTitle !== false);
+      })
       .catch(() => {});
     useStore.getState().loadShares(); // badge shared notes in the file tree
-    loadPlugins().catch(() => {});
-    // websocket live updates
+    const pluginReady=Promise.all([treeReady,workspaceReady]).then(()=>{if(!useStore.getState().tree)throw new Error('Vault tree could not be restored');});
+    void loadPlugins(pluginReady);
+    const pluginScopeChange=()=>{void stopPlugins().then(()=>loadPlugins(Promise.all([loadTree(),useStore.getState().loadUiState(true)])));};
+    window.addEventListener('draft-scope-change',pluginScopeChange);
+    // websocket live updates. Reconnects with backoff: the socket drops on every
+    // redeploy, laptop sleep or proxy idle-timeout, and without this live updates
+    // silently stopped until a full reload. After a reconnect the tree is reloaded
+    // once, since fs events may have been missed while disconnected.
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    const ws = new WebSocket(`${proto}://${location.host}/ws`);
+    let ws: WebSocket | undefined;
     let treeTimer: number | undefined;
-    ws.onmessage = (ev) => {
+    let retryTimer: number | undefined;
+    let retryDelay = 1000;
+    let hadConnection = false;
+    let closed = false;
+    const onMessage = (ev: MessageEvent) => {
+      if(closed)return;
       try {
         const msg = JSON.parse(ev.data);
         if (msg.type === 'fs') {
           // coalesce bursts of fs events into a single tree refresh
           window.clearTimeout(treeTimer);
           treeTimer = window.setTimeout(() => loadTree(), 800);
+          // let other views (e.g. the Tasks board) react to the raw event themselves
+          window.dispatchEvent(new CustomEvent('wo-fs', { detail: msg }));
+        } else if (msg.type === 'index') {
+          applyIndexStatus(msg.status);
         } else if (msg.type === 'uistate') {
           // another tab/device changed the workspace → sync live
           useStore.getState().applyRemoteState(msg.state, msg.originId);
@@ -88,9 +119,30 @@ export default function App() {
         /* ignore */
       }
     };
+    const connect = () => {
+      if (closed) return;
+      ws = new WebSocket(`${proto}://${location.host}/ws`);
+      ws.onopen = () => {
+        retryDelay = 1000;
+        refreshIndexStatus().catch(()=>{});
+        if (hadConnection) loadTree();
+        hadConnection = true;
+      };
+      ws.onmessage = onMessage;
+      ws.onclose = () => {
+        if (closed) return;
+        retryTimer = window.setTimeout(connect, retryDelay);
+        retryDelay = Math.min(retryDelay * 2, 30_000);
+      };
+    };
+    connect();
     return () => {
+      closed = true;
+      window.removeEventListener('draft-scope-change',pluginScopeChange);
+      void stopPlugins();
       window.clearTimeout(treeTimer);
-      ws.close();
+      window.clearTimeout(retryTimer);
+      ws?.close();
     };
   }, [authed, loadTree]);
 
@@ -173,8 +225,9 @@ export default function App() {
 
   return (
     <div className={theme}>
+      {indexStatusMessage(indexStatus)&&<div role="status" style={{position:'fixed',bottom:28,right:16,zIndex:60,maxWidth:360,padding:'6px 10px',background:'var(--background-secondary)',border:'1px solid var(--background-modifier-border)',borderRadius:6,fontSize:12}}>{indexStatusMessage(indexStatus)}</div>}
       <div className={appCls}>
-        <Ribbon onTheme={() => setTheme((t) => (t === 'theme-dark' ? 'theme-light' : 'theme-dark'))} />
+        <Ribbon onTheme={() => setTheme(theme === 'theme-dark' ? 'theme-light' : 'theme-dark')} />
         {showLeft && <Sidebar />}
         <Workspace />
         {showRight && <RightSidebar />}
@@ -189,6 +242,9 @@ export default function App() {
       <TrashView />
       <ContextMenu />
       <FolderPicker />
+      <TemplatePicker />
+      <ConfirmDialog />
+      <DraftRecovery />
       {toast && <div className="toast">{toast}</div>}
     </div>
   );

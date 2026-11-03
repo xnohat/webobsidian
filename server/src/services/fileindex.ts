@@ -13,6 +13,17 @@ const IGNORED = new Set(['.git', 'node_modules']);
 
 let byBasename = new Map<string, string>();
 let byBasenameNoExt = new Map<string, string>();
+let allPaths = new Set<string>();
+
+/** Complete inventory, including user-excluded files; never a search projection. */
+export function indexedFilePaths(): string[] { return [...allPaths]; }
+
+export function publishFilePaths(paths: string[]): void {
+  const maps = { b: new Map<string, string>(), bn: new Map<string, string>() };
+  allPaths = new Set(paths);
+  for (const rel of [...allPaths].sort()) record(maps, rel);
+  byBasename = maps.b; byBasenameNoExt = maps.bn;
+}
 
 function depth(p: string): number {
   return p.split('/').length;
@@ -30,23 +41,34 @@ function record(maps: { b: Map<string, string>; bn: Map<string, string> }, rel: 
 export async function buildFileIndex(): Promise<void> {
   const root = await getVaultRoot();
   const maps = { b: new Map<string, string>(), bn: new Map<string, string>() };
-  async function walk(dir: string) {
+  const paths = new Set<string>();
+  async function walk(dir: string, visited: Set<string>) {
     let entries;
     try {
       entries = await fs.readdir(dir, { withFileTypes: true });
     } catch {
       return;
     }
+    const key = await fs.realpath(dir).catch(() => dir);
+    if (visited.has(key)) return;
+    visited.add(key);
     for (const e of entries) {
       if (IGNORED.has(e.name) || e.name.startsWith('.')) continue;
       const abs = path.join(dir, e.name);
-      if (e.isDirectory()) await walk(abs);
-      else if (e.isFile()) record(maps, toRel(root, abs));
+      if (e.isDirectory()) await walk(abs, visited);
+      else if (e.isFile()) { const rel = toRel(root, abs); paths.add(rel); record(maps, rel); }
+      else if (e.isSymbolicLink()) {
+        const st = await fs.stat(abs).catch(() => null);
+        if (!st) continue;
+        if (st.isDirectory()) await walk(abs, visited);
+        else if (st.isFile()) { const rel = toRel(root, abs); paths.add(rel); record(maps, rel); }
+      }
     }
   }
-  await walk(root);
+  await walk(root, new Set());
   byBasename = maps.b;
   byBasenameNoExt = maps.bn;
+  allPaths = paths;
 }
 
 /** Resolve a link target (basename or partial path) to a real vault path. */
@@ -56,12 +78,11 @@ export function resolveFile(name: string): string | undefined {
 }
 
 export function indexFile(rel: string): void {
+  allPaths.add(rel);
   record({ b: byBasename, bn: byBasenameNoExt }, rel);
 }
 
 export function unindexFile(rel: string): void {
-  const name = (rel.split('/').pop() ?? rel).toLowerCase();
-  if (byBasename.get(name) === rel) byBasename.delete(name);
-  const noExt = name.replace(/\.[^.]+$/, '');
-  if (byBasenameNoExt.get(noExt) === rel) byBasenameNoExt.delete(noExt);
+  allPaths.delete(rel);
+  publishFilePaths([...allPaths]);
 }

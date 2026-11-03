@@ -1,0 +1,57 @@
+{
+  ".markdown-preview-view p": {
+    "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont, system-ui, \"Segoe UI\", \"Google Sans Flex\", Roboto, \"Inter Variable\", Inter, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", sans-serif",
+    "fontSize": "16px",
+    "fontWeight": "400",
+    "lineHeight": "24px",
+    "color": "rgb(218, 218, 218)",
+    "backgroundColor": "rgba(0, 0, 0, 0)",
+    "padding": "0px",
+    "margin": "16px 0px",
+    "borderLeftWidth": "0px"
+  },
+  ".markdown-preview-view h1": {
+    "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont, system-ui, \"Segoe UI\", \"Google Sans Flex\", Roboto, \"Inter Variable\", Inter, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", sans-serif",
+    "fontSize": "25.888px",
+    "fontWeight": "700",
+    "lineHeight": "31.0656px",
+    "color": "rgb(218, 218, 218)",
+    "backgroundColor": "rgba(0, 0, 0, 0)",
+    "padding": "0px",
+    "margin": "0px 0px 16px",
+    "borderLeftWidth": "0px"
+  },
+  ".markdown-preview-view h2": {
+    "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont, system-ui, \"Segoe UI\", \"Google Sans Flex\", Roboto, \"Inter Variable\", Inter, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", sans-serif",
+    "fontSize": "23.392px",
+    "fontWeight": "680",
+    "lineHeight": "28.0704px",
+    "color": "rgb(218, 218, 218)",
+    "backgroundColor": "rgba(0, 0, 0, 0)",
+    "padding": "0px",
+    "margin": "40px 0px 16px",
+    "borderLeftWidth": "0px"
+  },
+  ".markdown-preview-view th": {
+    "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont, system-ui, \"Segoe UI\", \"Google Sans Flex\", Roboto, \"Inter Variable\", Inter, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", sans-serif",
+    "fontSize": "16px",
+    "fontWeight": "600",
+    "lineHeight": "20.8px",
+    "color": "rgb(218, 218, 218)",
+    "backgroundColor": "rgba(0, 0, 0, 0)",
+    "padding": "4px 8px",
+    "margin": "0px",
+    "borderLeftWidth": "1px"
+  },
+  ".markdown-preview-view td": {
+    "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont, system-ui, \"Segoe UI\", \"Google Sans Flex\", Roboto, \"Inter Variable\", Inter, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", sans-serif",
+    "fontSize": "16px",
+    "fontWeight": "400",
+    "lineHeight": "20.8px",
+    "color": "rgb(218, 218, 218)",
+    "backgroundColor": "rgba(0, 0, 0, 0)",
+    "padding": "4px 8px",
+    "margin": "0px",
+    "borderLeftWidth": "1px"
+  }
+}

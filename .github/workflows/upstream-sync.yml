@@ -1,0 +1,73 @@
+name: Upstream PR sync check
+
+# Keeps the "sync later upstream PRs" follow-up from issue #2 turning into a manual chore:
+# once a week (and on demand) this checks every open PR on xnohat/webobsidian against this
+# fork's main and, only when something is genuinely new, opens or updates a single issue
+# labelled `upstream-sync`. No new PRs → no noise.
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    name: Any new upstream PRs?
+    # Preserve the source automation without scheduling issue creation in this fork.
+    if: github.repository == 'phamtruonghung/webobsidian'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      UPSTREAM_REPO: xnohat/webobsidian
+      # Pin gh to THIS repo. The status script adds a git remote named `upstream`
+      # (xnohat/webobsidian), and gh's repo inference prefers the parent-looking remote —
+      # without this, `gh issue create` tries to file the report on the upstream repo and
+      # fails with "could not add label" (it did, before this pin).
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the script compares upstream PR head commits against main
+
+      - name: Scan upstream PRs against main
+        id: scan
+        run: |
+          set +e
+          out="$(scripts/upstream-pr-status.sh --new-only 2>/dev/null)"
+          code=$?
+          set -e
+          printf '%s\n' "$out" > /tmp/new-prs.txt
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          echo "new PRs: $(grep -c . /tmp/new-prs.txt || true)"
+          cat /tmp/new-prs.txt
+
+      - name: Report new PRs as an issue (only when there are any)
+        if: steps.scan.outputs.exit_code == '1'
+        run: |
+          set -euo pipefail
+          {
+            echo "Open pull requests on \`xnohat/webobsidian\` that are **not** in this fork's \`main\` yet."
+            echo
+            echo '| PR | Author | Title |'
+            echo '|----|--------|-------|'
+            while IFS=$'\t' read -r n author title url; do
+              [ -n "${n:-}" ] || continue
+              printf '| [#%s](%s) | %s | %s |\n' "$n" "$url" "$author" "$title"
+            done < /tmp/new-prs.txt
+            echo
+            echo 'Sync one with `scripts/merge-upstream-pr.sh <n>`, then verify with `npm ci && npm test && npm run build` (see [docs/UPSTREAM_PR_MERGES.md](../blob/main/docs/UPSTREAM_PR_MERGES.md)).'
+          } > /tmp/body.md
+
+          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --label upstream-sync --state open \
+            --json number --jq '.[0].number // empty')"
+          if [[ -n "$existing" ]]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body-file /tmp/body.md
+            echo "commented on #$existing"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" \
+              --title "Upstream PR sync available" --label upstream-sync --body-file /tmp/body.md
+          fi

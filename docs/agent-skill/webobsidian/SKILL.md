@@ -69,11 +69,12 @@ for queries; encode `/`-containing paths in the URL path, e.g. `Notes/Ideas.md` 
 | Method | Path | Scope | Description |
 |--------|------|-------|-------------|
 | GET | `/api/v1/health` | – | Liveness check |
-| GET | `/api/v1/notes?offset=&limit=` | read | List markdown notes (paginated) |
-| GET | `/api/v1/notes/{path}` | read | Read a note + parsed metadata |
-| PUT | `/api/v1/notes/{path}` | write | Create / overwrite a note — body `{"content":"..."}` |
-| PATCH | `/api/v1/notes/{path}` | write | Append — body `{"append":"..."}` |
+| GET | `/api/v1/notes?offset=&limit=&sort=&order=&folder=` | read | List markdown notes (paginated; default newest-modified first) |
+| GET | `/api/v1/notes/{path}?offset=&limit=` | read | Read a note + parsed metadata + `version` (line-sliced when `limit` given) |
+| PUT | `/api/v1/notes/{path}` | write | Create / overwrite — body `{"content":"...","base_version":"..."}` |
+| PATCH | `/api/v1/notes/{path}` | write | Append (`{"append":"..."}`) **or** find/replace (`{"find":"...","replace":"..."}`) |
 | DELETE | `/api/v1/notes/{path}` | write | Move note to trash |
+| GET | `/api/v1/note-matches?path=&q=&case_sensitive=&limit=&context=` | read | Literal grep inside one note, with line numbers |
 | GET | `/api/v1/search?q=&limit=` | search | QMD search (fielded: `tag:`, `path:`, `title:`) |
 | GET | `/api/v1/backlinks?path=` | read | Notes linking to a path |
 | GET | `/api/v1/tags` | read | All tags with counts |
@@ -97,6 +98,21 @@ curl -s -X PATCH -H "X-API-Key: $KEY" -H 'Content-Type: application/json' \
   -d '{"append":"\n- another bullet"}' \
   "$BASE/api/v1/notes/Agent/Generated.md"
 
+# Edit one spot in an existing note, atomically (recommended for changes)
+# 1) read it — the response carries "version"
+curl -s -H "X-API-Key: *** "$BASE/api/v1/notes/Projects/Roadmap.md"
+# 2) locate the exact text (line numbers + context; literal, case-insensitive by default)
+curl -s -G -H "X-API-Key: *** "$BASE/api/v1/note-matches" \
+  --data-urlencode "path=Projects/Roadmap.md" --data-urlencode "q=Q3 owner" --data-urlencode "context=1"
+# 3) replace that literal string in place, guarded by the version you read
+curl -s -X PATCH -H "X-API-Key: *** -H 'Content-Type: application/json' \
+  -d '{"find":"Q3 owner: TBD","replace":"Q3 owner: Hung","base_version":"<version>"}' \
+  "$BASE/api/v1/notes/Projects/Roadmap.md"
+
+# Create a note only if it does not exist yet (base_version "")
+curl -s -X PUT -H "X-API-Key: *** -H 'Content-Type: application/json' \
+  -d '{"content":"# New\n\nBody.","base_version":""}' "$BASE/api/v1/notes/Agent/New.md"
+
 # Delete a note (→ trash)
 curl -s -X DELETE -H "X-API-Key: $KEY" "$BASE/api/v1/notes/Agent/Generated.md"
 
@@ -115,8 +131,14 @@ curl -s -H "X-API-Key: $KEY" "$BASE/api/v1/tags"
 
 ```jsonc
 // GET /api/v1/notes/{path}
-{ "path": "Welcome.md", "content": "...", "title": "Welcome",
+{ "path": "Welcome.md", "content": "...", "version": "9f2c1d4a8b3e0f77",
+  "totalLines": 512, "offset": 0, "limit": 80, "hasMore": true, "title": "Welcome",
   "frontmatter": { "tags": ["welcome"] }, "tags": ["welcome"], "links": ["Notes/Ideas"] }
+
+// GET /api/v1/note-matches?path=&q=
+{ "path": "Projects/Roadmap.md", "query": "Q3 owner", "count": 1, "truncated": false,
+  "matches": [ { "line": 214, "text": "Q3 owner: TBD", "ranges": [{ "start": 0, "end": 8 }],
+                 "pre": "…", "post": "…" } ] }
 
 // GET /api/v1/search
 { "query": "graph", "hits": [
@@ -213,9 +235,21 @@ graph TD
 
 ## Editing rules
 
-- **Prefer `PATCH` append** over `PUT` when only adding content, so you don't clobber a note.
+- **Read, then write with `base_version`.** Every read returns the note's `version`; pass it as
+  `base_version` on the next `PUT`/`PATCH`. If someone (the user, another agent) edited in between,
+  the call fails with `409 version_conflict` + `currentVersion` — re-read and redo the change instead
+  of retrying blind. `base_version: ""` means "this note must not exist yet".
+- **Prefer `PATCH {"find","replace"}` for changes to an existing note** — it edits in place, so a
+  stale copy can never be written back, and it leaves the rest of the file (frontmatter, formatting,
+  the user's own edits) untouched. Matching is literal: no regex, and `$&`/`$1` in the replacement are
+  just characters. `409 find_ambiguous` (+ `count`) means the string occurs more than once — add
+  surrounding context or set `"replaceAll": true`; `409 find_not_found` means the note changed or the
+  text is not there.
+- **Prefer `PATCH` append** over a full `PUT` when only adding content at the end.
 - **Read before you overwrite** an existing note unless the user explicitly wants a fresh
   replace; preserve its frontmatter and formatting.
+- For a long note, page it (`?offset=&limit=` are line numbers) and locate the target with
+  `/note-matches` rather than pulling the whole file into context.
 - Paths are **case-sensitive** and notes must include the `.md` extension.
 - When you reference another note, link it (`[[Other Note]]`) instead of writing a bare name —
   it keeps the graph and backlinks intact.
@@ -227,4 +261,10 @@ graph TD
   scope (`read`/`write`/`search`).
 - `404` on a note → wrong path/casing, or it's in `.trash`.
 - `429` → rate limited → wait and retry.
+- `409 version_conflict` → the note changed since your read → re-read (the response's
+  `currentVersion` is the version to use) and reapply your change.
+- `409 find_ambiguous` / `409 find_not_found` → your `find` text is too generic or gone →
+  `grep_note`/`/note-matches` for the exact surrounding text and retry.
+- `400 missing_base_version` → this instance runs in strict mode → always send `base_version`
+  (use `""` when creating a note).
 - Connection refused / TLS error → confirm the base URL and that the server is reachable.

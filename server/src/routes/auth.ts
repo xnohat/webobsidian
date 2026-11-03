@@ -4,6 +4,7 @@ import { COOKIE_NAME, requireAuth } from '../middleware/auth.js';
 import {
   isPasswordSet,
   hasCustomPassword,
+  hasOverridePassword,
   setUserPassword,
   checkPassword,
   changePassword,
@@ -35,8 +36,12 @@ function cookieOpts(req: Request) {
 authRouter.get(
   '/status',
   asyncHandler(async (_req, res) => {
-    // mustChangePassword=true ⇒ still on the default 123456; the UI forces a change.
-    res.json({ passwordSet: await isPasswordSet(), mustChangePassword: !(await hasCustomPassword()) });
+    // Do NOT report `mustChangePassword` here. This route needs no auth, so the
+    // flag was a public oracle for "this instance still accepts 123456": a port
+    // scan was enough to find every takeable deployment.
+    // The client only reads `passwordSet` from here (web/src/components/Login.tsx);
+    // the flag is available post-login on /auth/login and /auth/me.
+    res.json({ passwordSet: await isPasswordSet() });
   }),
 );
 
@@ -86,7 +91,12 @@ authRouter.post(
   loginRateLimit,
   asyncHandler(async (req, res) => {
     const { password } = req.body ?? {};
-    if (typeof password !== 'string' || !(await checkPassword(password))) {
+    // The well-known default (123456) is only accepted at login when no operator
+    // override is configured. Once WEBOBSIDIAN_PASSWORD / auth.passwordHash exists,
+    // login requires it (or the user's own password). change-password stays lenient
+    // so the first-run "set a password" flow still works under an override.
+    const allowDefault = !(await hasOverridePassword());
+    if (typeof password !== 'string' || !(await checkPassword(password, { allowDefault }))) {
       res.status(401).json({ error: 'Invalid password' });
       return;
     }

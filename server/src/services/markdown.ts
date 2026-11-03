@@ -20,7 +20,10 @@ export function parseNote(rel: string, raw: string): ParsedNote {
   let frontmatter: Record<string, unknown> = {};
   let body = raw;
   try {
-    const fm = matter(raw);
+    // gray-matter's default process-wide cache retains every body and every
+    // historical edit indefinitely. Indexing owns its cache; explicit options
+    // bypass gray-matter's cache without changing parser behavior.
+    const fm = matter(raw, {});
     frontmatter = (fm.data ?? {}) as Record<string, unknown>;
     body = fm.content;
   } catch {

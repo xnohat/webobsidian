@@ -1,0 +1,67 @@
+{
+  "obsidianVersion": "1.14.5",
+  "textLayerOpacity": 0.2,
+  "openInNewTabPreservesSelection": true,
+  "source": "scripts/capture-obsidian-pdf-fragments.mjs",
+  "cases": [
+    {
+      "name": "multi",
+      "fragment": "#page=2&selection=0,7,1,7",
+      "highlights": [
+        {
+          "text": "PDF page",
+          "background": "rgb(255, 208, 0)",
+          "border": "0px none rgba(0, 0, 0, 0)"
+        },
+        {
+          "text": "Another",
+          "background": "rgb(255, 208, 0)",
+          "border": "0px none rgba(0, 0, 0, 0)"
+        }
+      ]
+    },
+    {
+      "name": "selection",
+      "fragment": "#page=2&selection=0,0,0,6",
+      "highlights": [
+        {
+          "text": "Second",
+          "background": "rgb(255, 208, 0)",
+          "border": "0px none rgba(0, 0, 0, 0)"
+        }
+      ]
+    },
+    {
+      "name": "annotation",
+      "fragment": "#page=2&annotation=8R",
+      "highlights": [
+        {
+          "text": "",
+          "background": "rgba(255, 208, 0, 0.1)",
+          "border": "4px solid rgba(255, 208, 0, 0.8)"
+        }
+      ]
+    },
+    {
+      "name": "both",
+      "fragment": "#page=2&annotation=8R&selection=0,0,0,6",
+      "highlights": [
+        {
+          "text": "",
+          "background": "rgba(255, 208, 0, 0.1)",
+          "border": "4px solid rgba(255, 208, 0, 0.8)"
+        }
+      ]
+    },
+    {
+      "name": "invalid",
+      "fragment": "#page=2&selection=999,0,1000,3",
+      "highlights": []
+    },
+    {
+      "name": "offset",
+      "fragment": "#page=2&offset=40,600,1",
+      "highlights": []
+    }
+  ]
+}

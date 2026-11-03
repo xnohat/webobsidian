@@ -20,11 +20,16 @@ and design-driven — please read the few rules below before opening a PR.
 - **Runtime config is JSON only** (`data/settings.json`) — do not add a DB engine.
 - **Security:** never log secrets/tokens/API keys; hash before storing; guard against path
   traversal.
+- **Editor CSS:** vertical spacing on an element CodeMirror renders as a *block* must be
+  `padding`, never `margin`. CodeMirror's height map is built from border-box rects and assumes
+  blocks stack flush, so a vertical margin between two blocks is invisible to it and every click
+  below that gap lands one or two rows low. [README › Live Preview geometry](README.md) has the
+  details; `web/tests/editorSpacing.test.ts` fails CI if a margin reappears.
 - Match the style, naming, and comment density of the surrounding code.
 
 ## Development setup
 
-Requires **Node ≥ 20** and `git` (+ `git-lfs` if you use LFS).
+Requires **Node ≥ 22.12** and `git` (+ `git-lfs` if you use LFS). CI uses Node 22.
 
 ```bash
 npm install
@@ -34,15 +39,29 @@ npm run dev          # server :8787 + web dev server :5173 (proxied)
 Before opening a PR:
 
 ```bash
-npm run typecheck    # must pass — CI runs this
-npm run build        # must succeed — CI runs this
+npm ci
+npm run check:secure-deps
+npm audit --include=dev --audit-level=low
+npm run typecheck
+npm --workspace desktop run typecheck
+npm test
+npm run build
+node scripts/integration-smoke.mjs
+npm --workspace desktop run build
 ```
+
+CI also runs `scripts/smoke-test.sh`, Linux desktop directory packaging and a Docker image build.
+On headless Linux, install Electron's system libraries, configure its `chrome-sandbox` helper,
+and run tests through `xvfb-run --auto-servernum npm test`; see `.github/workflows/ci.yml`.
+The dependency audit checks development dependencies too and rejects every advisory severity.
+Download the `npm-audit` artifact from a CI run for its JSON report. CI can also be started
+manually from the repository's Actions tab.
 
 ## Pull requests
 
 1. Fork and create a topic branch off `main`.
 2. Make your change; keep commits focused and the diff minimal.
-3. Ensure `npm run typecheck` and `npm run build` pass.
+3. Run the checks above and ensure all three CI jobs pass.
 4. Update PRD.md / IMPLEMENTATION_PLAN.md if your change touches design or scope.
 5. Open the PR using the template; describe the *what* and the *why*.
 

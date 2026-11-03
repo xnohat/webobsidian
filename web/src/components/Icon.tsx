@@ -2,15 +2,38 @@
  * Flat line icons (Lucide set — the same icon family Obsidian uses).
  * Stroke-based, 24x24 viewBox, currentColor. Add new glyphs to PATHS as needed.
  */
-import type { CSSProperties } from 'react';
+import React, { type CSSProperties } from 'react';
 
 const PATHS: Record<string, string> = {
+  // Editing toolbar actions, using the same 24px stroke-based glyph convention.
+  paintbrush: '<path d="m14 6 4-4 4 4-4 4z"/><path d="m14 6-8 8 4 4 8-8"/><path d="M9 17c0 4-4 5-7 5 1-1 1-2 1-3a3 3 0 0 1 6-2Z"/>',
+  eraser: '<path d="m16 3 5 5a2 2 0 0 1 0 3L10 22H6l-4-4a2 2 0 0 1 0-3L13 3a2 2 0 0 1 3 0Z"/><path d="m7 10 7 7"/><path d="M10 22h12"/>',
+  type: '<path d="M4 7V4h16v3"/><path d="M12 4v16"/><path d="M8 20h8"/>',
+  strikethrough: '<path d="M16 5a5 5 0 0 0-8 3c0 2 2 3 4 4"/><path d="M8 19a5 5 0 0 0 8-3c0-2-2-3-4-4"/><path d="M3 12h18"/>',
+  underline: '<path d="M6 3v7a6 6 0 0 0 12 0V3"/><path d="M4 21h16"/>',
+  highlighter: '<path d="m9 11 6-8 6 6-8 6z"/><path d="m9 11-3 3 4 4 3-3"/><path d="m6 14-4 6h8l2-4"/><path d="M3 23h7"/>',
+  maximize: '<path d="M8 3H3v5"/><path d="M16 3h5v5"/><path d="M3 16v5h5"/><path d="M21 16v5h-5"/>',
+  table: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/>',
+  copy: '<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>',
+  scissors: '<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="m8 8 13 13"/><path d="m14 10 7-7"/><path d="m8 16 4-4"/>',
+  clipboard: '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2"/>',
+  'arrow-up': '<path d="m5 12 7-7 7 7"/><path d="M12 5v15"/>',
+  'arrow-down': '<path d="m5 12 7 7 7-7"/><path d="M12 4v15"/>',
+  'list-ordered': '<path d="M11 6h10"/><path d="M11 12h10"/><path d="M11 18h10"/><path d="m4 4 1-1v6"/><path d="M3 9h4"/><path d="M3 15a2 2 0 1 1 4 0c0 2-4 3-4 5h4"/>',
+  'message-square': '<path d="M21 15a2 2 0 0 1-2 2H7l-5 5V4a2 2 0 0 1 2-2h15a2 2 0 0 1 2 2z"/>',
+  superscript: '<path d="m4 8 8 12"/><path d="m12 8-8 12"/><path d="M16 5a2 2 0 1 1 4 0c0 2-4 3-4 5h4"/>',
+  subscript: '<path d="m4 4 8 12"/><path d="m12 4-8 12"/><path d="M16 15a2 2 0 1 1 4 0c0 2-4 3-4 5h4"/>',
+  'align-justify': '<path d="M3 6h18"/><path d="M3 10h18"/><path d="M3 14h18"/><path d="M3 18h18"/>',
+  // Lucide "lock" / "lock-open" — the read-only badge in the file tree and the editor banner.
+  lock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  'lock-open': '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>',
   // Lucide "palette" + "zoom-in" (used by the Canvas selection menu / zoom controls).
   palette: '<circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2Z"/>',
   'zoom-in': '<circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="11" x2="11" y1="8" y2="14"/><line x1="8" x2="14" y1="11" y2="11"/>',
   'arrow-left-right': '<path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/>',
   minus: '<path d="M5 12h14"/>',
   // Lucide text-alignment icons (Canvas text-card alignment).
+  'zoom-to-selection': '<path d="M2 6V4a2 2 0 0 1 2-2h2m12 0h2a2 2 0 0 1 2 2v2m0 12v2a2 2 0 0 1-2 2h-2M6 22H4a2 2 0 0 1-2-2v-2"/><circle cx="11" cy="11" r="5"/><path d="m18 18-3-3"/>',
   'align-left': '<line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/>',
   'align-center': '<line x1="21" x2="3" y1="6" y2="6"/><line x1="17" x2="7" y1="12" y2="12"/><line x1="19" x2="5" y1="18" y2="18"/>',
   'align-right': '<line x1="21" x2="3" y1="6" y2="6"/><line x1="21" x2="9" y1="12" y2="12"/><line x1="21" x2="7" y1="18" y2="18"/>',
@@ -47,6 +70,8 @@ const PATHS: Record<string, string> = {
   'arrow-right': '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
   sliders: '<line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
+  download:
+    '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
   x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
   'panel-left': '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>',
   'panel-right': '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/>',

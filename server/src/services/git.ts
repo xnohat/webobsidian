@@ -1,11 +1,16 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { simpleGit, type SimpleGit, type StatusResult } from 'simple-git';
-import { getSettings } from './settings.js';
-import { getVaultRoot } from './vault.js';
+import { getSettings as loadSettings } from './settings.js';
+import { getVaultRoot, withVaultMutation } from './vault.js';
 import { redactUrlCreds } from '../lib/redact.js';
 
 /** GitHub-native sync with Git LFS support (PRD FR-4). */
+const operationSettings = new AsyncLocalStorage<Awaited<ReturnType<typeof loadSettings>>>();
+async function getSettings() {
+  return operationSettings.getStore() ?? loadSettings();
+}
 
 export interface GitStatus {
   enabled: boolean;
@@ -38,10 +43,10 @@ async function git(): Promise<SimpleGit> {
 // `commit` collide on `.git/index.lock` ("Another git process seems to be
 // running") — and a command killed mid-write leaves that lock behind, which then
 // wedges EVERY later op (the "completely dead" state). Funnelling all mutating
-// ops through one async queue removes the race; clearing a stale lock at the head
+// ops through the vault mutation queue removes the race with both Git commands
+// and version-checked saves; clearing a stale lock at the head
 // of each op heals a leftover from a crash or an external Obsidian-git process.
 // ---------------------------------------------------------------------------
-let gitQueue: Promise<unknown> = Promise.resolve();
 
 /** A lock a live git process holds is gone within a second for a notes vault; one
  *  older than this is orphaned. Generous enough that even an external LFS commit
@@ -67,21 +72,26 @@ async function clearStaleLocks(): Promise<void> {
 
 /** Run `fn` with exclusive access to the vault repo, after self-healing any stale
  *  lock. Ops queue (never overlap); a rejecting op doesn't poison the queue. */
-function withGitLock<T>(fn: () => Promise<T>): Promise<T> {
-  const result = gitQueue.then(async () => {
-    await clearStaleLocks();
-    return fn();
+async function withGitLock<T>(fn: () => Promise<T>): Promise<T> {
+  // Hold the same canonical-root lock as compare-and-set + atomic file writes
+  // for the ENTIRE operation (including all of sync's commit/pull/push steps).
+  // Capture the vault before waiting, as ordinary file mutations do.
+  const settings = structuredClone(await loadSettings());
+  return withVaultMutation(async () => {
+    // A settings switch between the two captures must never pair one vault
+    // with another vault's remote. Once admitted, use this snapshot throughout.
+    if (path.resolve(settings.vault.path) !== await getVaultRoot()) {
+      throw Object.assign(new Error('Vault changed; retry the Git operation'), { status: 409 });
+    }
+    return operationSettings.run(settings, async () => {
+      await clearStaleLocks();
+      return fn();
+    });
   });
-  gitQueue = result.then(
-    () => undefined,
-    () => undefined,
-  );
-  return result;
 }
 
 // Public, serialized git operations. Each delegates to its private *Impl below;
-// callers that already hold the lock (e.g. syncImpl) call the *Impl directly to
-// avoid re-entering the queue and dead-locking.
+// callers that already hold the lock (e.g. syncImpl) call the *Impl directly.
 export const status = (): Promise<GitStatus> => withGitLock(statusImpl);
 export const pull = (): Promise<string> => withGitLock(pullImpl);
 export const push = (): Promise<string> => withGitLock(pushImpl);
@@ -292,6 +302,8 @@ async function pullImpl(): Promise<string> {
   // never converge. Harmless (no-op) once the histories share a base.
   const res = await g.pull('origin', s.git.branch || 'main', {
     '--no-rebase': null,
+    // Sync is noninteractive; do not rely on ambient GIT_MERGE_AUTOEDIT (filtered by simple-git 4).
+    '--no-edit': null,
     '--allow-unrelated-histories': null,
   });
   if (await lfsAvailable()) await g.raw(['lfs', 'pull']).catch(() => {});
@@ -364,10 +376,19 @@ async function commitAllImpl(message?: string): Promise<string> {
   const g = await git();
   await configureIdentity(g);
   await ensureLfsAttributes();
-  await g.add('.');
+  // A vault copy and atomic text write remain private until their final rename.
+  // Match only the reserved staging namespace and writer UUID suffix, retaining
+  // normal dotfiles and user documents such as `notes.tmp-draft`.
+  const uuidGlob = [8, 4, 4, 4, 12].map((length) => '[0-9a-f]'.repeat(length)).join('-');
+  await g.add([
+    '--all', '--', '.',
+    ':(exclude,glob)**/.webobsidian-copy-*/**',
+    `:(exclude,glob)**/*.tmp-${uuidGlob}`,
+  ]);
   const st = await g.status();
-  if (st.staged.length === 0 && st.isClean()) return 'Nothing to commit';
-  const { subject, body } = describeChanges(st);
+  if (st.staged.length === 0) return 'Nothing to commit';
+  const staged = new Set(st.staged);
+  const { subject, body } = describeChanges({ ...st, files: st.files.filter((file) => staged.has(file.path)) });
   // A caller-supplied message (e.g. a manual commit with a typed message) wins
   // as the subject; otherwise auto-derive one naming the notes. The file list
   // always goes in the body so `git log` shows precisely what was synced.
@@ -446,7 +467,7 @@ async function recoverMerge(g: SimpleGit): Promise<void> {
 
 /** Convenience: stage+commit+pull+push in one go. Reports conflicts. Runs entirely
  *  inside the git queue (via the exported `sync` wrapper), so it calls the unlocked
- *  *Impl helpers directly — re-entering withGitLock here would dead-lock. */
+ *  *Impl helpers directly so the transaction retains its settings snapshot. */
 async function syncImpl(message?: string): Promise<{ ok: boolean; log: string[] }> {
   const log: string[] = [];
   const g = await git();

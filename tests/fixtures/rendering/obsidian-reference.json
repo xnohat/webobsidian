@@ -1,0 +1,11 @@
+{
+  "title": "Reference - vault - Obsidian 1.14.5",
+  "text": "Reference\nReference\nRendering reference\n\n<LS_BEN>-FIELD\n\nprefix underlined <LS_BEN>-FIELD suffix\n\nmarked and struck and bold\n\nfirst\nsecond\n\nopen\ndone\npartial\nFolded title\nOpen title\n\nVisible body.\n\nNested title\n\nNested body.\n\nFormat\tValue\nmarked\tstruck\nbold italic\talias\nescaped | pipe\ta\\|b\n\nInline footnote [1]. Named footnote [2].\n\nbefore after\n\n%%literal%% and [[literal]]\n\nred\n\nSection\n\nSelected paragraph bold.\n\nChild\n\nChild content.\n\nFirst\nSecond\n\nSelected paragraph bold.\n\nFirst\nSecond\n\nInline note↩︎\n\nNamed note.↩︎",
+  "tables": [
+    "\n\n\nFormat\nValue\n\n\n\n\nmarked\nstruck\n\n\nbold italic\nalias\n\n\nescaped | pipe\na\\|b\n\n\n",
+    "Format\tValue\nmarked\tstruck\nbold italic\talias\nescaped | pipe\ta\\|b"
+  ],
+  "width": 1024,
+  "height": 800,
+  "sourceSha256": "3155debe1d22f0b828b46a037746840c8113339a25908e21265e8dfe89c477ec"
+}

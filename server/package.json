@@ -8,7 +8,9 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "chokidar": "^3.6.0",
@@ -19,17 +21,19 @@
     "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.2",
     "minisearch": "^7.1.0",
-    "multer": "^2.1.1",
+    "multer": "^2.5.0",
     "rehype-raw": "^7.0.0",
     "rehype-sanitize": "^6.0.0",
     "rehype-stringify": "^10.0.1",
     "remark-gfm": "^4.0.1",
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",
-    "simple-git": "^3.27.0",
+    "simple-git": "^4.0.2",
     "unified": "^11.0.5",
     "ws": "^8.18.0",
-    "zod": "^3.23.8"
+    "zod": "^4.6.7",
+    "@webobsidian/mcp-server": "0.1.0",
+    "@modelcontextprotocol/sdk": "^1.32.2"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.7",
@@ -40,6 +44,7 @@
     "@types/node": "^22.9.0",
     "@types/ws": "^8.5.13",
     "tsx": "^4.19.2",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^4.1.12"
   }
 }

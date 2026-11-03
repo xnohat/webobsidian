@@ -5,6 +5,7 @@
 // faithful snapshot. Text/embedded-note bodies reuse the markdown renderer.
 import { renderNoteHtml, escapeHtml } from './renderhtml.js';
 import * as vault from './vault.js';
+import {canvasAttachmentReferences} from './publicAttachments.js';
 
 type Side = 'top' | 'right' | 'bottom' | 'left';
 interface Rect { x: number; y: number; width: number; height: number; }
@@ -15,8 +16,15 @@ interface CNode extends Rect {
   text?: string;
   textAlign?: 'left' | 'center' | 'right';
   file?: string;
+  subpath?: string;
   url?: string;
   label?: string;
+}
+export interface CanvasRenderOptions {
+ expandFiles?:boolean;
+ shareId?:string;
+ renderFile?:(file:string,subpath:string)=>Promise<{html:string;shareId?:string;pdf?:boolean}|null>;
+ renderText?:(text:string)=>Promise<string>;
 }
 interface CEdge {
   id: string;
@@ -42,6 +50,12 @@ function resolveColor(c?: string): string | null {
 function num(v: unknown, fallback = 0): number {
   const n = typeof v === 'number' ? v : Number(v);
   return Number.isFinite(n) ? n : fallback;
+}
+
+/** Only allow safe URL schemes for hrefs taken from untrusted .canvas link nodes.
+ *  CSP blocks javascript: execution, but drop the scheme rather than render it. */
+function safeHref(url: string): string {
+  return /^(?:https?:|mailto:)/i.test(url.trim()) ? url.trim() : '';
 }
 
 function sideAnchor(n: Rect, side: Side): { x: number; y: number } {
@@ -88,7 +102,8 @@ function bbox(nodes: CNode[]): Rect | null {
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }
 
-async function renderNode(n: CNode, fileUrl: (p: string) => string): Promise<string> {
+async function renderNode(n: CNode, fileUrl: (p: string) => string, options:CanvasRenderOptions): Promise<string> {
+  const expandFiles=options.expandFiles!==false;
   const col = resolveColor(n.color);
   const style = `left:${n.x}px;top:${n.y}px;width:${n.width}px;height:${n.height}px;` +
     (col ? `--c:${escapeHtml(col)};border-color:${escapeHtml(col)};` : '');
@@ -98,21 +113,29 @@ async function renderNode(n: CNode, fileUrl: (p: string) => string): Promise<str
   }
   if (n.type === 'text') {
     const align = n.textAlign === 'center' || n.textAlign === 'right' ? n.textAlign : 'left';
-    const body = (n.text ?? '').trim() ? await renderNoteHtml(n.text ?? '', fileUrl) : '';
+    const text=typeof n.text==='string'?n.text:'';
+    const body = text.trim() ? await (options.renderText?options.renderText(text):renderNoteHtml(text, fileUrl)) : '';
     return `<div class="canvas-node canvas-text" style="${style}"><div class="canvas-text-body markdown-preview" style="text-align:${align}">${body}</div></div>`;
   }
   if (n.type === 'link') {
     const url = n.url ?? '';
-    return `<div class="canvas-node canvas-link" style="${style}"><a class="canvas-link-body" href="${escapeHtml(url)}" target="_blank" rel="noopener nofollow"><span class="url">${escapeHtml(url)}</span></a></div>`;
+    return `<div class="canvas-node canvas-link" style="${style}"><a class="canvas-link-body" href="${escapeHtml(safeHref(url))}" target="_blank" rel="noopener nofollow"><span class="url">${escapeHtml(url)}</span></a></div>`;
   }
   // file node
-  const file = n.file ?? '';
-  if (IMG_RE.test(file)) {
+  const file = typeof n.file==='string'?n.file:'';
+  if(options.renderFile){
+    const result=await options.renderFile(file,typeof n.subpath==='string'?n.subpath:'');
+    const scope=result?.shareId?` data-public-share="${escapeHtml(result.shareId)}"`:'';
+    const name=(file.split('/').pop()??file).replace(MD_RE,'');
+    const fallback=`<div class="canvas-file-note"><div class="canvas-file-head"><span class="title">${escapeHtml(name)}</span></div><div class="canvas-file-body canvas-file-generic">${escapeHtml(name)}</div></div>`;
+    return `<div class="canvas-node canvas-file${result?.pdf?' canvas-pdf-card':''}" data-canvas-node="${escapeHtml(String(n.id??''))}"${scope} style="${style}">${result?.html??fallback}</div>`;
+  }
+  if (expandFiles && IMG_RE.test(file)) {
     return `<div class="canvas-node canvas-file" style="${style}"><div class="canvas-file-img"><img src="${escapeHtml(fileUrl(file))}" alt="${escapeHtml(file)}" /></div></div>`;
   }
   const name = (file.split('/').pop() ?? file).replace(MD_RE, '');
   let body = '';
-  if (MD_RE.test(file)) {
+  if (expandFiles && MD_RE.test(file)) {
     const md = await vault.readFileText(file).catch(() => null);
     body = md ? await renderNoteHtml(md, fileUrl) : '';
   }
@@ -123,12 +146,12 @@ async function renderNode(n: CNode, fileUrl: (p: string) => string): Promise<str
  * Render a `.canvas` document to a self-contained static HTML block. `fileUrl`
  * resolves a vault path (image / embed) to a public URL.
  */
-export async function renderCanvasHtml(raw: string, fileUrl: (p: string) => string): Promise<string> {
+export async function renderCanvasHtml(raw: string, fileUrl: (p: string) => string,options:CanvasRenderOptions={}): Promise<string> {
   let data: { nodes?: CNode[]; edges?: CEdge[] };
   try { data = JSON.parse(raw); } catch { data = {}; }
   // Normalise geometry up front: every downstream use (style attrs, bbox, the
   // `shifted` arithmetic) then operates on numbers, not attacker-supplied strings.
-  const nodes: CNode[] = (Array.isArray(data.nodes) ? data.nodes : []).map((n) => ({
+  const nodes: CNode[] = (Array.isArray(data.nodes) ? data.nodes : []).filter(n=>n&&typeof n==='object').map((n) => ({
     ...n,
     x: num(n.x),
     y: num(n.y),
@@ -149,7 +172,10 @@ export async function renderCanvasHtml(raw: string, fileUrl: (p: string) => stri
 
   // Groups behind everything, then other nodes (matches the editor's z-order).
   const ordered = [...shifted.filter((n) => n.type === 'group'), ...shifted.filter((n) => n.type !== 'group')];
-  const nodeHtml = (await Promise.all(ordered.map((n) => renderNode(n, fileUrl)))).join('\n');
+  // A shared note budget is request-local; serial rendering cannot reserve it
+  // concurrently for many large file cards.
+  const rendered:string[]=[];for(const node of ordered)rendered.push(await renderNode(node,fileUrl,options));
+  const nodeHtml=rendered.join('\n');
 
   const edgeSvg = edges.map((e) => {
     const a = byId.get(e.fromNode), b = byId.get(e.toNode);
@@ -165,7 +191,7 @@ export async function renderCanvasHtml(raw: string, fileUrl: (p: string) => stri
   }).join('\n');
 
   return `<div class="canvas-public-viewport" id="cv-viewport">
-<div class="canvas-static" id="cv-world" data-w="${W}" data-h="${H}" style="width:${W}px;height:${H}px">
+<div class="canvas-static" id="cv-world"${options.shareId?` data-public-share="${escapeHtml(options.shareId)}"`:''} data-w="${W}" data-h="${H}" style="width:${W}px;height:${H}px">
 <svg class="canvas-edges" style="overflow:visible;position:absolute;left:0;top:0;width:1px;height:1px">
 <defs><marker id="cv-arrow" markerWidth="14" markerHeight="14" refX="11" refY="5.5" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0,0 L11,5.5 L0,11 Z" fill="context-stroke" /></marker></defs>
 ${edgeSvg}
@@ -193,9 +219,11 @@ export function canvasViewerScript(nonce: string): string {
   function apply(){world.style.transform='translate('+tx+'px,'+ty+'px) scale('+scale+')';}
   function fit(){var r=vp.getBoundingClientRect(),pad=56;scale=clampS(Math.min((r.width-pad)/W,(r.height-pad)/H,1.5));tx=(r.width-W*scale)/2;ty=(r.height-H*scale)/2;apply();}
   function zoomAt(px,py,f){var ns=clampS(scale*f),k=ns/scale;tx=px-(px-tx)*k;ty=py-(py-ty)*k;scale=ns;apply();}
-  vp.addEventListener('wheel',function(e){e.preventDefault();var r=vp.getBoundingClientRect();zoomAt(e.clientX-r.left,e.clientY-r.top,Math.exp(-e.deltaY*0.0015));},{passive:false});
+  function control(target){return target.closest('a,button,input,select,textarea,audio,video,[role="button"],.pdf-reader,.canvas-public-controls');}
+  function scrollBody(target){var el=target.closest('.canvas-file-body,.canvas-text-body');return el&&el.scrollHeight>el.clientHeight+1;}
+  vp.addEventListener('wheel',function(e){if(control(e.target)||scrollBody(e.target))return;e.preventDefault();var r=vp.getBoundingClientRect();zoomAt(e.clientX-r.left,e.clientY-r.top,Math.exp(-e.deltaY*0.0015));},{passive:false});
   var pts={},dragId=null,lx=0,ly=0,pinch=null;
-  vp.addEventListener('pointerdown',function(e){if(e.target.closest('.canvas-public-controls'))return;vp.setPointerCapture(e.pointerId);pts[e.pointerId]={x:e.clientX,y:e.clientY};var ids=Object.keys(pts);if(ids.length===1){dragId=e.pointerId;lx=e.clientX;ly=e.clientY;}else if(ids.length===2){dragId=null;var a=pts[ids[0]],b=pts[ids[1]];pinch={d:Math.hypot(a.x-b.x,a.y-b.y)||1};}});
+  vp.addEventListener('pointerdown',function(e){if(e.button!==0||control(e.target)||e.target.closest('.canvas-file-body,.canvas-text-body'))return;vp.setPointerCapture(e.pointerId);pts[e.pointerId]={x:e.clientX,y:e.clientY};var ids=Object.keys(pts);if(ids.length===1){dragId=e.pointerId;lx=e.clientX;ly=e.clientY;}else if(ids.length===2){dragId=null;var a=pts[ids[0]],b=pts[ids[1]];pinch={d:Math.hypot(a.x-b.x,a.y-b.y)||1};}});
   vp.addEventListener('pointermove',function(e){if(!pts[e.pointerId])return;pts[e.pointerId]={x:e.clientX,y:e.clientY};var ids=Object.keys(pts);if(pinch&&ids.length>=2){var a=pts[ids[0]],b=pts[ids[1]],nd=Math.hypot(a.x-b.x,a.y-b.y)||1,r=vp.getBoundingClientRect();zoomAt((a.x+b.x)/2-r.left,(a.y+b.y)/2-r.top,nd/pinch.d);pinch.d=nd;}else if(dragId===e.pointerId){tx+=e.clientX-lx;ty+=e.clientY-ly;lx=e.clientX;ly=e.clientY;apply();}});
   function up(e){delete pts[e.pointerId];try{vp.releasePointerCapture(e.pointerId);}catch(_){}if(Object.keys(pts).length<2)pinch=null;if(e.pointerId===dragId)dragId=null;}
   vp.addEventListener('pointerup',up);vp.addEventListener('pointercancel',up);
@@ -220,29 +248,10 @@ export function canvasDescription(raw: string, max = 160): string {
   return body.length > max ? `${body.slice(0, max - 1).trimEnd()}…` : body;
 }
 
-/** Vault paths a canvas references (image file-nodes + images embedded in its
- *  markdown file-nodes) — the allowlist for the public file endpoint. */
-export async function canvasEmbedTargets(raw: string): Promise<string[]> {
-  let data: { nodes?: CNode[] };
-  try { data = JSON.parse(raw); } catch { return []; }
-  const out = new Set<string>();
-  for (const n of data.nodes ?? []) {
-    if (n.type !== 'file' || !n.file) continue;
-    if (IMG_RE.test(n.file)) { out.add(n.file); continue; }
-    if (MD_RE.test(n.file)) {
-      const md = await vault.readFileText(n.file).catch(() => null);
-      if (!md) continue;
-      for (const m of md.matchAll(/!\[\[([^\]]+?)\]\]/g)) {
-        const t = m[1].split('|')[0].split('#')[0].trim();
-        if (t) out.add(t);
-      }
-      for (const m of md.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)) {
-        const url = m[1].replace(/\s+"[^"]*"$/, '').trim();
-        if (url && !/^(https?|data|blob|file):/i.test(url)) out.add(decodeURIComponent(url.split('/').pop() || url));
-      }
-    }
-  }
-  return [...out];
+/** Direct non-note file cards and text-card embeds only. Note descendants keep
+ *  their own publication scope and never extend the board's attachment grant. */
+export async function canvasEmbedTargets(raw:string):Promise<string[]>{
+  return [...new Set(canvasAttachmentReferences(raw).map(reference=>reference.target))];
 }
 
 /** First image file-node of a canvas, for og:image. */

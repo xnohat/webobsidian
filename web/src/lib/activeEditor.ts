@@ -2,6 +2,7 @@ import type { EditorView } from '@codemirror/view';
 import { undo, redo, indentMore, indentLess } from '@codemirror/commands';
 import { openSearchPanel } from '@codemirror/search';
 import { toggleInline, toggleChecklist, insertLink } from './editorCommands';
+import {invalidateContext} from './toolbar/registry';
 
 /**
  * Module-level handle to the currently-mounted CodeMirror editor, so UI outside
@@ -11,6 +12,7 @@ import { toggleInline, toggleChecklist, insertLink } from './editorCommands';
 let active: EditorView | null = null;
 
 export function setActiveEditor(v: EditorView | null) {
+  if(active && active!==v) invalidateContext(active);
   active = v;
 }
 export function getActiveEditor(): EditorView | null {
@@ -18,19 +20,18 @@ export function getActiveEditor(): EditorView | null {
 }
 
 /** Wrap the selection (or word at caret) in a pair of marks; unwrap if already wrapped. */
-export function fmtInline(mark: string) {
-  if (active) toggleInline(active, mark);
+export function fmtInline(mark: string, view = active) {
+  if (view && !view.state.readOnly) toggleInline(view, mark);
 }
 
 /** Toggle a task checkbox / continue checklist on the selected lines. */
-export function fmtChecklist() {
-  if (active) toggleChecklist(active);
+export function fmtChecklist(view = active) {
+  if (view && !view.state.readOnly) toggleChecklist(view);
 }
 
 /** Prefix each selected line with `prefix` (heading, bullet, quote…). */
-export function fmtPrefixLines(prefix: string) {
-  const v = active;
-  if (!v) return;
+export function fmtPrefixLines(prefix: string, v = active) {
+  if (!v || v.state.readOnly) return;
   const { from, to } = v.state.selection.main;
   const a = v.state.doc.lineAt(from).number;
   const b = v.state.doc.lineAt(to).number;
@@ -41,28 +42,27 @@ export function fmtPrefixLines(prefix: string) {
 }
 
 /** Insert text at the caret; place caret `caretOffset` chars in (default end). */
-export function fmtInsert(text: string, caretOffset = text.length) {
-  const v = active;
-  if (!v) return;
+export function fmtInsert(text: string, caretOffset = text.length, v = active) {
+  if (!v || v.state.readOnly) return;
   const { from, to } = v.state.selection.main;
   v.dispatch({ changes: { from, to, insert: text }, selection: { anchor: from + caretOffset }, userEvent: 'input' });
   v.focus();
 }
 
-export function fmtLink() {
-  if (active) insertLink(active);
+export function fmtLink(view = active) {
+  if (view && !view.state.readOnly) insertLink(view);
 }
-export function fmtIndent() {
-  if (active) { indentMore(active); active.focus(); }
+export function fmtIndent(view = active) {
+  if (view && !view.state.readOnly) { indentMore(view); view.focus(); }
 }
-export function fmtOutdent() {
-  if (active) { indentLess(active); active.focus(); }
+export function fmtOutdent(view = active) {
+  if (view && !view.state.readOnly) { indentLess(view); view.focus(); }
 }
-export function fmtUndo() {
-  if (active) { undo(active); active.focus(); }
+export function fmtUndo(view = active) {
+  if (view && !view.state.readOnly) { undo(view); view.focus(); }
 }
-export function fmtRedo() {
-  if (active) { redo(active); active.focus(); }
+export function fmtRedo(view = active) {
+  if (view && !view.state.readOnly) { redo(view); view.focus(); }
 }
 
 /** Open the in-document Find/Replace panel (CM6 search panel includes both). */

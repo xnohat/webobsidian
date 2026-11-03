@@ -1,5 +1,9 @@
+import {translateLabel as uiLabel} from "../lib/i18n/runtime";
+import {t as uiText, useLanguage} from "../lib/i18n/runtime";
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore, type GraphSettings } from '../lib/store';
+import { resolveThemeColor } from '../lib/cssColor';
+import { THEME_SELECTOR } from '../lib/theme';
 import { api } from '../lib/api';
 import Icon from './Icon';
 import {
@@ -26,6 +30,8 @@ interface GNode {
   y?: number;
   vx?: number;
   vy?: number;
+  fx?: number;
+  fy?: number;
 }
 interface GLink {
   source: GNode | string;
@@ -103,9 +109,12 @@ const FADE_DIM = 0.2;
  * Groups, Display sliders and Forces.
  */
 export default function GraphView() {
+  const languageRevision = useLanguage().revision;
+
   const openFile = useStore((s) => s.openFile);
   const searchFor = useStore((s) => s.searchFor);
   const settings = useStore((s) => s.graphSettings);
+  const theme = useStore((s) => s.theme); // re-render + repaint when the theme changes
   const patch = useStore((s) => s.setGraphSettings);
   const reset = useStore((s) => s.resetGraphSettings);
 
@@ -128,7 +137,8 @@ export default function GraphView() {
   const flyNode = useRef<GNode | null>(null);
   const adjRef = useRef<Map<GNode, Set<GNode>>>(new Map());
   const hover = useRef<GNode | null>(null);
-  const drag = useRef<{ px: number; py: number; moved: number } | null>(null);
+  const drag = useRef<{ px: number; py: number; moved: number; dragNode?: GNode } | null>(null);
+  const dragNode = useRef<GNode | null>(null);
   const rafRef = useRef<number>();
   const fullDirty = useRef(false);
   const edgesDirty = useRef(false);
@@ -167,7 +177,7 @@ export default function GraphView() {
     scored.sort((a, b) => b.s - a.s || a.n.label.length - b.n.label.length);
     return scored.slice(0, 50).map((x) => x.n);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jumpQ, sceneVersion]);
+  }, [jumpQ, sceneVersion, languageRevision]);
   const [panelOpen, setPanelOpen] = useState(false); // Obsidian default: collapsed, cog only
   const [stats, setStats] = useState({ total: 0, shown: 0, orphans: 0 });
   const [buildError, setBuildError] = useState<string | null>(null);
@@ -175,9 +185,11 @@ export default function GraphView() {
   // ---- colour helpers -----------------------------------------------------
   const getCols = (): ColorSet => {
     const Color = mod.current!.Color;
-    const cs = getComputedStyle(document.querySelector('.theme-light, .theme-dark') || document.body);
+    // Theme-aware resolution: follows var() alias chains, normalises hsl()/calc() accents
+    // to rgb() and finds the themed root by *all* theme classes (see lib/cssColor.ts). The
+    // numeric fallback is kept for when the palette variable is genuinely missing.
     const toInt = (name: string, fb: number) => {
-      const v = cs.getPropertyValue(name).trim();
+      const v = resolveThemeColor(name);
       if (!v) return fb;
       try {
         return new Color(v).toNumber();
@@ -329,13 +341,18 @@ export default function GraphView() {
     fullDirty.current = false;
     updateLabels();
     p.app.render();
-    // debug/testing hook: expose the live camera (used by automated UI checks)
+    // debug/testing hook: expose the live camera + the resolved palette (used by automated
+    // UI checks — e.g. exercising the theme switch and asserting the label ink matches the
+    // active theme's --text-normal instead of eyeballing pixels).
     (window as unknown as { __graphCam?: object }).__graphCam = {
       k,
       x,
       y,
       target: zoomTarget.current,
       dev: devScale(k),
+      cols: p.cols,
+      labelFill: (p.labels[0]?.style as { fill?: number } | undefined)?.fill,
+      theme: (document.querySelector(THEME_SELECTOR) as HTMLElement | null)?.className ?? null,
     };
     if (zooming || fading) scheduleRender(false);
   };
@@ -478,6 +495,10 @@ export default function GraphView() {
     cand.sort((u, v) => (v.n === h ? 1 : 0) - (u.n === h ? 1 : 0) || v.n.deg - u.n.deg);
     const MAX = Math.min(cand.length, 400);
 
+    // Declutter: candidates are sorted hovered-first then by degree, so skip any
+    // label that would overlap one already placed — hubs keep their labels and
+    // the rest appear as you zoom in and they spread apart.
+    const placed: { l: number; r: number; t: number; b: number }[] = [];
     let li = 0;
     for (let ci = 0; ci < MAX; ci++) {
       const { n, sx, sy, a } = cand[ci];
@@ -485,9 +506,15 @@ export default function GraphView() {
       const t = ensureLabel(li++);
       if (t.text !== label) t.text = label;
       const isH = n === h;
-      if ((t as unknown as { _hv?: boolean })._hv !== isH) {
-        (t as unknown as { _hv?: boolean })._hv = isH;
-        t.style.fill = isH ? p.cols.accentHover : p.cols.textStrong;
+      // Keep the label ink in step with the active theme: a live theme switch must repaint
+      // text that is neither hovered nor newly created. Guarded so it rewrites only on change
+      // (and never re-rasterises a stable label), and `_hv`/fill are one condition so a
+      // hover-to-normal transition repaints too.
+      const wantFill = isH ? p.cols.accentHover : p.cols.textStrong;
+      const hv = t as unknown as { _hv?: boolean };
+      if (hv._hv !== isH || t.style.fill !== wantFill) {
+        hv._hv = isH;
+        t.style.fill = wantFill;
       }
       // Obsidian: labels live in world space with scale = nodeScale and font
       // size 14 + getSize()/4, i.e. they shrink with √zoom exactly like nodes;
@@ -498,6 +525,12 @@ export default function GraphView() {
       t.scale.set(sc);
       t.x = sx;
       t.y = sy + (r + 5) * rs + (isH ? 15 / dpr : 0);
+      const box = { l: t.x - t.width / 2, r: t.x + t.width / 2, t: t.y, b: t.y + t.height };
+      if (!isH && placed.some((o) => box.l < o.r && box.r > o.l && box.t < o.b && box.b > o.t)) {
+        li--; // give the pooled Text back; it's reused (or hidden) below
+        continue;
+      }
+      placed.push(box);
       t.alpha = a;
       t.visible = true;
     }
@@ -558,6 +591,30 @@ export default function GraphView() {
     zoomAnchor.current = null;
   };
 
+  // Animate the camera (via the fly-to animation) so every node fits the view.
+  // Only zooms out: a small graph keeps Obsidian's default scale.
+  const fitToView = () => {
+    const nodes = nodesRef.current;
+    const wrap = wrapRef.current;
+    if (!nodes.length || !wrap) return;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const n of nodes) {
+      x0 = Math.min(x0, n.x ?? 0);
+      y0 = Math.min(y0, n.y ?? 0);
+      x1 = Math.max(x1, n.x ?? 0);
+      y1 = Math.max(y1, n.y ?? 0);
+    }
+    const W = wrap.clientWidth || 900;
+    const H = wrap.clientHeight || 600;
+    const PAD = 80; // room for node radius + label below the outermost nodes
+    const k = Math.min((W - PAD * 2) / Math.max(1, x1 - x0), (H - PAD * 2) / Math.max(1, y1 - y0));
+    const target = Math.max(SCALE_MIN, k * dprNow());
+    if (target >= devScale(cam.current.k)) return; // already fits
+    zoomTarget.current = target;
+    flyNode.current = { x: (x0 + x1) / 2, y: (y0 + y1) / 2 } as GNode;
+    scheduleRender(true);
+  };
+
   const applyDisplay = () => {
     const p = pixi.current;
     if (!p) return;
@@ -568,8 +625,20 @@ export default function GraphView() {
       sp.tint = n === hover.current ? p.cols.accentHover : colorOf(n, p.cols);
       sp.scale.set(spriteScale(n, s, k));
     }
+    // Label ink tracks the palette (see updateLabels); edges are re-styled on the next pass.
+    edgesDirty.current = true;
+    fullDirty.current = true;
     scheduleRender(true);
   };
+
+  // The graph tab is restored from the saved workspace *before* App applies the saved theme,
+  // and the user can toggle the theme with the graph open. In both cases getCols() has stale
+  // ink (light-theme text on a dark canvas). Subscribe to the store's theme and repaint when
+  // it changes so the canvas always matches the app.
+  useEffect(() => {
+    applyDisplay();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [theme]);
 
   // ---- init pixi (once) ---------------------------------------------------
   useEffect(() => {
@@ -652,24 +721,25 @@ export default function GraphView() {
         out.width = src.width;
         out.height = src.height;
         const ctx = out.getContext('2d')!;
-        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim() || '#ffffff';
+        // resolved theme bg, so a dark-theme screenshot is not pasted on white
+        ctx.fillStyle = '#' + p.cols.bg.toString(16).padStart(6, '0');
         ctx.fillRect(0, 0, out.width, out.height);
         ctx.drawImage(src, 0, 0);
         const blob = await new Promise<Blob | null>((res) => out.toBlob(res, 'image/png'));
         if (!blob) throw new Error('toBlob failed');
         if (navigator.clipboard && typeof ClipboardItem !== 'undefined') {
           await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-          useStore.getState().notify('Graph screenshot copied');
+          useStore.getState().notify(uiText("webobsidian.graph-screenshot-copied-9f9bfe"));
         } else {
           const a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
           a.download = 'graph.png';
           a.click();
           URL.revokeObjectURL(a.href);
-          useStore.getState().notify('Graph screenshot downloaded');
+          useStore.getState().notify(uiText("webobsidian.graph-screenshot-downloaded-3daff4"));
         }
       } catch {
-        useStore.getState().notify('Screenshot failed');
+        useStore.getState().notify(uiText("webobsidian.screenshot-failed-b82f52"));
       }
     };
     window.addEventListener('wo-graph-screenshot', onShot);
@@ -811,7 +881,18 @@ export default function GraphView() {
         .alphaDecay(1 - Math.pow(0.001, 1 / 300))
         .velocityDecay(0.4);
       userMoved.current = false;
-      sim.on('tick', () => scheduleRender(true));
+      // Obsidian opens at scale 1 and lets the graph bloom past the edges; on a
+      // real vault that leaves most nodes off-screen. Once the layout has mostly
+      // settled, ease out (never in) so the whole graph fits — unless the user
+      // already took the camera.
+      let fitted = false;
+      sim.on('tick', () => {
+        if (!fitted && sim && sim.alpha() < 0.1) {
+          fitted = true;
+          if (!userMoved.current) fitToView();
+        }
+        scheduleRender(true);
+      });
       simRef.current = sim;
       setSceneVersion((v) => v + 1); // tell the renderer to (re)create sprites
     } catch (err) {
@@ -820,7 +901,7 @@ export default function GraphView() {
       simRef.current = null;
       nodesRef.current = [];
       linksRef.current = [];
-      setBuildError('Could not render the graph with the current filters.');
+      setBuildError(uiText("webobsidian.could-not-render-the-graph-with-the-current-filt-44e52f"));
       setSceneVersion((v) => v + 1);
     }
 
@@ -897,6 +978,156 @@ export default function GraphView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ---- touch interactions (mobile): 1 finger = pan, pinch = zoom, tap = open node ----
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const st: {
+      pts: Map<number, { x: number; y: number }>;
+      mode: 'pan' | 'pinch' | 'node' | null;
+      px: number;
+      py: number;
+      moved: number;
+      dist: number;
+      grabNode?: GNode | null;
+      timer?: number;
+    } = { pts: new Map(), mode: null, px: 0, py: 0, moved: 0, dist: 0, grabNode: null };
+
+    const twoPts = () => {
+      const v = [...st.pts.values()];
+      return v.length >= 2 ? ([v[0], v[1]] as const) : null;
+    };
+    const mid = () => {
+      const p = twoPts();
+      return p ? { x: (p[0].x + p[1].x) / 2, y: (p[0].y + p[1].y) / 2 } : { x: 0, y: 0 };
+    };
+    const spread = () => {
+      const p = twoPts();
+      return p ? Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) || 1 : 1;
+    };
+
+    const onStart = (e: TouchEvent) => {
+      e.preventDefault();
+      for (const t of Array.from(e.changedTouches)) st.pts.set(t.identifier, { x: t.clientX, y: t.clientY });
+      if (st.pts.size === 1) {
+        const p = [...st.pts.values()][0];
+        st.mode = 'pan';
+        st.px = p.x;
+        st.py = p.y;
+        st.moved = 0;
+        // Long-press on a node grabs it for dragging (d3 fx/fy), like the
+        // mouse drag; moving or lifting before the timer just pans/taps.
+        const n = nodeAt(p.x, p.y);
+        st.grabNode = n && n.kind !== 'tag' ? n : null;
+        if (st.grabNode) {
+          st.timer = window.setTimeout(() => {
+            st.timer = undefined;
+            if (st.mode === 'pan' && st.moved < 12 && st.grabNode) {
+              st.mode = 'node';
+              const w = toWorld(st.px, st.py);
+              st.grabNode.fx = w.x;
+              st.grabNode.fy = w.y;
+              simRef.current?.alphaTarget(0.3).restart();
+              flyNode.current = null;
+              setHover(st.grabNode); // keep the node's relations lit while dragging
+            }
+          }, 300);
+        }
+      } else if (st.pts.size >= 2) {
+        if (st.timer) { clearTimeout(st.timer); st.timer = undefined; }
+        if (st.grabNode) {
+          if (st.mode === 'node') { st.grabNode.fx = undefined; st.grabNode.fy = undefined; simRef.current?.alphaTarget(0); setHover(null); }
+          st.grabNode = null;
+        }
+        const m = mid();
+        st.mode = 'pinch';
+        st.px = m.x;
+        st.py = m.y;
+        st.dist = spread();
+        st.moved = 999; // a pinch that drops to one finger must not count as a tap
+      }
+    };
+    const onMove = (e: TouchEvent) => {
+      e.preventDefault();
+      if (!st.mode) return;
+      for (const t of Array.from(e.changedTouches)) if (st.pts.has(t.identifier)) st.pts.set(t.identifier, { x: t.clientX, y: t.clientY });
+      flyNode.current = null; // manual gesture cancels a fly-to-node in progress
+      if (st.mode === 'node' && st.grabNode && st.pts.size === 1) {
+        const p = [...st.pts.values()][0];
+        const w = toWorld(p.x, p.y);
+        st.grabNode.fx = w.x;
+        st.grabNode.fy = w.y;
+        st.px = p.x;
+        st.py = p.y;
+        st.moved = 999; // never treat as a tap
+        userMoved.current = true;
+        scheduleRender(true);
+      } else if (st.mode === 'pinch' && st.pts.size >= 2) {
+        const m = mid();
+        const d = spread();
+        cam.current.x += m.x - st.px;
+        cam.current.y += m.y - st.py;
+        const t = Math.min(SCALE_MAX, Math.max(SCALE_MIN, zoomTarget.current * (d / st.dist)));
+        zoomTarget.current = t;
+        const rect = canvas.getBoundingClientRect();
+        zoomAnchor.current = t < cam.current.k * dprNow() ? null : { x: m.x - rect.left, y: m.y - rect.top };
+        st.dist = d;
+        st.px = m.x;
+        st.py = m.y;
+      } else if (st.mode === 'pan' && st.pts.size === 1) {
+        const p = [...st.pts.values()][0];
+        cam.current.x += p.x - st.px;
+        cam.current.y += p.y - st.py;
+        st.moved += Math.abs(p.x - st.px) + Math.abs(p.y - st.py);
+        st.px = p.x;
+        st.py = p.y;
+      }
+      userMoved.current = true;
+      scheduleRender(false);
+    };
+    const onEnd = (e: TouchEvent) => {
+      e.preventDefault();
+      for (const t of Array.from(e.changedTouches)) st.pts.delete(t.identifier);
+      if (st.pts.size === 0) {
+        if (st.timer) { clearTimeout(st.timer); st.timer = undefined; }
+        if (st.mode === 'node' && st.grabNode) {
+          st.grabNode.fx = undefined;
+          st.grabNode.fy = undefined;
+          st.grabNode = null;
+          simRef.current?.alphaTarget(0);
+          setHover(null); // touch has no mousemove to clear the highlight
+        }
+        if (st.mode === 'pan' && st.moved < 10) {
+          const t0 = e.changedTouches[0];
+          const n = nodeAt(t0.clientX, t0.clientY);
+          if (n) {
+            if (n.kind === 'note') openFile(n.id);
+            else if (n.kind === 'tag') searchFor(`tag:${n.id.slice(4)}`);
+          }
+        }
+        st.mode = null;
+      } else if (st.pts.size === 1 && st.mode === 'pinch') {
+        st.grabNode = null; // a leftover finger after pinch just pans
+        st.mode = 'pan'; // one finger left after a pinch: keep panning
+        const p = [...st.pts.values()][0];
+        st.px = p.x;
+        st.py = p.y;
+      }
+    };
+
+    canvas.addEventListener('touchstart', onStart, { passive: false });
+    canvas.addEventListener('touchmove', onMove, { passive: false });
+    canvas.addEventListener('touchend', onEnd, { passive: false });
+    canvas.addEventListener('touchcancel', onEnd, { passive: false });
+    return () => {
+      canvas.removeEventListener('touchstart', onStart);
+      canvas.removeEventListener('touchmove', onMove);
+      canvas.removeEventListener('touchend', onEnd);
+      canvas.removeEventListener('touchcancel', onEnd);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ---- pointer interactions ----------------------------------------------
   const nodeAt = (clientX: number, clientY: number): GNode | null => {
     const rect = canvasRef.current!.getBoundingClientRect();
@@ -948,8 +1179,25 @@ export default function GraphView() {
     scheduleRender(false);
   };
 
+  // Node drag (dragNode): pinching a node with the mouse sets d3 fx/fy and
+  // reheats the sim (alphaTarget .3, like Obsidian's panel); releasing clears
+  // the pin so physics resumes. Clicks without movement still open the note.
+  const toWorld = (clientX: number, clientY: number) => {
+    const rect = canvasRef.current!.getBoundingClientRect();
+    const { x: cx, y: cy, k } = cam.current;
+    return { x: (clientX - rect.left - cx) / k, y: (clientY - rect.top - cy) / k };
+  };
   const onDown = (e: React.MouseEvent) => {
-    drag.current = { px: e.clientX, py: e.clientY, moved: 0 };
+    const n = nodeAt(e.clientX, e.clientY);
+    drag.current = { px: e.clientX, py: e.clientY, moved: 0, dragNode: n ?? undefined };
+    if (n && n.kind !== 'tag') {
+      const w = toWorld(e.clientX, e.clientY);
+      n.fx = w.x; n.fy = w.y;
+      dragNode.current = n;
+      simRef.current?.alphaTarget(0.3).restart();
+      flyNode.current = null;
+      setHover(n); // highlight the node + its edges while dragging (Obsidian parity)
+    }
   };
   const onMove = (e: React.MouseEvent) => {
     if (drag.current) {
@@ -958,11 +1206,19 @@ export default function GraphView() {
       drag.current.px = e.clientX;
       drag.current.py = e.clientY;
       drag.current.moved += Math.abs(dx) + Math.abs(dy);
-      cam.current.x += dx;
-      cam.current.y += dy;
-      flyNode.current = null; // manual pan cancels a fly-to-node in progress
-      userMoved.current = true;
-      scheduleRender(false);
+      if (dragNode.current) {
+        const w = toWorld(e.clientX, e.clientY);
+        dragNode.current.fx = w.x;
+        dragNode.current.fy = w.y;
+        userMoved.current = true;
+        scheduleRender(true);
+      } else {
+        cam.current.x += dx;
+        cam.current.y += dy;
+        flyNode.current = null; // manual pan cancels a fly-to-node in progress
+        userMoved.current = true;
+        scheduleRender(false);
+      }
     } else {
       setHover(nodeAt(e.clientX, e.clientY));
     }
@@ -970,6 +1226,12 @@ export default function GraphView() {
   const onUp = (e: React.MouseEvent) => {
     const d = drag.current;
     drag.current = null;
+    if (dragNode.current) {
+      dragNode.current.fx = undefined;
+      dragNode.current.fy = undefined;
+      dragNode.current = null;
+      simRef.current?.alphaTarget(0);
+    }
     if (d && d.moved < 5) {
       const n = nodeAt(e.clientX, e.clientY);
       if (!n) return;
@@ -996,7 +1258,7 @@ export default function GraphView() {
           <Icon name="search" size={14} />
           <input
             value={jumpQ}
-            placeholder="Find node…"
+            placeholder={uiText("webobsidian.find-node-e18fc8")}
             spellCheck={false}
             onChange={(e) => setJumpQ(e.target.value)}
             onKeyDown={(e) => {
@@ -1010,7 +1272,7 @@ export default function GraphView() {
           />
           {jumpQ.trim() !== '' && (
             <div className="graph-node-results">
-              {jumpResults.length === 0 && <div className="graph-node-empty">No matching nodes</div>}
+              {jumpResults.length === 0 && <div className="graph-node-empty">{uiText("webobsidian.no-matching-nodes-440ffa")}</div>}
               {jumpResults.map((n) => (
                 <button
                   key={n.id}
@@ -1029,20 +1291,18 @@ export default function GraphView() {
         </div>
 
         <div className="graph-hint">
-          {stats.shown} / {stats.total} notes · {stats.orphans} orphans · scroll to zoom · drag to pan · click a tag to search
-        </div>
+          {stats.shown} {uiText("webobsidian.nodes-25d85b")} {stats.total} {uiText("webobsidian.notes-5571cd")} {stats.orphans} {uiText("webobsidian.orphans-scroll-to-zoom-drag-to-pan-click-a-tag-t-63b45b")} </div>
 
         {buildError && (
           <div className="graph-error">
             <span>{buildError}</span>
             <button className="btn secondary" onClick={reset}>
-              Reset filters
-            </button>
+              {uiText("webobsidian.reset-filters-565531")} </button>
           </div>
         )}
 
         {!panelOpen && (
-          <button className="graph-panel-open" title="Show filters" onClick={() => setPanelOpen(true)}>
+          <button className="graph-panel-open" title={uiText("webobsidian.show-filters-b1ad23")} onClick={() => setPanelOpen(true)}>
             <Icon name="settings" size={16} />
           </button>
         )}
@@ -1080,6 +1340,8 @@ function FilterPanel({
   onClose: () => void;
   onAnimate: () => void;
 }) {
+  const languageRevision = useLanguage().revision;
+
   const addGroup = () =>
     patch({
       groups: [...s.groups, { query: '', color: GROUP_COLORS[s.groups.length % GROUP_COLORS.length] }],
@@ -1091,13 +1353,13 @@ function FilterPanel({
   return (
     <div className="graph-panel">
       <Section
-        title="Filters"
+        title={uiText("plugins.graph-view.label-filters")}
         actions={
           <>
-            <button className="nav-action" title="Reset to defaults" onClick={reset}>
+            <button className="nav-action" title={uiText("webobsidian.reset-to-defaults-ddefe4")} onClick={reset}>
               <Icon name="refresh-cw" size={14} />
             </button>
-            <button className="nav-action" title="Close" onClick={onClose}>
+            <button className="nav-action" title={uiText("interface.menu.close")} onClick={onClose}>
               <Icon name="x" size={14} />
             </button>
           </>
@@ -1105,20 +1367,19 @@ function FilterPanel({
       >
         <input
           className="text-input"
-          placeholder="Search files..."
+          placeholder={uiText("plugins.graph-view.prompt-filter-nodes")}
           value={s.search}
           onChange={(e) => patch({ search: e.target.value })}
         />
-        <Toggle label="Tags" checked={s.tags} onChange={(v) => patch({ tags: v })} />
-        <Toggle label="Attachments" checked={s.attachments} onChange={(v) => patch({ attachments: v })} />
-        <Toggle label="Existing files only" checked={s.existingOnly} onChange={(v) => patch({ existingOnly: v })} />
-        <Toggle label="Orphans" checked={s.orphans} onChange={(v) => patch({ orphans: v })} />
+        <Toggle label={uiText("webobsidian.tags-848eed")} checked={s.tags} onChange={(v) => patch({ tags: v })} />
+        <Toggle label={uiText("webobsidian.attachments-6771ad")} checked={s.attachments} onChange={(v) => patch({ attachments: v })} />
+        <Toggle label={uiText("plugins.graph-view.option-show-existing-files-only")} checked={s.existingOnly} onChange={(v) => patch({ existingOnly: v })} />
+        <Toggle label={uiText("plugins.graph-view.option-show-orphans")} checked={s.orphans} onChange={(v) => patch({ orphans: v })} />
       </Section>
 
-      <Section title="Groups">
+      <Section title={uiText("plugins.graph-view.label-groups")}>
         <button className="btn" style={{ width: '100%' }} onClick={addGroup}>
-          New group
-        </button>
+          {uiText("webobsidian.new-group-f9850c")} </button>
         {s.groups.map((g, i) => (
           <div className="graph-group-row" key={i}>
             <input
@@ -1129,32 +1390,31 @@ function FilterPanel({
             />
             <input
               className="text-input"
-              placeholder="Search query"
+              placeholder={uiText("webobsidian.search-query-e5e053")}
               value={g.query}
               onChange={(e) => setGroup(i, { query: e.target.value })}
             />
-            <button className="nav-action" title="Remove group" onClick={() => delGroup(i)}>
+            <button className="nav-action" title={uiText("webobsidian.remove-group-9a5319")} onClick={() => delGroup(i)}>
               <Icon name="x" size={14} />
             </button>
           </div>
         ))}
       </Section>
 
-      <Section title="Display">
-        <Toggle label="Arrows" checked={s.arrows} onChange={(v) => patch({ arrows: v })} />
-        <Slider label="Text fade threshold" min={-3} max={3} step={0.1} value={s.textFade} onChange={(v) => patch({ textFade: v })} />
-        <Slider label="Node size" min={0.1} max={5} step={0.1} value={s.nodeSize} onChange={(v) => patch({ nodeSize: v })} />
-        <Slider label="Link thickness" min={0.1} max={5} step={0.1} value={s.linkThickness} onChange={(v) => patch({ linkThickness: v })} />
+      <Section title={uiText("webobsidian.display-574ff9")}>
+        <Toggle label={uiText("plugins.graph-view.option-show-arrows")} checked={s.arrows} onChange={(v) => patch({ arrows: v })} />
+        <Slider label={uiText("plugins.graph-view.option-text-fade")} min={-3} max={3} step={0.1} value={s.textFade} onChange={(v) => patch({ textFade: v })} />
+        <Slider label={uiText("plugins.graph-view.option-node-size")} min={0.1} max={5} step={0.1} value={s.nodeSize} onChange={(v) => patch({ nodeSize: v })} />
+        <Slider label={uiText("plugins.graph-view.option-link-thickness")} min={0.1} max={5} step={0.1} value={s.linkThickness} onChange={(v) => patch({ linkThickness: v })} />
         <button className="btn" style={{ width: '100%', marginTop: 6 }} onClick={onAnimate}>
-          Animate
-        </button>
+          {uiText("plugins.graph-view.button-animate-timelapse")} </button>
       </Section>
 
-      <Section title="Forces">
-        <Slider label="Center force" min={0} max={1} step={0.01} value={s.centerForce} onChange={(v) => patch({ centerForce: v })} />
-        <Slider label="Repel force" min={0} max={20} step={0.1} value={s.repelForce} onChange={(v) => patch({ repelForce: v })} />
-        <Slider label="Link force" min={0} max={1} step={0.01} value={s.linkForce} onChange={(v) => patch({ linkForce: v })} />
-        <Slider label="Link distance" min={30} max={500} step={1} value={s.linkDistance} onChange={(v) => patch({ linkDistance: v })} />
+      <Section title={uiText("plugins.graph-view.label-forces")}>
+        <Slider label={uiText("plugins.graph-view.option-center-force")} min={0} max={1} step={0.01} value={s.centerForce} onChange={(v) => patch({ centerForce: v })} />
+        <Slider label={uiText("plugins.graph-view.option-repel-force")} min={0} max={20} step={0.1} value={s.repelForce} onChange={(v) => patch({ repelForce: v })} />
+        <Slider label={uiText("plugins.graph-view.option-link-force")} min={0} max={1} step={0.01} value={s.linkForce} onChange={(v) => patch({ linkForce: v })} />
+        <Slider label={uiText("plugins.graph-view.option-link-distance")} min={30} max={500} step={1} value={s.linkDistance} onChange={(v) => patch({ linkDistance: v })} />
       </Section>
     </div>
   );
@@ -1169,13 +1429,15 @@ function Section({
   actions?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const languageRevision = useLanguage().revision;
+
   const [open, setOpen] = useState(true);
   return (
     <div className="graph-section">
       <div className="graph-section-head">
         <button className="graph-section-title" onClick={() => setOpen((o) => !o)}>
           <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
-          {title}
+          {uiLabel(title)}
         </button>
         <span style={{ flex: 1 }} />
         {actions}
@@ -1194,9 +1456,11 @@ function Toggle({
   checked: boolean;
   onChange: (v: boolean) => void;
 }) {
+  const languageRevision = useLanguage().revision;
+
   return (
     <div className="graph-row">
-      <span className="graph-row-label">{label}</span>
+      <span className="graph-row-label">{uiLabel(label)}</span>
       <button
         className={`graph-switch ${checked ? 'on' : ''}`}
         role="switch"
@@ -1224,9 +1488,11 @@ function Slider({
   step: number;
   onChange: (v: number) => void;
 }) {
+  const languageRevision = useLanguage().revision;
+
   return (
     <div className="graph-slider">
-      <span className="graph-row-label">{label}</span>
+      <span className="graph-row-label">{uiLabel(label)}</span>
       <input
         type="range"
         min={min}

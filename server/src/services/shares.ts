@@ -111,9 +111,9 @@ export async function deleteShare(id: string): Promise<boolean> {
 /** Keep share paths in sync when notes are renamed/deleted elsewhere. */
 export async function onFileRenamed(from: string, to: string): Promise<void> {
   const shares = await load();
-  const rec = shares.find((s) => s.path === from);
-  if (rec) {
-    rec.path = to;
-    await persist(shares);
-  }
+  const updated = shares.map(s => s.path === from || s.path.startsWith(from + '/')
+    ? { ...s, path: to + s.path.slice(from.length) } : s);
+  if (!updated.some((s, i) => s !== shares[i])) return;
+  await persist(updated);
+  cache = updated;
 }

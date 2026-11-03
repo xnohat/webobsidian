@@ -15,6 +15,10 @@ the matching prebuilt Electron binary — no cross-compilation, no `node-gyp`.
 - App data (`settings.json`, search index) lives in Electron's per-user `userData` dir.
 - A random per-install password is generated, passed to the server as
   `WEBOBSIDIAN_PASSWORD`, and used to **auto-login** — no password prompt.
+  _Fork note:_ because that secret counts as configured, the well-known default `123456` is never
+  valid on the desktop's loopback server (auth hardening in this fork). The desktop **bundles the
+  server**, so it also carries every merged upstream PR listed in
+  [`docs/UPSTREAM_PR_MERGES.md`](../docs/UPSTREAM_PR_MERGES.md).
 - Menu **File → Switch Vault…** changes the vault (relaunches to re-index);
   **Open Vault/Data Folder** and **Open Logs** help debugging.
 - Git sync needs `git` on the machine; without it the app still works for local editing.
@@ -49,15 +53,34 @@ npm run dist:dir     # fast unpacked build (no installer), for smoke testing
 CI workflow [`.github/workflows/release.yml`](../.github/workflows/release.yml) runs on
 a version tag and builds on three native runners in parallel:
 
+Enable GitHub Actions in the fork before releasing. The publish target in
+`desktop/package.json` is `lakylekidd/webobsidian`; the workflow uses the fork's
+`GITHUB_TOKEN` with `contents: write`, so no personal access token is needed.
+
+Following the v0.1.1 release convention, bump both the root and desktop versions
+(the private server/web workspace versions remain unchanged), commit the release
+changes, and push an annotated tag matching the desktop version:
+
 ```bash
-npm version patch -w desktop   # or bump versions as you prefer
-git tag v0.1.0
-git push origin v0.1.0
+npm version 0.1.2 --no-git-tag-version
+npm version 0.1.2 --workspace desktop --no-git-tag-version
+npm run typecheck
+npm --workspace desktop run typecheck
+npm run build
+npm --workspace desktop run build
+git add package.json package-lock.json desktop/package.json README.md desktop/README.md IMPLEMENTATION_PLAN.md
+git commit -m "chore(release): v0.1.2"
+git tag -a v0.1.2 -m "WebObsidian v0.1.2"
+git push origin main
+git push origin v0.1.2
 ```
 
 Each runner (macOS/Windows/Ubuntu) packages its platform's installers and uploads
 them to a **draft** GitHub Release for the tag. When all three finish, open the draft
-release on GitHub and click **Publish**.
+release at [the fork's Releases page](https://github.com/lakylekidd/webobsidian/releases),
+add release notes, and click **Publish**. For v0.1.2, the changes since v0.1.1 are
+the dark-mode text contrast and editor cursor fixes (#19), plus fork release metadata
+and documentation.
 
 Artifacts:
 

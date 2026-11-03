@@ -5,22 +5,67 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
-    name: Typecheck & build
-    runs-on: ubuntu-latest
+  security:
+    name: Dependency vulnerability audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --include=dev
+
+      - name: Reject remediated vulnerable dependency versions
+        run: npm run check:secure-deps
+
+      - name: Audit all dependency advisory severities
+        id: audit
+        run: npm audit --include=dev --audit-level=low --json --fetch-timeout=30000 --fetch-retries=1 > npm-audit.json
+
+      - name: Upload dependency audit report
+        if: ${{ !cancelled() && (steps.audit.outcome == 'success' || steps.audit.outcome == 'failure') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit
+          path: npm-audit.json
+          if-no-files-found: error
+          retention-days: 14
+
+  build:
+    name: Typecheck & build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
-        run: npm ci || npm install
+        run: npm ci --no-audit
 
       - name: Typecheck
         run: npm run typecheck
@@ -31,14 +76,47 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Prepare Electron browser tests
+        run: |
+          # Electron 43 downloads its runtime lazily, rather than during npm ci.
+          node node_modules/electron/install.js
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends xvfb xauth libgtk-3-0 libnss3 libasound2t64
+          # Chromium needs its setuid helper when user namespaces are restricted.
+          sudo chown root:root node_modules/electron/dist/chrome-sandbox
+          sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
+
+      - name: Test (server, web and Electron browser fixtures)
+        run: xvfb-run --auto-servernum npm test
+
+      - name: HTTP and stdio MCP integration (disposable vault)
+        run: npm run test:mcp
+
+      - name: Merged fork integration smoke test
+        run: node scripts/integration-smoke.mjs
+
+      - name: Smoke test (auth hardening, symlinked vault, graceful shutdown)
+        run: scripts/smoke-test.sh
+
       - name: Build desktop bundle
         run: npm --workspace desktop run build
 
+      - name: Package desktop directory without publishing
+        run: npm exec --workspace desktop -- electron-builder --dir --linux --x64 --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
   docker:
     name: Docker image builds
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Build image
         run: docker build -t webobsidian:ci .
+
+      - name: Docker MCP runtime smoke
+        run: bash scripts/docker-mcp-smoke.sh webobsidian:ci

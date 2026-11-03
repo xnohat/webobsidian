@@ -1,0 +1,35 @@
+{
+  "version": "1.14.5",
+  "platform": "Windows",
+  "isolatedProfile": true,
+  "canvas": {
+    "viewBox": "-76.5 -76.5 803 413",
+    "height": 400,
+    "rectangles": 3,
+    "paths": 1,
+    "textInCards": false,
+    "clickOpens": "Board.canvas"
+  },
+  "genericFiles": [
+    "config.yaml",
+    "table.csv",
+    "archive.zip"
+  ],
+  "imageEditSelection": "picture.svg",
+  "pdfEditSelection": "![[sample.pdf#page=2&height=400]]",
+  "pdfFixedHeight": {
+    "request": 400,
+    "liveRootHeight": 400,
+    "readingRootHeight": 438,
+    "toolbarHeight": 38
+  },
+  "audio": {
+    "controlsList": "nodownload",
+    "editAction": false
+  },
+  "video": {
+    "editAction": false
+  },
+  "canvasOpenNormalizesJson": true,
+  "canvasDataUnchanged": true
+}

@@ -1,0 +1,8 @@
+{
+  "version": "1.14.5",
+  "vault": "temporary synthetic fixtures, default appearance/app settings {}, no community plugins",
+  "sourceSha256": "3155DEBE1D22F0B828B46A037746840C8113339A25908E21265E8DFE89C477EC",
+  "capture": "Windows accessibility text; Live viewport only; screenshots unavailable due capture timeout",
+  "live": "vault             ​ Reference  ​ Target       Reference         Reference       Reference ​ ​   Rendering reference \n <LS_BEN>-FIELD \n prefix underlined <LS_BEN>-FIELD suffix \n marked and struck and bold \n first second \n   open   done   partial \n ​ Folded title  ​      \n ​ Open title  ​   Visible body. ​ Nested title Nested body.    \n Format    Value     marked   struck   bold italic   alias   escaped | pipe   a\\|b        \n Inline footnote ^[Inline note]. Named footnote [^named]. \n named  Named note.         Обратных ссылок: 0  Слов: 86Символов: 696",
+  "reading": "vault             ​ Reference  ​ Target       Reference         Reference     Reference ​ Rendering reference <LS_BEN>-FIELD prefix underlined <LS_BEN>-FIELD suffix marked and struck and bold first\nsecond  open  done  partial   ​ Folded title  ​    ​ Open title  ​   Visible body.  ​ Nested title Nested body. Format Value   marked struck  bold italic alias  escaped | pipe a\\|b   Inline footnote [1]. Named footnote [2]. before after %%literal%% and [[literal]] red ​ Section Selected paragraph bold. ​ Child Child content. ​ ​ ​ First ​ ​ ​ Second     Selected paragraph bold.    ​ ​ ​ First ​ ​ ​ Second       1. Inline note ↩︎  2.  Named note. ↩︎           Обратных ссылок: 0  Слов: 86Символов: 696"
+}

@@ -1,28 +1,44 @@
 {
   "name": "webobsidian",
-  "version": "0.1.1",
+  "version": "0.3.0",
   "private": true,
-  "description": "WebObsidian — a self-hosted Obsidian-compatible web app",
+  "description": "WebObsidian \u2014 a self-hosted Obsidian-compatible web app",
   "workspaces": [
     "server",
     "web",
-    "desktop"
+    "desktop",
+    "packages/webo",
+    "mcp-server"
   ],
   "scripts": {
+    "check:critical-deps": "node scripts/check-critical-dependencies.mjs",
+    "check:secure-deps": "node scripts/check-critical-dependencies.mjs",
+    "test": "npm --workspace server run test && node --import tsx --test --test-concurrency=2 web/tests/*.test.ts",
     "dev": "concurrently -n server,web -c blue,magenta \"npm:dev:server\" \"npm:dev:web\"",
     "dev:server": "npm --workspace server run dev",
     "dev:web": "npm --workspace web run dev",
-    "build": "npm --workspace web run build && npm --workspace server run build",
+    "build": "npm --workspace mcp-server run build && npm --workspace web run build && npm --workspace server run build && npm --workspace packages/webo run build",
+    "webo": "node packages/webo/dist/bin.js",
+    "mcp": "node mcp-server/dist/index.js",
     "start": "npm --workspace server run start",
-    "typecheck": "npm --workspace server run typecheck && npm --workspace web run typecheck",
+    "typecheck": "npm --workspace server run typecheck && npm --workspace web run typecheck && npm --workspace packages/webo run typecheck && npm --workspace mcp-server run typecheck",
     "desktop": "npm run build && npm --workspace desktop run dev",
     "desktop:dist": "npm run build && npm --workspace desktop run dist",
-    "desktop:publish": "npm run build && npm --workspace desktop run dist:publish"
+    "desktop:publish": "npm run build && npm --workspace desktop run dist:publish",
+    "pretypecheck": "npm --workspace mcp-server run build",
+    "predev:server": "npm --workspace mcp-server run build",
+    "test:mcp": "node --test mcp-server/test/library.mjs mcp-server/test/http.mjs"
   },
   "devDependencies": {
-    "concurrently": "^9.1.0"
+    "concurrently": "^9.2.5"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.12.0"
+  },
+  "overrides": {
+    "minimatch": "11.0.1",
+    "@electron/asar": "4.3.1",
+    "@electron/universal": "3.0.6",
+    "glob@>=9": "14.0.2"
   }
 }

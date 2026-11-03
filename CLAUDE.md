@@ -1,4 +1,18 @@
-# CLAUDE.md — Hướng dẫn làm việc cho Claude Code trên dự án WebObsidian
+# CLAUDE.md — WebObsidian contributor guidance
+
+## Upstream contribution — authoritative routing
+
+This branch contributes the integrated `macros0`, `phamtruonghung` and `lakylekidd`
+community work to `xnohat/webobsidian`. Read `docs/FORK_INTEGRATION.md` for historical
+source revisions and merge decisions.
+Use `--repo xnohat/webobsidian` explicitly for upstream GitHub operations. References below
+to the Pham issue tracker or LXC 107 describe the source fork and must not direct operations there.
+Do not deploy or access a real vault unless explicitly requested. Use temporary local vaults
+for tests. Automatic trash retention defaults to zero (keep forever).
+
+Validation: `npm ci`, `npm run typecheck`, `npm test`, `npm run build`,
+`node scripts/integration-smoke.mjs`; desktop typecheck/build via its workspace scripts.
+Linux CI also runs `scripts/smoke-test.sh` for auth, symlinks, Agent API and MCP.
 
 ## Bối cảnh
 WebObsidian là web app self-hosted clone toàn diện Obsidian. Thiết kế chính thức nằm ở
@@ -41,3 +55,27 @@ docker compose up      # chạy full stack
 - `web/` — React SPA (components, lib, styles).
 - `data/` — runtime config & index (gitignored).
 - `docs/` — tài liệu bổ sung.
+
+## Ghi chú riêng của fork
+Đây là fork `phamtruonghung/webobsidian` (= upstream + toàn bộ PR đang mở đã merge). Xem
+[docs/UPSTREAM_PR_MERGES.md](docs/UPSTREAM_PR_MERGES.md) trước khi "sửa" một lỗi trông giống lỗi
+upstream. Deploy production chạy trên LXC 107 qua Docker Compose + self-hosted runner — quy trình,
+runbook và rollback ở [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+## Agent skills
+
+### Issue tracker
+
+Issues live as GitHub issues in this fork (`phamtruonghung/webobsidian`); use the `gh` CLI. See
+`docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical roles map one-to-one: `needs-triage`, `needs-info`, `ready-for-agent`,
+`ready-for-human`, `wontfix` (plus repo labels `deploy`, `upstream-sync`). See
+`docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `PRD.md` + `IMPLEMENTATION_PLAN.md` are authoritative, `docs/adr/` and `CONTEXT.md`
+are created lazily by `/domain-modeling`. See `docs/agents/domain.md`.

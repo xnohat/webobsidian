@@ -1,3 +1,4 @@
+import {t as uiText, useLanguage} from "../lib/i18n/runtime";
 import { useEffect } from 'react';
 import { useStore } from '../lib/store';
 import { api } from '../lib/api';
@@ -9,6 +10,8 @@ import Icon from './Icon';
  * password, or delete the link. The centralized list lives in Settings → Sharing.
  */
 export default function ShareDialog() {
+  const languageRevision = useLanguage().revision;
+
   const path = useStore((s) => s.shareDialogPath);
   const setShareDialog = useStore((s) => s.setShareDialog);
   const shares = useStore((s) => s.shares);
@@ -27,7 +30,7 @@ export default function ShareDialog() {
   const create = async () => {
     await api.createShare(path);
     await loadShares();
-    notify('Public link created');
+    notify(uiText("webobsidian.public-link-created-d4717a"));
   };
   const toggle = async () => {
     if (!share) return;
@@ -36,26 +39,26 @@ export default function ShareDialog() {
   };
   const copy = () => {
     navigator.clipboard?.writeText(url).catch(() => {});
-    notify('Public link copied');
+    notify(uiText("webobsidian.public-link-copied-147450"));
   };
   const password = async () => {
     if (!share) return;
     const pw = prompt(
       share.hasPassword
-        ? 'New password for this link (leave empty to REMOVE the password):'
-        : 'Password for this link:',
+        ? uiText("webobsidian.new-password-for-this-link-leave-empty-to-remove-c299e3")
+        : uiText("webobsidian.password-for-this-link-2ab0e0"),
     );
     if (pw === null) return;
     await api.setSharePassword(share.id, pw || null);
     await loadShares();
-    notify(pw ? 'Password set' : 'Password removed');
+    notify(pw ? uiText("webobsidian.password-set-676101") : uiText("webobsidian.password-removed-114bea"));
   };
   const remove = async () => {
     if (!share) return;
-    if (!confirm('Delete this public link? The URL stops working permanently.')) return;
+    if (!confirm(uiText("webobsidian.delete-this-public-link-the-url-stops-working-pe-9594a0"))) return;
     await api.deleteShare(share.id);
     await loadShares();
-    notify('Public link deleted');
+    notify(uiText("webobsidian.public-link-deleted-8b12fc"));
   };
 
   return (
@@ -64,7 +67,7 @@ export default function ShareDialog() {
         <div className="share-dialog-head">
           <Icon name="globe" size={18} />
           <div>
-            <div className="share-dialog-title">{/\.canvas$/i.test(path) ? 'Share canvas' : 'Share note'}</div>
+            <div className="share-dialog-title">{/\.canvas$/i.test(path) ? uiText("webobsidian.share-canvas-c02682") : uiText("webobsidian.share-note-81fd73")}</div>
             <div className="share-dialog-path">{path}</div>
           </div>
         </div>
@@ -72,11 +75,9 @@ export default function ShareDialog() {
         {!share && (
           <>
             <p className="share-dialog-hint">
-              Create a public link so <b>anyone with the URL</b> can read this note without login.
-            </p>
+              {uiText("webobsidian.create-a-public-link-so-9a5987")} <b>{uiText("webobsidian.anyone-with-the-url-8c7152")}</b> {uiText("webobsidian.can-read-this-note-without-login-19ec52")} </p>
             <button className="btn" onClick={create}>
-              <Icon name="globe" size={14} /> Create public link
-            </button>
+              <Icon name="globe" size={14} /> {uiText("webobsidian.create-public-link-2b4d90")} </button>
           </>
         )}
 
@@ -84,10 +85,10 @@ export default function ShareDialog() {
           <>
             <div className="setting-row">
               <div className="info">
-                <div className="name">Public link</div>
-                <div className="desc">{share.enabled ? 'Anyone with the URL can view this note' : 'Sharing is paused — the URL returns 404'}</div>
+                <div className="name">{uiText("webobsidian.public-link-dd39ae")}</div>
+                <div className="desc">{share.enabled ? uiText("webobsidian.anyone-with-the-url-can-view-this-note-aa7107") : uiText("webobsidian.sharing-is-paused-the-url-returns-404-11c45e")}</div>
               </div>
-              <button className={`graph-switch ${share.enabled ? 'on' : ''}`} onClick={toggle} aria-label="Toggle public link">
+              <button className={`graph-switch ${share.enabled ? 'on' : ''}`} onClick={toggle} aria-label={uiText("webobsidian.toggle-public-link-70590f")}>
                 <span className="graph-knob" />
               </button>
             </div>
@@ -95,32 +96,32 @@ export default function ShareDialog() {
             {share.enabled && (
               <div className="share-url">
                 <input className="text-input" readOnly value={url} onFocus={(e) => e.currentTarget.select()} />
-                <button className="btn" onClick={copy}><Icon name="link" size={14} /> Copy</button>
+                <button className="btn" onClick={copy}><Icon name="link" size={14} /> {uiText("interface.menu.copy")}</button>
               </div>
             )}
 
             <div className="setting-row">
               <div className="info">
-                <div className="name">Password protection</div>
-                <div className="desc">{share.hasPassword ? 'Visitors must enter a password' : 'Anyone with the link can open it'}</div>
+                <div className="name">{uiText("webobsidian.password-protection-5828c6")}</div>
+                <div className="desc">{share.hasPassword ? uiText("webobsidian.visitors-must-enter-a-password-715c79") : uiText("webobsidian.anyone-with-the-link-can-open-it-a4f493")}</div>
               </div>
               <button className="btn secondary" onClick={password}>
-                {share.hasPassword ? 'Change…' : 'Set password…'}
+                {share.hasPassword ? uiText("webobsidian.change-49b1cd") : uiText("webobsidian.set-password-bf0373")}
               </button>
             </div>
 
             <div className="setting-row">
               <div className="info">
-                <div className="name">Delete link</div>
-                <div className="desc">Revokes the URL permanently</div>
+                <div className="name">{uiText("webobsidian.delete-link-943845")}</div>
+                <div className="desc">{uiText("webobsidian.revokes-the-url-permanently-595bc4")}</div>
               </div>
-              <button className="btn danger" onClick={remove}>Delete</button>
+              <button className="btn danger" onClick={remove}>{uiText("dialogue.button-delete")}</button>
             </div>
           </>
         )}
 
         <div className="share-dialog-foot">
-          <button className="btn secondary" onClick={close}>Done</button>
+          <button className="btn secondary" onClick={close}>{uiText("webobsidian.done-e9b450")}</button>
         </div>
       </div>
     </div>

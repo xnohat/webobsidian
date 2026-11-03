@@ -2,6 +2,7 @@ import { scrypt, randomBytes, timingSafeEqual, createHash } from 'node:crypto';
 import { promisify } from 'node:util';
 import jwt from 'jsonwebtoken';
 import { getSettings, updateSettings } from './settings.js';
+import { effectiveOverridePassword, isDefaultPasswordActive } from './password-policy.js';
 import { config } from '../config.js';
 
 const scryptAsync = promisify(scrypt);
@@ -42,10 +43,16 @@ export async function isPasswordSet(): Promise<boolean> {
   return true;
 }
 
-/** Đã đổi pass khỏi mặc định chưa? */
+/**
+ * Has the instance moved off the default password yet? "Custom" here includes an
+ * operator-configured override (`auth.passwordHash` / `WEBOBSIDIAN_PASSWORD`), not
+ * just a password set through the UI: once an override exists, `123456` is no
+ * longer accepted (see `isDefaultPasswordActive`), so we must not force the user
+ * to go and change it.
+ */
 export async function hasCustomPassword(): Promise<boolean> {
   const s = await getSettings();
-  return Boolean(s.auth.userPasswordHash);
+  return !isDefaultPasswordActive(s.auth);
 }
 
 /** Lưu mật khẩu người dùng mới (ghi đè pass mặc định/pass cũ). */
@@ -60,24 +67,57 @@ export async function setUserPassword(password: string): Promise<void> {
 }
 
 /**
+ * True when an operator override password is configured — WEBOBSIDIAN_PASSWORD
+ * (env) or a manually-set auth.passwordHash. The login route uses this to refuse
+ * the well-known default (123456) once auth has been deliberately set up.
+ */
+export async function hasOverridePassword(): Promise<boolean> {
+  const s = await getSettings();
+  return Boolean(effectiveOverridePassword(config.initialPassword)) || Boolean(s.auth.passwordHash);
+}
+
+/**
  * Kiểm tra mật khẩu đăng nhập. Chấp nhận:
- *  1) Mật khẩu người dùng (userPasswordHash), hoặc mặc định 123456 nếu chưa đổi.
+ *  1) Mật khẩu người dùng (userPasswordHash), hoặc mặc định 123456 nếu chưa đổi
+ *     (chỉ khi `allowDefault`).
  *  2) Mật khẩu override để khôi phục: auth.passwordHash (hash, sửa tay) hoặc
  *     env WEBOBSIDIAN_PASSWORD (plaintext) — luôn được chấp nhận.
+ *
+ * `allowDefault` gates the well-known fallback (123456) — the login route passes
+ * false once an operator override exists (PR #4). Independently, the default is
+ * only ever accepted while no other credential is configured at all
+ * (`isDefaultPasswordActive`, PR #15): an instance that set WEBOBSIDIAN_PASSWORD
+ * or a hand-edited auth.passwordHash and never opened the UI must not still accept
+ * 123456. Both intents are kept: `allowDefault && isDefaultPasswordActive(...)`.
+ * `changePassword` hashes the current password through this same check, and
+ * `hasCustomPassword` reports "off the default" off the very same condition, so
+ * the ForceChangePassword screen can never demand a change to a password that no
+ * longer works.
  */
-export async function checkPassword(password: string): Promise<boolean> {
+export async function checkPassword(
+  password: string,
+  opts: { allowDefault?: boolean } = {},
+): Promise<boolean> {
+  const { allowDefault = true } = opts;
   const s = await getSettings();
 
-  // (1) Mật khẩu đăng nhập hiệu dụng.
+  // (1) The effective login password. The default branch must go through
+  // isDefaultPasswordActive(): it previously tested `userPasswordHash` alone, so
+  // setting WEBOBSIDIAN_PASSWORD without ever opening the UI still let `123456` in.
   if (s.auth.userPasswordHash) {
     if (await verifyPassword(password, s.auth.userPasswordHash)) return true;
-  } else if (safeEqualStr(password, DEFAULT_PASSWORD)) {
+  } else if (
+    allowDefault &&
+    isDefaultPasswordActive(s.auth) &&
+    safeEqualStr(password, DEFAULT_PASSWORD)
+  ) {
     return true;
   }
 
   // (2) Mật khẩu override (recovery) — luôn kiểm tra, kể cả khi đã đổi pass.
   if (s.auth.passwordHash && (await verifyPassword(password, s.auth.passwordHash))) return true;
-  if (config.initialPassword && safeEqualStr(password, config.initialPassword)) return true;
+  const override = effectiveOverridePassword(config.initialPassword);
+  if (override && safeEqualStr(password, override)) return true;
 
   return false;
 }

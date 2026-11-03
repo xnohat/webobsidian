@@ -1,0 +1,5 @@
+# markdown.ts, services/renderhtml.ts and services/links.ts embed raw NUL bytes
+# as parser sentinels, so git detects them as binary and prints
+# "Bin 1234 -> 5678 bytes" instead of a patch. (grep also skips them without -a.)
+*.ts diff
+*.tsx diff

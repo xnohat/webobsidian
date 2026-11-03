@@ -1,0 +1,63 @@
+{
+  "version": "1.14.5",
+  "cases": [
+    {
+      "action": "remove-embed",
+      "policy": "never",
+      "attachmentExists": true
+    },
+    {
+      "action": "delete-note",
+      "policy": "never",
+      "noteExists": false,
+      "attachmentExists": true,
+      "promptShown": false
+    },
+    {
+      "action": "remove-embed",
+      "policy": "always",
+      "attachmentExists": true
+    },
+    {
+      "action": "delete-note",
+      "policy": "always",
+      "noteExists": false,
+      "attachmentExists": false,
+      "promptShown": false
+    },
+    {
+      "action": "remove-embed",
+      "policy": "ask",
+      "attachmentExists": true
+    },
+    {
+      "action": "delete-note",
+      "policy": "ask",
+      "noteExists": false,
+      "attachmentExists": false,
+      "promptShown": true
+    }
+  ],
+  "exclusions": [
+    {
+      "filter": " archive ",
+      "target": "Archives.md",
+      "ignored": true
+    },
+    {
+      "filter": "Archive",
+      "target": "Other/Archive.md",
+      "ignored": false
+    },
+    {
+      "filter": "/draft\\.md$/",
+      "target": "Notes/Draft.md",
+      "ignored": true
+    },
+    {
+      "filter": "*.md",
+      "target": "Notes/a.md",
+      "ignored": false
+    }
+  ]
+}

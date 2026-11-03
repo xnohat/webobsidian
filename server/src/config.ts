@@ -21,6 +21,13 @@ export interface RuntimeConfig {
    * value. Set `TRUST_PROXY=false` for a directly-exposed instance with no proxy.
    */
   trustProxy: boolean | number | string;
+  /**
+   * Optional request header carrying the real client IP, set by the proxy in
+   * front of us (e.g. `CF-Connecting-IP` for a Cloudflare tunnel). Only used to
+   * key the login rate limit, and only when the socket peer is trusted per
+   * `trustProxy`. Unset → key on the TCP socket address.
+   */
+  clientIpHeader?: string;
 }
 
 function resolveRoots(): string[] {
@@ -63,6 +70,7 @@ export const config: RuntimeConfig = {
   initialPassword: process.env.WEBOBSIDIAN_PASSWORD || undefined,
   isProd: process.env.NODE_ENV === 'production',
   trustProxy: resolveTrustProxy(),
+  clientIpHeader: process.env.CLIENT_IP_HEADER?.trim() || undefined,
 };
 
 export const SETTINGS_FILE = path.join(config.dataDir, 'settings.json');

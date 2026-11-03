@@ -1,20 +1,25 @@
+import {translateLabel as uiLabel} from "../lib/i18n/runtime";
+import {t as uiText, useLanguage} from "../lib/i18n/runtime";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { api, type SearchHit, type MatchContext, type NoteMatches } from '../lib/api';
+import { api, ApiError, type SearchHit, type MatchContext, type NoteMatches } from '../lib/api';
 import { useStore } from '../lib/store';
 import Icon from './Icon';
+import { cleanSnippet } from '../lib/snippet';
+import {useIndexStatus,indexStatusMessage,applyIndexStatus} from '../lib/indexStatus';
 
 type SortMode = 'relevance' | 'name-asc' | 'name-desc' | 'path-asc';
 
 const SORT_LABELS: Record<SortMode, string> = {
   relevance: 'Relevance',
-  'name-asc': 'File name (A to Z)',
-  'name-desc': 'File name (Z to A)',
+  'name-asc': uiText("plugins.file-explorer.label-sort-a-to-z"),
+  'name-desc': uiText("plugins.file-explorer.label-sort-z-to-a"),
   'path-asc': 'Path (A to Z)',
 };
 
 /** Render a match context with its highlighted ranges as React nodes. */
-function highlight(c: MatchContext): ReactNode[] {
+function highlight(raw: MatchContext): ReactNode[] {
   const out: ReactNode[] = [];
+  const c = { ...raw, ...cleanSnippet(raw.text, raw.ranges) };
   const ranges = [...c.ranges].sort((a, b) => a[0] - b[0]);
   let pos = 0;
   if (c.pre) out.push('…');
@@ -31,8 +36,16 @@ function highlight(c: MatchContext): ReactNode[] {
 }
 
 export default function SearchPanel() {
+  const languageRevision = useLanguage().revision;
+
   const [q, setQ] = useState('');
   const [hits, setHits] = useState<SearchHit[]>([]);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const indexState=useIndexStatus();
+  const indexKey=`${indexState.status?.generation ?? ''}:${indexState.status?.revision ?? ''}:${indexState.status?.initialScanComplete ?? ''}:${indexState.refresh}`;
+  const contextEpoch=useRef(0);
+  const previousGeneration=useRef(indexState.status?.generation);
   const [matches, setMatches] = useState<Map<string, NoteMatches>>(new Map());
   const [matchCase, setMatchCase] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -58,22 +71,38 @@ export default function SearchPanel() {
     if (searchQuery) setQ(searchQuery);
   }, [searchQuery]);
 
+  useEffect(()=>{
+    if(previousGeneration.current!==indexState.status?.generation){
+      previousGeneration.current=indexState.status?.generation;
+      setHits([]);
+      setMatches(new Map());
+    }
+  },[indexState.status?.generation]);
+
   useEffect(() => {
+    let current=true;
     window.clearTimeout(timer.current);
     if (!q.trim()) {
       setHits([]);
+      setError('');setLoading(false);
       return;
     }
+    setLoading(true);setError('');
     timer.current = window.setTimeout(async () => {
       try {
         const r = await api.search(q); // no limit — server returns every match
+        if(!current)return;
         setHits(r.hits);
-      } catch {
-        setHits([]);
+        if(r.index)applyIndexStatus(r.index);
+      } catch(e) {
+        if(!current)return;
+        setError(e instanceof ApiError && e.status===503 ? uiText("webobsidian.indexing-notes-search-will-update-when-ready-7dbe35") : uiText("webobsidian.search-could-not-be-refreshed-check-the-connecti-5905f0"));
+      } finally {
+        if(current)setLoading(false);
       }
     }, 180);
-    return () => window.clearTimeout(timer.current);
-  }, [q]);
+    return () => {current=false;window.clearTimeout(timer.current)};
+  }, [q,indexKey]);
 
   // Reset the render window when the result set or its ordering changes.
   useEffect(() => setVisible(50), [hits, sort, matchCase]);
@@ -82,7 +111,8 @@ export default function SearchPanel() {
     setMatches(new Map());
     setNoteOverride(new Map());
     inflight.current.clear();
-  }, [q, matchCase]);
+    contextEpoch.current++;
+  }, [q, matchCase,indexKey]);
   // Toggling the global collapse switch clears individual overrides.
   useEffect(() => setNoteOverride(new Map()), [collapsed]);
 
@@ -104,7 +134,7 @@ export default function SearchPanel() {
         break; // relevance = server order
     }
     return sorted;
-  }, [hits, sort]);
+  }, [hits, sort, languageRevision]);
 
   // Lazily fetch highlighted match contexts for the notes currently rendered.
   useEffect(() => {
@@ -118,10 +148,11 @@ export default function SearchPanel() {
     batch.forEach((p) => inflight.current.add(p));
     const qAt = q;
     const caseAt = matchCase;
+    const epochAt=contextEpoch.current;
     api
       .searchMatches(qAt, batch, caseAt)
       .then((r) => {
-        if (qAt !== queryRef.current || caseAt !== caseRef.current) return; // stale
+        if (epochAt!==contextEpoch.current || qAt !== queryRef.current || caseAt !== caseRef.current) return; // stale
         setMatches((prev) => {
           const next = new Map(prev);
           for (const m of r.matches) next.set(m.path, m);
@@ -129,8 +160,8 @@ export default function SearchPanel() {
         });
       })
       .catch(() => {})
-      .finally(() => batch.forEach((p) => inflight.current.delete(p)));
-  }, [shown, visible, q, matchCase, matches]);
+      .finally(() => {if(epochAt===contextEpoch.current)batch.forEach((p) => inflight.current.delete(p))});
+  }, [shown, visible, q, matchCase, matches,indexKey]);
 
   // Load the next chunk when the sentinel at the bottom scrolls into view.
   useEffect(() => {
@@ -159,7 +190,7 @@ export default function SearchPanel() {
     let t = 0;
     for (const m of matches.values()) t += m.count;
     return t;
-  }, [matches]);
+  }, [matches, languageRevision]);
 
   return (
     <div className="search-panel">
@@ -168,26 +199,25 @@ export default function SearchPanel() {
           <Icon name="search" size={15} className="search-lead" />
           <input
             className="search-input has-lead"
-            placeholder="Search   (try tag:idea, path:notes)"
+            placeholder={uiText("webobsidian.search-try-tag-idea-path-notes-c9baba")}
             autoFocus
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
           <button
             className={`search-icon-btn ${matchCase ? 'active' : ''}`}
-            title="Match case"
+            title={uiText("plugins.search.label-match-case")}
             onClick={() => setMatchCase((v) => !v)}
           >
-            Aa
-          </button>
+            {uiText("webobsidian.aa-2c419e")} </button>
           {q && (
-            <button className="search-icon-btn" title="Clear" onClick={() => setQ('')}>
+            <button className="search-icon-btn" title={uiText("plugins.file-recovery.button-clear-history")} onClick={() => setQ('')}>
               <Icon name="x" size={15} />
             </button>
           )}
           <button
             className={`search-icon-btn ${showOptions ? 'active' : ''}`}
-            title="Search options"
+            title={uiText("plugins.search.label-search-options")}
             onClick={() => setShowOptions((v) => !v)}
           >
             <Icon name="sliders" size={15} />
@@ -197,26 +227,28 @@ export default function SearchPanel() {
         {showOptions && (
           <div className="search-options">
             <label className="search-opt">
-              <span>Collapse results</span>
+              <span>{uiText("plugins.search.label-collapse-results")}</span>
               <input type="checkbox" checked={collapsed} onChange={(e) => setCollapsed(e.target.checked)} />
             </label>
             <label className="search-opt">
-              <span>Show more context</span>
+              <span>{uiText("plugins.search.label-more-context")}</span>
               <input type="checkbox" checked={moreContext} onChange={(e) => setMoreContext(e.target.checked)} />
             </label>
           </div>
         )}
 
-        {q && (
+        {indexStatusMessage(indexState.status) && <div role="status" className="search-index-status">{indexStatusMessage(indexState.status)}</div>}
+        {error && <div role="alert" className="search-index-status">{error}</div>}
+        {q && !error && (
           <div className="search-meta">
             <span>
-              {shown.length} note{shown.length === 1 ? '' : 's'}
-              {totalMatches > 0 && ` · ${totalMatches}${visible < shown.length ? '+' : ''} matches`}
+              {loading ? uiText("webobsidian.searching-1a6a5b") : uiText('webobsidian.note-count',{count:shown.length})}
+              {totalMatches > 0 && uiText("webobsidian.-value0-value1-matches-0a2408", {value0: totalMatches, value1: visible < shown.length ? '+' : ''})}
             </span>
             <span className="grow" />
             <div className="search-sort">
               <button className="search-sort-btn" onClick={() => setSortOpen((v) => !v)}>
-                {SORT_LABELS[sort]}
+                {uiLabel(SORT_LABELS[sort])}
                 <Icon name="chevron-down" size={13} />
               </button>
               {sortOpen && (
@@ -233,7 +265,7 @@ export default function SearchPanel() {
                         }}
                       >
                         <Icon name="check" size={14} style={{ opacity: sort === m ? 1 : 0 }} />
-                        {SORT_LABELS[m]}
+                        {uiLabel(SORT_LABELS[m])}
                       </button>
                     ))}
                   </div>
@@ -284,7 +316,7 @@ export default function SearchPanel() {
                         className={`rg-match ${moreContext ? 'expanded' : ''}`}
                         onClick={() => openFile(h.path)}
                       >
-                        {h.snippet}
+                        {cleanSnippet(h.snippet, []).text}
                       </div>
                     )
                   )}
@@ -295,7 +327,7 @@ export default function SearchPanel() {
         })}
         <div ref={sentinel} />
         {visible < shown.length && (
-          <div className="search-more">Showing {visible} of {shown.length}…</div>
+          <div className="search-more">{uiText("webobsidian.showing-163d81")} {visible} {uiText("webobsidian.of-de04fa")} {shown.length}…</div>
         )}
       </div>
     </div>

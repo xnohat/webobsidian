@@ -1,0 +1,85 @@
+name: Deploy (LXC 107)
+
+# Deploys to the homelab LXC 107, which is behind NAT: no inbound access exists, so the job runs on a
+# self-hosted runner *inside that LXC* (labels: self-hosted, webobsidian-107). The runner is
+# registered to this repository only, and this workflow is the only one that targets it.
+#
+# Trigger: after the CI workflow succeeds for a push to `main` (i.e. a merged PR), plus manual
+# dispatch. `workflow_run.event == 'push'` is checked explicitly: workflow_run also fires for
+# `pull_request` runs, and a fork PR must never reach this runner.
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      sync:
+        description: "Sync the deploy checkout to origin/main before building"
+        type: boolean
+        default: true
+
+concurrency:
+  group: deploy-lxc107
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to LXC 107
+    if: >-
+      github.repository == 'phamtruonghung/webobsidian' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success'))
+    runs-on: [self-hosted, webobsidian-107]
+    timeout-minutes: 45
+    env:
+      DEPLOY_DIR: /root/webobsidian
+      ENV_FILE: /root/webobsidian/.env
+      BACKUP_DIR: /root/backups
+      PROJECT: webobsidian
+      SYNC: "0"
+    steps:
+      - name: Show what is being deployed
+        run: |
+          set -euo pipefail
+          echo "event:  ${{ github.event_name }}"
+          echo "sha:    ${{ github.event.workflow_run.head_sha || github.sha }}"
+          echo "run:    ${{ github.event.workflow_run.run_number || github.run_number }}"
+          docker compose version
+          docker system df
+
+      - name: Sync deploy checkout to the merged commit
+        if: github.event_name == 'workflow_run'
+        run: |
+          set -euo pipefail
+          SHA='${{ github.event.workflow_run.head_sha }}'
+          git -C "$DEPLOY_DIR" fetch --prune origin
+          git -C "$DEPLOY_DIR" checkout --force "$SHA"
+          test "$(git -C "$DEPLOY_DIR" rev-parse HEAD)" = "$SHA"
+          echo "deploy checkout is at $(git -C "$DEPLOY_DIR" rev-parse --short HEAD)"
+
+      - name: Deploy (backup → build → up → smoke, rollback on failure)
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            SYNC="${{ inputs.sync && '1' || '0' }}" "$DEPLOY_DIR/deploy/deploy.sh"
+          else
+            SYNC=0 "$DEPLOY_DIR/deploy/deploy.sh"
+          fi
+
+      - name: Report deployed state
+        if: always()
+        run: |
+          set +e
+          echo "--- container ---"
+          docker compose -f "$DEPLOY_DIR/docker-compose.yml" --env-file "$ENV_FILE" -p "$PROJECT" ps
+          echo "--- git ---"
+          git -C "$DEPLOY_DIR" log -1 --pretty='%h %s (%ci)'
+          echo "--- images ---"
+          docker images --format '{{.Repository}}:{{.Tag}} {{.CreatedSince}} {{.Size}}' | head -10
+          echo "--- last log lines ---"
+          docker compose -f "$DEPLOY_DIR/docker-compose.yml" --env-file "$ENV_FILE" -p "$PROJECT" logs --tail 20 webobsidian
+          exit 0

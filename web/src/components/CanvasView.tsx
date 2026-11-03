@@ -1,3 +1,4 @@
+import {t as uiText, useLanguage} from "../lib/i18n/runtime";
 import { useEffect, useLayoutEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useStore, type ContextMenuItem } from '../lib/store';
 import { api, type TreeNode } from '../lib/api';
@@ -48,6 +49,8 @@ type Drag =
 
 /** Markdown / image / link body rendered inside a file node. */
 function FileNodeBody({ file }: { file: string }) {
+  const languageRevision = useLanguage().revision;
+
   const [md, setMd] = useState<string | null>(null);
   const isImg = IMG_RE.test(file);
   const isMd = MD_RE.test(file);
@@ -78,7 +81,7 @@ function FileNodeBody({ file }: { file: string }) {
         <span className="title">{name.replace(MD_RE, '')}</span>
       </div>
       <div className="canvas-file-body markdown-preview">
-        {isMd ? (md != null ? <Preview source={md} /> : <div className="canvas-loading">Loading…</div>) : (
+        {isMd ? (md != null ? <Preview source={md} sourcePath={file} /> : <div className="canvas-loading">{uiText("webobsidian.loading-33ce41")}</div>) : (
           <div className="canvas-file-generic">
             <Icon name="file" size={28} />
             <span>{name}</span>
@@ -90,6 +93,8 @@ function FileNodeBody({ file }: { file: string }) {
 }
 
 export default function CanvasView() {
+  const languageRevision = useLanguage().revision;
+
   const activePath = useStore((s) => s.activePath);
   const storeContent = useStore((s) => s.content);
   const setContent = useStore((s) => s.setContent);
@@ -304,7 +309,7 @@ export default function CanvasView() {
       lastWritten.current = s;
       setContent(s);
     },
-    [setContent],
+    [setContent, languageRevision],
   );
 
   // Commit a user edit: record the prior state for undo, then apply.
@@ -316,7 +321,7 @@ export default function CanvasView() {
       setHistV((v) => v + 1);
       applyData(next);
     },
-    [applyData],
+    [applyData, languageRevision],
   );
 
   const undo = useCallback(() => {
@@ -327,7 +332,7 @@ export default function CanvasView() {
     setEditingNode(null);
     setEditingEdge(null);
     setHistV((v) => v + 1);
-  }, [applyData]);
+  }, [applyData, languageRevision]);
 
   const redo = useCallback(() => {
     if (!redoStack.current.length) return;
@@ -337,10 +342,10 @@ export default function CanvasView() {
     setEditingNode(null);
     setEditingEdge(null);
     setHistV((v) => v + 1);
-  }, [applyData]);
+  }, [applyData, languageRevision]);
 
   useEffect(() => {
-    const id = window.setTimeout(() => save(), 900);
+    const id = window.setTimeout(() => { void save().catch(() => {}); }, 900);
     return () => window.clearTimeout(id);
   }, [data, save]);
 
@@ -516,33 +521,33 @@ export default function CanvasView() {
     const multi = selNodes.size > 1;
     const colorNames: Record<string, string> = { '1': 'Red', '2': 'Orange', '3': 'Yellow', '4': 'Green', '5': 'Cyan', '6': 'Purple' };
     const colorSub: ContextMenuItem[] = [
-      { label: 'Default', onClick: () => setColor(undefined) },
-      ...Object.keys(PRESET_COLORS).map((k) => ({ label: colorNames[k] ?? `Color ${k}`, onClick: () => setColor(k) })),
+      { get label() {return uiText("webobsidian.default-808d7d");}, onClick: () => setColor(undefined) },
+      ...Object.keys(PRESET_COLORS).map((k) => ({ label: colorNames[k] ?? uiText("webobsidian.color-value0-e68c76", {value0: k}), onClick: () => setColor(k) })),
     ];
     const items: ContextMenuItem[] = [
-      ...(node.type === 'text' ? [{ label: 'Edit', icon: 'pencil', onClick: () => setEditingNode(node.id) }] : []),
-      ...(node.type === 'file' ? [{ label: 'Open', icon: 'arrow-up-right', onClick: () => openFile((node as any).file) }] : []),
-      ...(node.type === 'link' ? [{ label: 'Open link', icon: 'globe', onClick: () => window.open((node as any).url, '_blank', 'noopener') }] : []),
-      { label: 'Set color', icon: 'palette', submenu: colorSub },
-      { label: 'Duplicate', icon: 'file-plus', onClick: duplicateSelection },
-      { label: 'Zoom to selection', icon: 'zoom-in', onClick: zoomToSelection },
+      ...(node.type === 'text' ? [{ get label() {return uiText("interface.menu.edit");}, icon: 'pencil', onClick: () => setEditingNode(node.id) }] : []),
+      ...(node.type === 'file' ? [{ get label() {return uiText("webobsidian.open-cf9b77");}, icon: 'arrow-up-right', onClick: () => openFile((node as any).file) }] : []),
+      ...(node.type === 'link' ? [{ get label() {return uiText("webobsidian.open-link-d2de1a");}, icon: 'globe', onClick: () => window.open((node as any).url, '_blank', 'noopener') }] : []),
+      { get label() {return uiText("plugins.canvas.action-set-color");}, icon: 'palette', submenu: colorSub },
+      { get label() {return uiText("webobsidian.duplicate-972d57");}, icon: 'file-plus', onClick: duplicateSelection },
+      { get label() {return uiText("plugins.canvas.action-zoom-to-selection");}, icon: 'zoom-in', onClick: zoomToSelection },
       { label: '', separator: true },
-      { label: 'Bring to front', onClick: bringToFront },
-      { label: 'Send to back', onClick: sendToBack },
+      { get label() {return uiText("webobsidian.bring-to-front-1f65ed");}, onClick: bringToFront },
+      { get label() {return uiText("webobsidian.send-to-back-e259d4");}, onClick: sendToBack },
       ...(multi
         ? [{
-            label: 'Align', icon: 'columns', submenu: [
-              { label: 'Align left', onClick: () => alignSelection('left') },
-              { label: 'Align center horizontally', onClick: () => alignSelection('hcenter') },
-              { label: 'Align right', onClick: () => alignSelection('right') },
-              { label: 'Align top', onClick: () => alignSelection('top') },
-              { label: 'Align center vertically', onClick: () => alignSelection('vcenter') },
-              { label: 'Align bottom', onClick: () => alignSelection('bottom') },
+            get label() {return uiText("plugins.canvas.action-align");}, icon: 'columns', submenu: [
+              { get label() {return uiText("webobsidian.align-left-b442b4");}, onClick: () => alignSelection('left') },
+              { get label() {return uiText("webobsidian.align-center-horizontally-0f49ab");}, onClick: () => alignSelection('hcenter') },
+              { get label() {return uiText("webobsidian.align-right-9bb446");}, onClick: () => alignSelection('right') },
+              { get label() {return uiText("plugins.canvas.action-align-top");}, onClick: () => alignSelection('top') },
+              { get label() {return uiText("webobsidian.align-center-vertically-685eac");}, onClick: () => alignSelection('vcenter') },
+              { get label() {return uiText("plugins.canvas.action-align-bottom");}, onClick: () => alignSelection('bottom') },
             ],
           }]
         : []),
       { label: '', separator: true },
-      { label: 'Remove', icon: 'trash', danger: true, onClick: deleteSelection },
+      { get label() {return uiText("webobsidian.remove-e96390");}, icon: 'trash', danger: true, onClick: deleteSelection },
     ];
     openContextMenu({ x: e.clientX, y: e.clientY, items });
   };
@@ -692,48 +697,48 @@ export default function CanvasView() {
 
   // Obsidian editor context-menu structure (mined from obsidian.asar i18n).
   const textMenuItems = (): FmtItem[] => [
-    { label: 'Add link', act: openLinkPicker },
-    { label: 'Add external link', act: () => applyFormat('[', '](https://)') },
+    { get label() {return uiText("interface.formatting.insert-link");}, act: openLinkPicker },
+    { get label() {return uiText("interface.formatting.insert-external-link");}, act: () => applyFormat('[', '](https://)') },
     { sep: true },
-    { label: 'Format', sub: [
-      { label: 'Bold', act: () => toggleWrap('**') },
-      { label: 'Italic', act: () => toggleWrap('*') },
-      { label: 'Strikethrough', act: () => toggleWrap('~~') },
-      { label: 'Highlight', act: () => toggleWrap('==') },
-      { label: 'Code', act: () => toggleWrap('`') },
-      { label: 'Math', act: () => toggleWrap('$') },
-      { label: 'Comment', act: () => toggleWrap('%%') },
+    { get label() {return uiText("interface.formatting.label-formatting");}, sub: [
+      { get label() {return uiText("webobsidian.bold-19e074");}, act: () => toggleWrap('**') },
+      { get label() {return uiText("interface.formatting.toggle-italics");}, act: () => toggleWrap('*') },
+      { get label() {return uiText("webobsidian.strikethrough-a93b9a");}, act: () => toggleWrap('~~') },
+      { get label() {return uiText("webobsidian.highlight-e1da92");}, act: () => toggleWrap('==') },
+      { get label() {return uiText("webobsidian.code-adac69");}, act: () => toggleWrap('`') },
+      { get label() {return uiText("webobsidian.math-3edf0d");}, act: () => toggleWrap('$') },
+      { get label() {return uiText("webobsidian.comment-153d7a");}, act: () => toggleWrap('%%') },
       { sep: true },
-      { label: 'Clear formatting', act: clearFormatting },
+      { get label() {return uiText("webobsidian.clear-formatting-6c8a26");}, act: clearFormatting },
     ] },
-    { label: 'Paragraph', sub: [
-      { label: 'Bullet list', act: () => setLinePrefix('- ') },
-      { label: 'Numbered list', act: () => setLinePrefix('1. ') },
-      { label: 'Task list', act: () => setLinePrefix('- [ ] ') },
+    { get label() {return uiText("interface.formatting.label-paragraph");}, sub: [
+      { get label() {return uiText("interface.formatting.toggle-bullet-list");}, act: () => setLinePrefix('- ') },
+      { get label() {return uiText("interface.formatting.toggle-numbered-list");}, act: () => setLinePrefix('1. ') },
+      { get label() {return uiText("interface.formatting.toggle-checklist");}, act: () => setLinePrefix('- [ ] ') },
       { sep: true },
-      ...[1, 2, 3, 4, 5, 6].map((l) => ({ label: `Heading ${l}`, act: () => setLinePrefix('#'.repeat(l) + ' ') })),
-      { label: 'Body', act: () => setLinePrefix('') },
+      ...[1, 2, 3, 4, 5, 6].map((l) => ({ get label() {return uiText("webobsidian.heading-value0-390a28", {value0: l});}, act: () => setLinePrefix('#'.repeat(l) + ' ') })),
+      { get label() {return uiText("webobsidian.body-718a7e");}, act: () => setLinePrefix('') },
       { sep: true },
-      { label: 'Quote', act: () => setLinePrefix('> ') },
+      { get label() {return uiText("webobsidian.quote-309028");}, act: () => setLinePrefix('> ') },
     ] },
-    { label: 'Align', sub: [
-      { label: 'Align left', act: () => setTextAlign('left') },
-      { label: 'Align center', act: () => setTextAlign('center') },
-      { label: 'Align right', act: () => setTextAlign('right') },
+    { get label() {return uiText("plugins.canvas.action-align");}, sub: [
+      { get label() {return uiText("webobsidian.align-left-b442b4");}, act: () => setTextAlign('left') },
+      { get label() {return uiText("webobsidian.align-center-97b689");}, act: () => setTextAlign('center') },
+      { get label() {return uiText("webobsidian.align-right-9bb446");}, act: () => setTextAlign('right') },
     ] },
-    { label: 'Insert', sub: [
-      { label: 'Table', act: () => insertAtCaret('\n| Column 1 | Column 2 |\n| --- | --- |\n|  |  |\n') },
-      { label: 'Callout', act: () => insertAtCaret('> [!note]\n> ') },
-      { label: 'Code block', act: () => applyFormat('```\n', '\n```') },
-      { label: 'Math block', act: () => applyFormat('$$\n', '\n$$') },
-      { label: 'Horizontal rule', act: () => insertAtCaret('\n\n---\n\n') },
-      { label: 'Footnote', act: () => insertAtCaret('[^1]') },
+    { get label() {return uiText("interface.formatting.label-insert");}, sub: [
+      { get label() {return uiText("webobsidian.table-0424f6");}, act: () => insertAtCaret('\n| Column 1 | Column 2 |\n| --- | --- |\n|  |  |\n') },
+      { get label() {return uiText("webobsidian.callout-f1647a");}, act: () => insertAtCaret('> [!note]\n> ') },
+      { get label() {return uiText("interface.formatting.insert-code-block");}, act: () => applyFormat('```\n', '\n```') },
+      { get label() {return uiText("interface.formatting.insert-math-block");}, act: () => applyFormat('$$\n', '\n$$') },
+      { get label() {return uiText("interface.formatting.insert-horizontal-rule");}, act: () => insertAtCaret('\n\n---\n\n') },
+      { get label() {return uiText("webobsidian.footnote-40e31a");}, act: () => insertAtCaret('[^1]') },
     ] },
     { sep: true },
-    { label: 'Cut', act: () => doClipboard('cut') },
-    { label: 'Copy', act: () => doClipboard('copy') },
-    { label: 'Paste', act: () => { void doPaste(); } },
-    { label: 'Select all', act: () => editTaRef.current?.select() },
+    { get label() {return uiText("interface.menu.cut");}, act: () => doClipboard('cut') },
+    { get label() {return uiText("interface.menu.copy");}, act: () => doClipboard('copy') },
+    { get label() {return uiText("interface.menu.paste");}, act: () => { void doPaste(); } },
+    { get label() {return uiText("webobsidian.select-all-913aff");}, act: () => editTaRef.current?.select() },
   ];
 
   const addTextNode = (cx: number, cy: number) => {
@@ -826,27 +831,27 @@ export default function CanvasView() {
     e.target.value = '';
     if (!f) return;
     try {
-      const { path } = await api.upload(f);
+      const { path } = await api.upload(f, undefined, activePath ?? '');
       const c = viewCenter();
       addFileNode(path, c.x, c.y);
-      notify(`Inserted ${path}`);
+      notify(uiText("webobsidian.inserted-value0-dac12f", {value0: path}));
     } catch (err: any) {
-      notify(err?.message ?? 'Upload failed');
+      notify(err?.message ?? uiText("webobsidian.upload-failed-ad0d06"));
     }
   };
 
-  const noteList = useMemo(() => flattenFiles(tree), [tree]);
+  const noteList = useMemo(() => flattenFiles(tree), [tree, languageRevision]);
   const filteredNotes = useMemo(() => {
     const q = noteFilter.trim().toLowerCase();
     const list = q ? noteList.filter((f) => f.path.toLowerCase().includes(q)) : noteList;
     return list.slice(0, 50);
-  }, [noteList, noteFilter]);
+  }, [noteList, noteFilter, languageRevision]);
 
   const filteredLinks = useMemo(() => {
     const q = linkFilter.trim().toLowerCase();
     const list = q ? noteList.filter((f) => f.path.toLowerCase().includes(q)) : noteList;
     return list.slice(0, 50);
-  }, [noteList, linkFilter]);
+  }, [noteList, linkFilter, languageRevision]);
 
   // ---- Pointer handling on the viewport ------------------------------------
   const onViewportPointerDown = (e: React.PointerEvent) => {
@@ -1149,7 +1154,7 @@ export default function CanvasView() {
       return;
     }
     const pad = 80;
-    const scale = Math.min(4, Math.max(0.1, Math.min((r.width - pad) / bb.width, (r.height - pad) / bb.height, 1.5)));
+    const scale = Math.max(0.1, Math.min((r.width - pad) / bb.width, (r.height - pad) / bb.height, 1));
     const tx = r.width / 2 - (bb.x + bb.width / 2) * scale;
     const ty = r.height / 2 - (bb.y + bb.height / 2) * scale;
     setView({ tx, ty, scale });
@@ -1248,10 +1253,10 @@ export default function CanvasView() {
   })();
   const onlyEdges = sel.edges.size > 0 && sel.nodes.size === 0;
   const selEdgeHasLabel = onlyEdges && data.edges.some((e) => sel.edges.has(e.id) && e.label);
-  // Text-card alignment state (only when ≥1 selected node is a text card).
-  const selTextNodes = data.nodes.filter((n) => sel.nodes.has(n.id) && n.type === 'text') as TextNode[];
-  const selHasText = selTextNodes.length > 0;
-  const curAlign: TextAlign = selTextNodes[0]?.textAlign ?? 'left';
+  // Native Edit action applies to a single selected text card.
+  const singleTextNode = sel.nodes.size === 1 && sel.edges.size === 0
+    ? data.nodes.find((n) => sel.nodes.has(n.id) && n.type === 'text')
+    : undefined;
   // Current color of the selection (first selected node/edge) → highlight its swatch.
   const selColor: string | undefined = (() => {
     const n = data.nodes.find((x) => sel.nodes.has(x.id));
@@ -1297,7 +1302,7 @@ export default function CanvasView() {
               onPointerLeave={() => setHoverNode((h) => (h === n.id ? null : h))}
               onContextMenu={(e) => openNodeMenu(e, n)}
             >
-              <div className="canvas-group-label">{(n as any).label ?? 'Group'}</div>
+              <div className="canvas-group-label">{(n as any).label ?? uiText("plugins.bases.label-group")}</div>
               {renderHandlesAndPorts(n, sel.nodes.has(n.id), hoverNode === n.id || sel.nodes.has(n.id))}
             </div>
           );
@@ -1308,8 +1313,8 @@ export default function CanvasView() {
           <defs>
             {/* auto-start-reverse → the `from` arrowhead points outward (back toward
                 its node) and sits ON the line instead of hidden under the node. */}
-            <marker id="cv-arrow" markerWidth="14" markerHeight="14" refX="11" refY="5.5" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
-              <path d="M0,0 L11,5.5 L0,11 Z" fill="context-stroke" />
+            <marker id="cv-arrow" markerWidth="14" markerHeight="14" refX="10.4" refY="6.5" orient="auto-start-reverse" markerUnits="userSpaceOnUse" overflow="visible">
+              <path d="M0,0 L10.4,6.5 L0,13 Z" fill="context-stroke" stroke="context-stroke" strokeWidth="1" strokeLinejoin="round" />
             </marker>
           </defs>
           {data.edges.map((edge) => {
@@ -1440,7 +1445,7 @@ export default function CanvasView() {
             <div
               key={n.id}
               className={`canvas-node canvas-${n.type} ${selected ? 'selected' : ''}`}
-              style={{ left: n.x, top: n.y, width: n.width, height: n.height, ...(col ? ({ '--c': col, borderColor: col } as React.CSSProperties) : {}) }}
+              style={{ left: n.x, top: n.y, width: n.width, height: n.height, '--canvas-node-height': `${n.height}px`, ...(col ? ({ '--c': col, borderColor: col } as React.CSSProperties) : {}) } as React.CSSProperties}
               onPointerDown={(e) => beginNodeDrag(e, n.id)}
               onPointerEnter={() => setHoverNode(n.id)}
               onPointerLeave={() => setHoverNode((h) => (h === n.id ? null : h))}
@@ -1481,8 +1486,8 @@ export default function CanvasView() {
                     style={{ textAlign: (n as TextNode).textAlign ?? 'left' }}
                   />
                 ) : (
-                  <div className="canvas-text-body markdown-preview" style={{ textAlign: (n as TextNode).textAlign ?? 'left' }}>
-                    {(n as TextNode).text.trim() ? <Preview source={(n as TextNode).text} /> : <span className="canvas-placeholder">Empty card — double-click to edit</span>}
+                  <div className="canvas-text-body" style={{ textAlign: (n as TextNode).textAlign ?? 'left' }}>
+                    {(n as TextNode).text.trim() ? <Preview source={(n as TextNode).text} fontSize={16} /> : <span className="canvas-placeholder">{uiText("webobsidian.empty-card-double-click-to-edit-e21e85")}</span>}
                   </div>
                 )
               )}
@@ -1521,34 +1526,24 @@ export default function CanvasView() {
           onPointerDown={(e) => e.stopPropagation()}
         >
           <div className="canvas-menu-row">
-            <button className="canvas-menu-btn" title="Remove" onClick={deleteSelection}>
+            <button className="canvas-menu-btn" title={uiText("webobsidian.remove-e96390")} onClick={deleteSelection}>
               <Icon name="trash" size={16} />
             </button>
-            <button className={`canvas-menu-btn ${showColors ? 'active' : ''}`} title="Set color" onClick={() => setShowColors((v) => !v)}>
+            <button className={`canvas-menu-btn ${showColors ? 'active' : ''}`} title={uiText("plugins.canvas.action-set-color")} onClick={() => setShowColors((v) => !v)}>
               <Icon name="palette" size={16} />
             </button>
-            <button className="canvas-menu-btn" title="Zoom to selection" onClick={zoomToSelection}>
-              <Icon name="zoom-in" size={16} />
+            <button className="canvas-menu-btn" title={uiText("plugins.canvas.action-zoom-to-selection")} onClick={zoomToSelection}>
+              <Icon name="zoom-to-selection" size={16} />
             </button>
-            {selHasText && (
-              <>
-                <span className="canvas-menu-vsep" />
-                {(['left', 'center', 'right'] as const).map((a) => (
-                  <button
-                    key={a}
-                    className={`canvas-menu-btn ${curAlign === a ? 'active' : ''}`}
-                    title={`Align ${a}`}
-                    onClick={() => setTextAlign(a)}
-                  >
-                    <Icon name={`align-${a}`} size={16} />
-                  </button>
-                ))}
-              </>
+            {singleTextNode && (
+              <button className="canvas-menu-btn" title={uiText("interface.menu.edit")} onClick={() => activateNode(singleTextNode.id)}>
+                <Icon name="square-pen" size={16} />
+              </button>
             )}
             {onlyEdges && (
               <>
                 <span className="canvas-dir-wrap">
-                  <button className={`canvas-menu-btn ${showDir ? 'active' : ''}`} title="Arrow direction" onClick={() => setShowDir((v) => !v)}>
+                  <button className={`canvas-menu-btn ${showDir ? 'active' : ''}`} title={uiText("webobsidian.arrow-direction-d8e9ea")} onClick={() => setShowDir((v) => !v)}>
                     <Icon name={curDir === 'non' ? 'minus' : curDir === 'bi' ? 'arrow-left-right' : 'arrow-right'} size={16} />
                   </button>
                   {showDir && (
@@ -1564,13 +1559,13 @@ export default function CanvasView() {
                   )}
                 </span>
                 {selEdgeHasLabel && (
-                  <button className="canvas-menu-btn" title="Remove label" onClick={removeEdgeLabel}>
+                  <button className="canvas-menu-btn" title={uiText("plugins.canvas.action-remove-label")} onClick={removeEdgeLabel}>
                     <Icon name="x" size={16} />
                   </button>
                 )}
                 <button
                   className="canvas-menu-btn"
-                  title="Edit label"
+                  title={uiText("plugins.canvas.action-edit-label")}
                   onClick={() => { const id = Array.from(sel.edges)[0]; if (id) setEditingEdge(id); }}
                 >
                   <Icon name="pencil" size={16} />
@@ -1582,7 +1577,7 @@ export default function CanvasView() {
             <div className="canvas-menu-colors">
               <button
                 className={`canvas-swatch canvas-swatch-default ${!selColor ? 'selected' : ''}`}
-                title="Default color"
+                title={uiText("webobsidian.default-color-60ea2b")}
                 onClick={() => setColor(undefined)}
               />
               {Object.entries(PRESET_COLORS).map(([k, hex]) => (
@@ -1590,11 +1585,11 @@ export default function CanvasView() {
                   key={k}
                   className={`canvas-swatch ${selColor === k ? 'selected' : ''}`}
                   style={{ background: hex }}
-                  title={`Color ${k}`}
+                  title={uiText("webobsidian.color-value0-e68c76", {value0: k})}
                   onClick={() => setColor(k)}
                 />
               ))}
-              <label className={`canvas-swatch canvas-swatch-custom ${isCustomColor ? 'selected' : ''}`} title="Custom color…">
+              <label className={`canvas-swatch canvas-swatch-custom ${isCustomColor ? 'selected' : ''}`} title={uiText("webobsidian.custom-color-856257")}>
                 <input
                   type="color"
                   value={isCustomColor ? (selColor as string) : '#e93147'}
@@ -1609,26 +1604,26 @@ export default function CanvasView() {
 
       {/* Zoom / control toolbar (bottom-left) */}
       <div className="canvas-toolbar canvas-toolbar-zoom" onPointerDown={(e) => e.stopPropagation()}>
-        <button title="Zoom out" onClick={() => zoomBy(1 / 1.2)}><Icon name="indent-decrease" size={16} /></button>
-        <button title="Reset zoom (100%)" className="canvas-zoom-pct" onClick={resetZoom}>{Math.round(view.scale * 100)}%</button>
-        <button title="Zoom in" onClick={() => zoomBy(1.2)}><Icon name="indent-increase" size={16} /></button>
+        <button title={uiText("commands.zoom-out")} onClick={() => zoomBy(1 / 1.2)}><Icon name="indent-decrease" size={16} /></button>
+        <button title={uiText("webobsidian.reset-zoom-100-8e1bda")} className="canvas-zoom-pct" onClick={resetZoom}>{Math.round(view.scale * 100)}%</button>
+        <button title={uiText("commands.zoom-in")} onClick={() => zoomBy(1.2)}><Icon name="indent-increase" size={16} /></button>
         <span className="canvas-tb-sep" />
-        <button title="Zoom to fit" onClick={zoomFit}><Icon name="graph" size={16} /></button>
+        <button title={uiText("plugins.canvas.action-zoom-to-fit")} onClick={zoomFit}><Icon name="graph" size={16} /></button>
         <span className="canvas-tb-sep" />
-        <button title="Undo (⌘Z)" disabled={undoStack.current.length === 0} onClick={undo}><Icon name="undo" size={16} /></button>
-        <button title="Redo (⌘⇧Z)" disabled={redoStack.current.length === 0} onClick={redo}><Icon name="redo" size={16} /></button>
+        <button title={uiText("webobsidian.undo-z-b35df2")} disabled={undoStack.current.length === 0} onClick={undo}><Icon name="undo" size={16} /></button>
+        <button title={uiText("webobsidian.redo-z-b09f9e")} disabled={redoStack.current.length === 0} onClick={redo}><Icon name="redo" size={16} /></button>
         <span style={{ display: 'none' }}>{histV}</span>
       </div>
 
       {/* Add toolbar (bottom-center) — card / note / image, like Obsidian */}
       <div className="canvas-toolbar canvas-toolbar-add" onPointerDown={(e) => e.stopPropagation()}>
-        <button title="Add card (or double-click canvas)" onClick={() => { const c = viewCenter(); addTextNode(c.x, c.y); }}>
+        <button title={uiText("webobsidian.add-card-or-double-click-canvas-c4198b")} onClick={() => { const c = viewCenter(); addTextNode(c.x, c.y); }}>
           <Icon name="file-plus" size={18} />
         </button>
-        <button title="Add card from note" onClick={() => { setNoteFilter(''); setNotePicker((v) => !v); }}>
+        <button title={uiText("webobsidian.add-card-from-note-9e31f2")} onClick={() => { setNoteFilter(''); setNotePicker((v) => !v); }}>
           <Icon name="file-text" size={18} />
         </button>
-        <button title="Add image" onClick={() => fileInputRef.current?.click()}>
+        <button title={uiText("webobsidian.add-image-537563")} onClick={() => fileInputRef.current?.click()}>
           <Icon name="image" size={18} />
         </button>
       </div>
@@ -1639,13 +1634,13 @@ export default function CanvasView() {
           <input
             className="canvas-notepicker-input"
             autoFocus
-            placeholder="Search notes…"
+            placeholder={uiText("webobsidian.search-notes-300225")}
             value={noteFilter}
             onChange={(e) => setNoteFilter(e.target.value)}
             onKeyDown={(e) => e.key === 'Escape' && setNotePicker(false)}
           />
           <div className="canvas-notepicker-list">
-            {filteredNotes.length === 0 && <div className="canvas-notepicker-empty">No files</div>}
+            {filteredNotes.length === 0 && <div className="canvas-notepicker-empty">{uiText("webobsidian.no-files-ccc17f")}</div>}
             {filteredNotes.map((f) => (
               <button
                 key={f.path}
@@ -1682,8 +1677,7 @@ export default function CanvasView() {
             className="canvas-dropmenu-item"
             onClick={() => { addConnectedTextNode(edgeDrop.cx, edgeDrop.cy, edgeDrop.edgeId, edgeDrop.end); setEdgeDrop(null); }}
           >
-            <Icon name="file-plus" size={15} /> Add card
-          </button>
+            <Icon name="file-plus" size={15} /> {uiText("plugins.canvas.action-add-card")} </button>
           <button
             className="canvas-dropmenu-item"
             onClick={() => {
@@ -1693,8 +1687,7 @@ export default function CanvasView() {
               setEdgeDrop(null);
             }}
           >
-            <Icon name="file-text" size={15} /> Add note from vault
-          </button>
+            <Icon name="file-text" size={15} /> {uiText("plugins.canvas.action-add-note")} </button>
         </div>
       )}
 
@@ -1713,7 +1706,7 @@ export default function CanvasView() {
           <input
             className="canvas-notepicker-input"
             autoFocus
-            placeholder="Link to note…"
+            placeholder={uiText("webobsidian.link-to-note-ac6487")}
             value={linkFilter}
             onChange={(e) => setLinkFilter(e.target.value)}
             onKeyDown={(e) => {
@@ -1722,7 +1715,7 @@ export default function CanvasView() {
             }}
           />
           <div className="canvas-notepicker-list">
-            {filteredLinks.length === 0 && <div className="canvas-notepicker-empty">No files</div>}
+            {filteredLinks.length === 0 && <div className="canvas-notepicker-empty">{uiText("webobsidian.no-files-ccc17f")}</div>}
             {filteredLinks.map((f) => (
               <button
                 key={f.path}
@@ -1750,7 +1743,7 @@ export default function CanvasView() {
         {showGrip && (
           <div
             className="canvas-node-grip"
-            title="Drag to move"
+            title={uiText("webobsidian.drag-to-move-0d84b3")}
             onPointerDown={(e) => beginNodeDrag(e, n.id)}
             onDoubleClick={(e) => e.stopPropagation()}
           >
@@ -1786,6 +1779,8 @@ function centerOf(n: { x: number; y: number; width: number; height: number }) {
 /** One alignment guide line + endpoint dots (canvas coords; thickness kept
     constant on screen by dividing by scale). axis 'x' = vertical line. */
 function SnapLine({ g, axis, scale }: { g: SnapGuide; axis: 'x' | 'y'; scale: number }) {
+  const languageRevision = useLanguage().revision;
+
   const x1 = axis === 'x' ? g.coord : g.min;
   const y1 = axis === 'x' ? g.min : g.coord;
   const x2 = axis === 'x' ? g.coord : g.max;
@@ -1804,6 +1799,8 @@ function SnapLine({ g, axis, scale }: { g: SnapGuide; axis: 'x' | 'y'; scale: nu
     on mousedown so the editing textarea keeps focus + selection. */
 type FmtItem = { label?: string; act?: () => void; sub?: FmtItem[]; sep?: boolean };
 function TextFormatMenu({ items, x, y, onClose }: { items: FmtItem[]; x: number; y: number; onClose: () => void }) {
+  const languageRevision = useLanguage().revision;
+
   const [open, setOpen] = useState(-1);
   const ref = useRef<HTMLDivElement>(null);
   // Open at the cursor, then measure and nudge fully on-screen (shift up/left if it

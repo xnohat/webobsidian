@@ -1,148 +1,254 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { getVaultRoot } from './vault.js';
 import { getSettings, updateSettings } from './settings.js';
-
-/**
- * Obsidian community plugin support (PRD FR-8).
- * Plugins live in `<vault>/.obsidian/plugins/<id>/` with manifest.json + main.js
- * (+ optional styles.css), exactly like the desktop app. The server lists,
- * installs (from GitHub releases) and toggles them; the browser loads main.js
- * against the Obsidian API shim (see web/src/lib/obsidian-shim).
- */
-
+import { assertPluginId, pluginContext, storagePath, readBounded, atomicWrite, serializePlugin, pluginError, digest, type PluginContext } from './pluginStorage.js';
+import { compilePluginModule } from './pluginModule.js';
 export interface PluginManifest {
-  id: string;
-  name: string;
-  version: string;
-  minAppVersion?: string;
-  description?: string;
-  author?: string;
-  authorUrl?: string;
-  isDesktopOnly?: boolean;
+    id: string;
+    name: string;
+    version: string;
+    minAppVersion?: string;
+    description?: string;
+    author?: string;
+    authorUrl?: string;
+    isDesktopOnly?: boolean;
 }
-
 export interface InstalledPlugin extends PluginManifest {
-  enabled: boolean;
-  hasStyles: boolean;
-  dir: string; // vault-relative
+    enabled: boolean;
+    hasStyles: boolean;
+    dir: string;
+    source: 'desktop' | 'web';
+    contentVersion: string;
+    runtimeUrl: string;
+    vaultIdentity: string;
+    availabilityError?: {
+        kind: 'http' | 'syntax' | 'runtime';
+        message: string;
+        status: number;
+    };
 }
-
-async function pluginsDir(): Promise<string> {
-  const root = await getVaultRoot();
-  return path.join(root, '.obsidian', 'plugins');
+interface Bundle {
+    manifest: PluginManifest;
+    main: string;
+    css?: string;
+    source: 'desktop' | 'web';
+    dir: string;
+    contentVersion: string;
 }
-
-/**
- * A plugin id becomes a path segment under `.obsidian/plugins/`, both when
- * installing (taken from a *remote* manifest.json) and when serving assets
- * (taken from the URL). Reject anything that isn't a plain id so a crafted
- * `../../..` can't read or write outside the plugins directory.
- */
-function assertSafeId(id: string): string {
-  if (!/^[a-zA-Z0-9._-]+$/.test(id) || id === '.' || id === '..') {
-    throw Object.assign(new Error('Invalid plugin id'), { status: 400 });
-  }
-  return id;
+function manifest(value: unknown, id?: string): PluginManifest {
+    const m = value as PluginManifest;
+    if (!m || typeof m !== 'object' || typeof m.id !== 'string' || typeof m.name !== 'string' || !m.name || m.name.length > 200 || typeof m.version !== 'string' || !m.version || m.version.length > 100)
+        pluginError(422, 'Invalid plugin manifest');
+    assertPluginId(m.id);
+    if (id && m.id !== id)
+        pluginError(422, 'Plugin manifest id does not match directory');
+    return { id: m.id, name: m.name, version: m.version, minAppVersion: typeof m.minAppVersion === 'string' ? m.minAppVersion : undefined, description: typeof m.description === 'string' ? m.description.slice(0, 4096) : undefined, author: typeof m.author === 'string' ? m.author : undefined, authorUrl: typeof m.authorUrl === 'string' ? m.authorUrl : undefined, isDesktopOnly: m.isDesktopOnly === true };
 }
-
-export async function listInstalled(): Promise<InstalledPlugin[]> {
-  const dir = await pluginsDir();
-  const s = await getSettings();
-  let entries: string[] = [];
-  try {
-    entries = (await fs.readdir(dir, { withFileTypes: true }))
-      .filter((e) => e.isDirectory())
-      .map((e) => e.name);
-  } catch {
-    return [];
-  }
-  const out: InstalledPlugin[] = [];
-  for (const id of entries) {
+async function safeDesktopFile(ctx: PluginContext, dir: string, asset: string): Promise<string> {
+    const file = path.join(dir, asset);
+    const real = await fs.realpath(file);
+    const roots = await Promise.all(ctx.allowedRoots.map(r => fs.realpath(r).catch(() => path.resolve(r))));
+    if (!roots.some(root => { const rel = path.relative(root, real); return rel === '' || (!rel.startsWith('..' + path.sep) && rel !== '..' && !path.isAbsolute(rel)); }))
+        pluginError(403, 'Plugin asset outside allowed roots');
+    return file;
+}
+async function bundle(ctx: PluginContext, id: string): Promise<Bundle> {
+    assertPluginId(id);
+    let dir: string;
+    let source: 'desktop' | 'web' = 'desktop';
+    const pointer = await storagePath(ctx, 'installed', id, 'current.json');
     try {
-      const manifestRaw = await fs.readFile(path.join(dir, id, 'manifest.json'), 'utf8');
-      const manifest = JSON.parse(manifestRaw) as PluginManifest;
-      const hasStyles = await fileExists(path.join(dir, id, 'styles.css'));
-      out.push({
-        ...manifest,
-        id: manifest.id || id,
-        enabled: s.plugins.enabled.includes(manifest.id || id),
-        hasStyles,
-        dir: `.obsidian/plugins/${id}`,
-      });
-    } catch {
-      /* skip invalid plugin dir */
+        const current = JSON.parse(await readBounded(pointer, 4096));
+        if (!/^[a-f0-9]{64}$/.test(current.version))
+            pluginError(422, 'Invalid plugin version pointer');
+        dir = await storagePath(ctx, 'installed', id, 'versions', current.version);
+        source = 'web';
     }
-  }
-  return out;
+    catch (e) {
+        if ((e as NodeJS.ErrnoException).code !== 'ENOENT')
+            throw e;
+        dir = path.join(ctx.root, '.obsidian', 'plugins', id);
+    }
+    const file = async (a: string) => source === 'desktop' ? safeDesktopFile(ctx, dir, a) : storagePath(ctx, 'installed', id, 'versions', path.basename(dir), a);
+    for (let attempt = 0; attempt < 2; attempt++) {
+        const mf = await file('manifest.json'), mainFile = await file('main.js');
+        const before = await Promise.all([fs.stat(mf), fs.stat(mainFile)]);
+        let cssFile: string | undefined;
+        let cssBefore: Awaited<ReturnType<typeof fs.stat>> | undefined;
+        try {
+            cssFile = await file('styles.css');
+            cssBefore = await fs.stat(cssFile);
+        }
+        catch (e) {
+            cssFile = undefined;
+            if ((e as NodeJS.ErrnoException).code !== 'ENOENT')
+                throw e;
+        }
+        const raw = await readBounded(mf, 65536), main = await readBounded(mainFile, 16 * 1024 * 1024);
+        let css: string | undefined;
+        if (cssFile)
+            css = await readBounded(cssFile, 4 * 1024 * 1024);
+        let cssAfter: Awaited<ReturnType<typeof fs.stat>> | undefined;
+        try {
+            cssAfter = await fs.stat(await file('styles.css'));
+        }
+        catch (e) {
+            if ((e as NodeJS.ErrnoException).code !== 'ENOENT')
+                throw e;
+        }
+        const cssChanged = Boolean(cssBefore) !== Boolean(cssAfter) || (cssBefore && cssAfter && (cssBefore.size !== cssAfter.size || cssBefore.mtimeMs !== cssAfter.mtimeMs || cssBefore.ctimeMs !== cssAfter.ctimeMs));
+        const after = await Promise.all([fs.stat(mf), fs.stat(mainFile)]);
+        if (cssChanged || before.some((s, i) => s.size !== after[i].size || s.mtimeMs !== after[i].mtimeMs || s.ctimeMs !== after[i].ctimeMs)) {
+            if (attempt === 0)
+                continue;
+            pluginError(409, 'PLUGIN_ASSET_CHANGED');
+        }
+        const m = manifest(JSON.parse(raw), id);
+        const contentVersion = digest(JSON.stringify([1, ctx.vaultIdentity, id, raw, main, css ?? null]));
+        return { manifest: m, main, css, source, dir: source === 'desktop' ? '.obsidian/plugins/' + id : 'web:' + id, contentVersion };
+    }
+    return pluginError(409, 'PLUGIN_ASSET_CHANGED');
 }
-
-export async function getPluginAsset(
-  id: string,
-  asset: 'main.js' | 'styles.css' | 'manifest.json',
-): Promise<string> {
-  assertSafeId(id);
-  const dir = await pluginsDir();
-  return fs.readFile(path.join(dir, id, asset), 'utf8');
+function installed(ctx: PluginContext, b: Bundle): InstalledPlugin { const id = b.manifest.id; return { ...b.manifest, enabled: ctx.enabled.includes(id), hasStyles: b.css !== undefined, dir: b.dir, source: b.source, contentVersion: b.contentVersion, vaultIdentity: ctx.vaultIdentity, runtimeUrl: `/api/plugins/${encodeURIComponent(id)}/runtime.mjs?version=${b.contentVersion}` }; }
+export async function listInstalled(provided?: PluginContext): Promise<InstalledPlugin[]> {
+    const ctx = provided ?? await pluginContext();
+    const ids = new Set<string>(ctx.enabled);
+    const sources = new Map<string, 'desktop' | 'web'>();
+    for (const dir of [path.join(ctx.root, '.obsidian/plugins'), await storagePath(ctx, 'installed')]) {
+        try {
+            for (const e of await fs.readdir(dir, { withFileTypes: true }))
+                if (e.isDirectory()) {
+                    ids.add(e.name);
+                    sources.set(e.name, dir === path.join(ctx.root, '.obsidian/plugins') ? 'desktop' : 'web');
+                }
+        }
+        catch (e) {
+            if ((e as NodeJS.ErrnoException).code !== 'ENOENT')
+                throw e;
+        }
+    }
+    const out: InstalledPlugin[] = [];
+    for (const id of ids) {
+        try {
+            out.push(installed(ctx, await bundle(ctx, id)));
+        }
+        catch (error) {
+            try {
+                assertPluginId(id);
+            }
+            catch {
+                continue;
+            }
+            const invalid = error instanceof SyntaxError || (error as {
+                status?: number;
+            }).status === 422;
+            const contentVersion = digest(JSON.stringify([1, ctx.vaultIdentity, id, 'unavailable']));
+            out.push({ id, name: id, version: 'unavailable', enabled: ctx.enabled.includes(id), hasStyles: false, dir: 'unavailable:' + id, source: sources.get(id) ?? 'desktop', vaultIdentity: ctx.vaultIdentity, contentVersion, runtimeUrl: `/api/plugins/${encodeURIComponent(id)}/runtime.mjs?version=${contentVersion}`, availabilityError: { kind: invalid ? 'syntax' : 'http', status: invalid ? 422 : ((error as NodeJS.ErrnoException).code === 'ENOENT' ? 404 : 503), message: invalid ? 'Plugin manifest or assets are invalid.' : 'Plugin files are missing or unavailable.' } });
+        }
+    }
+    return out;
 }
-
+export async function getPluginAsset(id: string, asset: 'main.js' | 'styles.css' | 'manifest.json', version?: string): Promise<string> {
+    const ctx = await pluginContext();
+    const b = await bundle(ctx, id);
+    if (version && version !== b.contentVersion)
+        pluginError(409, 'PLUGIN_VERSION_CHANGED');
+    if (asset === 'manifest.json')
+        return JSON.stringify(b.manifest);
+    if (asset === 'main.js')
+        return b.main;
+    if (b.css === undefined)
+        pluginError(404, 'Plugin styles not found');
+    return b.css;
+}
+export async function getRuntimeModule(id: string, version: string): Promise<string> {
+    const ctx = await pluginContext();
+    assertPluginId(id);
+    if (!ctx.enabled.includes(id))
+        pluginError(403, 'PLUGIN_DISABLED');
+    const b = await bundle(ctx, id);
+    if (version !== b.contentVersion)
+        pluginError(409, 'PLUGIN_VERSION_CHANGED');
+    return compilePluginModule(b.main);
+}
 export async function setEnabled(id: string, enabled: boolean): Promise<void> {
-  assertSafeId(id);
-  await updateSettings((d) => {
-    const set = new Set(d.plugins.enabled);
-    if (enabled) set.add(id);
-    else set.delete(id);
-    d.plugins.enabled = [...set];
-  });
+    assertPluginId(id);
+    const ctx = await pluginContext();
+    if (enabled)
+        await bundle(ctx, id);
+    await serializePlugin('plugin-enabled-settings', async () => {
+        await updateSettings(d => {
+            if (path.resolve(d.vault.path) !== ctx.settingsRoot)
+                pluginError(409, 'PLUGIN_VAULT_CHANGED');
+            const set = new Set(d.plugins.enabled);
+            if (enabled)
+                set.add(id);
+            else
+                set.delete(id);
+            d.plugins.enabled = [...set];
+        });
+    });
 }
-
-/**
- * Install a community plugin from a GitHub repo (owner/repo). Pulls
- * manifest.json + main.js (+ styles.css) from the latest release assets.
- */
+async function download(url: string, limit: number): Promise<string> {
+    const target = new URL(url);
+    if (target.protocol !== 'https:' || !['github.com', 'api.github.com', 'objects.githubusercontent.com', 'release-assets.githubusercontent.com'].includes(target.hostname))
+        pluginError(400, 'Invalid plugin download URL');
+    const response = await fetch(url, { headers: { 'User-Agent': 'WebObsidian' }, signal: AbortSignal.timeout(30000) });
+    if (!response.ok)
+        pluginError(502, 'Plugin download failed: HTTP ' + response.status);
+    if (response.headers.get('content-type')?.includes('text/html'))
+        pluginError(502, 'Unexpected plugin asset HTML');
+    if (!response.body)
+        pluginError(502, 'Empty plugin download');
+    const reader = response.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+    try {
+        for (;;) {
+            const { value, done } = await reader.read();
+            if (done)
+                break;
+            size += value.length;
+            if (size > limit)
+                pluginError(413, 'Plugin download exceeds allowed size');
+            chunks.push(value);
+        }
+    }
+    finally {
+        await reader.cancel().catch(() => { });
+    }
+    return Buffer.concat(chunks).toString('utf8');
+}
 export async function installFromGithub(repo: string): Promise<InstalledPlugin> {
-  const clean = repo.replace(/^https?:\/\/github\.com\//, '').replace(/\.git$/, '').trim();
-  const relApi = `https://api.github.com/repos/${clean}/releases/latest`;
-  const res = await fetch(relApi, { headers: { 'User-Agent': 'WebObsidian' } });
-  if (!res.ok) throw new Error(`GitHub release lookup failed: ${res.status}`);
-  const release = (await res.json()) as { assets: { name: string; browser_download_url: string }[] };
-  const assets = Object.fromEntries(release.assets.map((a) => [a.name, a.browser_download_url]));
-  if (!assets['manifest.json'] || !assets['main.js']) {
-    throw new Error('Release missing manifest.json or main.js');
-  }
-
-  const manifest = JSON.parse(await fetchText(assets['manifest.json'])) as PluginManifest;
-  // id comes from a REMOTE manifest — validate before it becomes a path segment
-  // (a crafted `../../..` would otherwise write main.js outside the plugins dir).
-  const id = assertSafeId(manifest.id || clean.split('/')[1]);
-  const dir = await pluginsDir();
-  const target = path.join(dir, id);
-  await fs.mkdir(target, { recursive: true });
-  await fs.writeFile(path.join(target, 'manifest.json'), JSON.stringify(manifest, null, 2));
-  await fs.writeFile(path.join(target, 'main.js'), await fetchText(assets['main.js']));
-  if (assets['styles.css']) {
-    await fs.writeFile(path.join(target, 'styles.css'), await fetchText(assets['styles.css']));
-  }
-  await updateSettings((d) => {
-    if (!d.plugins.installed.includes(id)) d.plugins.installed.push(id);
-  });
-  const installed = await listInstalled();
-  const found = installed.find((p) => p.id === id);
-  if (!found) throw new Error('Install verification failed');
-  return found;
+    const clean = repo.replace(/^https:\/\/github\.com\//, '').replace(/\.git$/, '').replace(/\/$/, '').trim();
+    if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(clean))
+        pluginError(400, 'Use GitHub owner/repository');
+    const ctx = await pluginContext();
+    const release = JSON.parse(await download(`https://api.github.com/repos/${clean}/releases/latest`, 1048576));
+    if (!Array.isArray(release.assets))
+        pluginError(422, 'Invalid GitHub release');
+    const assets = new Map(release.assets.map((a: {
+        name: string;
+        browser_download_url: string;
+    }) => [a.name, a.browser_download_url]));
+    if (!assets.has('manifest.json') || !assets.has('main.js'))
+        pluginError(422, 'Release missing manifest.json or main.js');
+    const raw = await download(String(assets.get('manifest.json')), 65536);
+    const m = manifest(JSON.parse(raw));
+    return serializePlugin(ctx.vaultIdentity + ':install:' + m.id, async () => {
+        const main = await download(String(assets.get('main.js')), 16 * 1024 * 1024);
+        const css = assets.has('styles.css') ? await download(String(assets.get('styles.css')), 4 * 1024 * 1024) : undefined;
+        await compilePluginModule(main);
+        const version = digest(JSON.stringify([raw, main, css ?? null]));
+        const versionDir = await storagePath(ctx, 'installed', m.id, 'versions', version);
+        await fs.mkdir(versionDir, { recursive: true });
+        await atomicWrite(await storagePath(ctx, 'installed', m.id, 'versions', version, 'manifest.json'), raw);
+        await atomicWrite(await storagePath(ctx, 'installed', m.id, 'versions', version, 'main.js'), main);
+        if (css !== undefined)
+            await atomicWrite(await storagePath(ctx, 'installed', m.id, 'versions', version, 'styles.css'), css);
+        // The active pointer changes only after every asset is complete; previous versions remain intact.
+        await atomicWrite(await storagePath(ctx, 'installed', m.id, 'current.json'), JSON.stringify({ version }));
+        return installed(ctx, await bundle(ctx, m.id));
+    });
 }
-
-async function fetchText(url: string): Promise<string> {
-  const r = await fetch(url, { headers: { 'User-Agent': 'WebObsidian' } });
-  if (!r.ok) throw new Error(`Download failed: ${url} (${r.status})`);
-  return r.text();
-}
-
-async function fileExists(p: string): Promise<boolean> {
-  try {
-    await fs.access(p);
-    return true;
-  } catch {
-    return false;
-  }
-}
+export { pluginContext };

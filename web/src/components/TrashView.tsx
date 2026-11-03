@@ -1,3 +1,4 @@
+import {t as uiText, useLanguage} from "../lib/i18n/runtime";
 import { useCallback, useEffect, useState } from 'react';
 import { useStore } from '../lib/store';
 import { api, type TrashItem } from '../lib/api';
@@ -6,6 +7,8 @@ import Icon from './Icon';
 /** Trash browser (FR-1): list items moved to `.trash`, restore them, or delete
  *  them permanently. Items land here when delete mode is "Move to trash". */
 export default function TrashView() {
+  const languageRevision = useLanguage().revision;
+
   const open = useStore((s) => s.trashOpen);
   const close = useStore((s) => s.setTrash);
   const notify = useStore((s) => s.notify);
@@ -20,9 +23,9 @@ export default function TrashView() {
     api
       .listTrash()
       .then((r) => setItems(r.items))
-      .catch((e) => notify(e.message || 'Failed to load trash'))
+      .catch((e) => notify(e.message || uiText("webobsidian.failed-to-load-trash-c104f6")))
       .finally(() => setLoading(false));
-  }, [notify]);
+  }, [notify, languageRevision]);
 
   useEffect(() => {
     if (open) refresh();
@@ -35,11 +38,11 @@ export default function TrashView() {
     setBusy(true);
     try {
       const r = await api.restoreTrash(it.path);
-      notify(`Restored ${r.restored}`);
+      notify(uiText("webobsidian.restored-value0-ce9831", {value0: r.restored}));
       await loadTree();
       refresh();
     } catch (e: any) {
-      notify(e.message || 'Restore failed');
+      notify(e.message || uiText("webobsidian.restore-failed-c848a6"));
     } finally {
       setBusy(false);
     }
@@ -47,14 +50,14 @@ export default function TrashView() {
 
   const remove = async (it: TrashItem) => {
     if (busy) return;
-    if (!confirm(`Permanently delete "${it.name}"? This cannot be undone.`)) return;
+    if (!confirm(uiText("webobsidian.permanently-delete-value0-this-cannot-be-undone-d82ad7", {value0: it.name}))) return;
     setBusy(true);
     try {
       await api.deleteTrashItem(it.path);
-      notify('Deleted permanently');
+      notify(uiText("webobsidian.deleted-permanently-ca75d5"));
       refresh();
     } catch (e: any) {
-      notify(e.message || 'Delete failed');
+      notify(e.message || uiText("webobsidian.delete-failed-64513b"));
     } finally {
       setBusy(false);
     }
@@ -62,14 +65,14 @@ export default function TrashView() {
 
   const empty = async () => {
     if (busy || items.length === 0) return;
-    if (!confirm(`Empty trash? ${items.length} item(s) will be permanently deleted.`)) return;
+    if (!confirm(uiText("webobsidian.empty-trash-value0-item-s-will-be-permanently-de-d69a6c", {value0: items.length}))) return;
     setBusy(true);
     try {
       await api.emptyTrash();
-      notify('Trash emptied');
+      notify(uiText("webobsidian.trash-emptied-c4e119"));
       refresh();
     } catch (e: any) {
-      notify(e.message || 'Empty trash failed');
+      notify(e.message || uiText("webobsidian.empty-trash-failed-4802b8"));
     } finally {
       setBusy(false);
     }
@@ -91,19 +94,19 @@ export default function TrashView() {
       <div className="modal trash-view" onClick={(e) => e.stopPropagation()}>
         <div className="vh-head">
           <Icon name="trash" size={16} />
-          <div className="vh-title">Trash</div>
-          <div className="vh-path">{items.length} item(s)</div>
-          <button className="tool-btn" title="Refresh" onClick={refresh}>
+          <div className="vh-title">{uiText("setting.file.option-trash")}</div>
+          <div className="vh-path">{items.length} {uiText("webobsidian.item-s-c0e2ec")}</div>
+          <button className="tool-btn" title={uiText("webobsidian.refresh-56e3ba")} onClick={refresh}>
             <Icon name="refresh-cw" size={16} />
           </button>
-          <button className="tool-btn" title="Close" onClick={() => close(false)}>
+          <button className="tool-btn" title={uiText("interface.menu.close")} onClick={() => close(false)}>
             <Icon name="x" size={16} />
           </button>
         </div>
         <div className="trash-body">
-          {loading && <div className="vh-empty">Loading…</div>}
+          {loading && <div className="vh-empty">{uiText("webobsidian.loading-33ce41")}</div>}
           {!loading && items.length === 0 && (
-            <div className="vh-empty">Trash is empty.</div>
+            <div className="vh-empty">{uiText("webobsidian.trash-is-empty-cffa18")}</div>
           )}
           {!loading &&
             items.map((it) => (
@@ -113,21 +116,20 @@ export default function TrashView() {
                   <div className="trash-item-name">{it.name}</div>
                   <div className="trash-item-meta">
                     {it.original}
-                    {it.mtime ? ` · ${fmtDate(it.mtime)}` : ''}
-                    {it.size ? ` · ${fmtSize(it.size)}` : ''}
+                    {it.mtime ? uiText("webobsidian.-value0-ce415a", {value0: fmtDate(it.mtime)}) : ''}
+                    {it.size ? uiText("webobsidian.-value0-ce415a", {value0: fmtSize(it.size)}) : ''}
                   </div>
                 </div>
                 <button
                   className="btn secondary trash-act"
-                  title="Restore to original location"
+                  title={uiText("webobsidian.restore-to-original-location-90c680")}
                   disabled={busy}
                   onClick={() => restore(it)}
                 >
-                  Restore
-                </button>
+                  {uiText("plugins.sync.label-restore-this-version")} </button>
                 <button
                   className="tool-btn trash-del"
-                  title="Delete permanently"
+                  title={uiText("webobsidian.delete-permanently-e63b51")}
                   disabled={busy}
                   onClick={() => remove(it)}
                 >
@@ -138,11 +140,9 @@ export default function TrashView() {
         </div>
         <div className="vh-foot">
           <button className="btn secondary" onClick={() => close(false)}>
-            Close
-          </button>
+            {uiText("interface.menu.close")} </button>
           <button className="btn danger" onClick={empty} disabled={busy || items.length === 0}>
-            Empty trash
-          </button>
+            {uiText("webobsidian.empty-trash-04382a")} </button>
         </div>
       </div>
     </div>

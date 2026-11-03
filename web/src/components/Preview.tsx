@@ -1,4 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import {setLocalizedText} from "../lib/i18n/runtime";
+import {t as uiText, useLanguage} from "../lib/i18n/runtime";
+import {mountDiagramBlocks} from '../lib/diagram';
+import {pdfFileActions} from '../lib/pdfFileActions';
+import {processPluginMarkdown,usePluginRevision} from '../lib/plugins/registry';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { highlightCode, classHighlighter } from '@lezer/highlight';
 import { LanguageDescription } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
@@ -7,9 +12,16 @@ import { renderMarkdown } from '../lib/markdown';
 import { calloutIconSvg } from '../lib/callouts';
 import { openLightbox } from '../lib/imageLightbox';
 import { api } from '../lib/api';
+import { displayTitle } from '../lib/title';
+import {mountPdfEmbeds} from '../lib/pdfEmbeds';
+import {mountCanvasEmbeds} from '../lib/canvasEmbed';
+import {mountImageActions} from '../lib/embedActions';
+import {addNoteEmbedOpenButtons} from '../lib/noteEmbed';
+import {useVaultPreferences} from '../lib/vaultPreferences';
+import {findRenderedNoteFragment} from '../lib/noteFragments';
 
-/** Syntax-highlight a `<code class="language-x">` block with the SAME CodeMirror
- *  grammars Live Preview uses (token classes styled by the Obsidian palette). */
+/** Syntax-highlight static preview code with catalog grammars and the scoped
+ *  token palette. The editor's native stream grammars are configured separately. */
 async function highlightCodeEl(codeEl: HTMLElement): Promise<void> {
   const cls = [...codeEl.classList].find((c) => c.startsWith('language-'));
   if (!cls) return;
@@ -44,16 +56,6 @@ async function highlightCodeEl(codeEl: HTMLElement): Promise<void> {
 let katexP: Promise<typeof import('katex')['default']> | null = null;
 const loadKatex = () =>
   (katexP ??= Promise.all([import('katex'), import('katex/dist/katex.min.css')]).then(([k]) => k.default));
-let mermaidP: Promise<typeof import('mermaid')['default']> | null = null;
-const loadMermaid = () =>
-  (mermaidP ??= import('mermaid').then((m) => {
-    m.default.initialize({
-      startOnLoad: false,
-      theme: document.querySelector('.theme-dark') ? 'dark' : 'default',
-    });
-    return m.default;
-  }));
-let mmdSeq = 0;
 
 /** Add a "Render HTML" toggle to a ```html block. Clicking swaps the source
  *  for a sandboxed iframe (scripts run but isolated — no same-origin, so the
@@ -68,7 +70,7 @@ function setupHtmlPreview(codeEl: HTMLElement): void {
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'html-render-btn';
-  btn.textContent = 'Render HTML';
+  setLocalizedText(btn, "webobsidian.render-html-e2fc37", {}, "textContent");
   wrap.appendChild(btn);
   let frame: HTMLIFrameElement | null = null;
   btn.addEventListener('click', () => {
@@ -76,7 +78,7 @@ function setupHtmlPreview(codeEl: HTMLElement): void {
       frame.remove();
       frame = null;
       pre.style.display = '';
-      btn.textContent = 'Render HTML';
+      setLocalizedText(btn, "webobsidian.render-html-e2fc37", {}, "textContent");
       return;
     }
     frame = document.createElement('iframe');
@@ -85,15 +87,22 @@ function setupHtmlPreview(codeEl: HTMLElement): void {
     frame.srcdoc = codeEl.textContent ?? '';
     pre.style.display = 'none';
     wrap.appendChild(frame);
-    btn.textContent = 'Hide HTML';
+    setLocalizedText(btn, "webobsidian.hide-html-0fab51", {}, "textContent");
   });
 }
 
-export default function Preview({ source }: { source?: string }) {
+export default function Preview({ source,sourcePath,fontSize }: { source?: string;sourcePath?:string;fontSize?:number }) {
+  const languageRevision = useLanguage().revision;
+
+  const preferences=useVaultPreferences();
+  const pluginRevision=usePluginRevision();
   const storeContent = useStore((s) => s.content);
   const content = source ?? storeContent;
-  const activePath = useStore((s) => s.activePath);
+  const workspacePath = useStore((s) => s.activePath);
+  const activePath=sourcePath??workspacePath;
+  const showInlineTitle = useStore((s) => s.showInlineTitle);
   const openWikilink = useStore((s) => s.openWikilink);
+  const noteNavigation=useStore(s=>s.noteNavigation);
   const openContextMenu = useStore((s) => s.openContextMenu);
   const setLeftPanel = useStore((s) => s.setLeftPanel);
   const [html, setHtml] = useState('');
@@ -101,11 +110,13 @@ export default function Preview({ source }: { source?: string }) {
   useEffect(() => {
     let cancelled = false;
     renderMarkdown(content, {
-      rawUrl: (p) => api.rawUrl(p),
-      resolveEmbed: async (target) => {
+      rawUrl: (p, from) => api.rawUrl(p, from),
+      sourcePath: activePath ?? undefined,
+      resolveEmbed: async (target, from,kind) => {
         try {
-          const { path } = await api.resolve(target);
+          const { path } = await api.resolve(target, from,kind);
           if (!path) return null;
+          if(!/\.(md|markdown)$/i.test(path))return null;
           const r = await api.read(path);
           return { path, content: typeof r === 'string' ? r : r.content };
         } catch {
@@ -118,18 +129,34 @@ export default function Preview({ source }: { source?: string }) {
     return () => {
       cancelled = true;
     };
-  }, [content]);
+  }, [content, activePath]);
 
   // Post-render pass — same renderers as Live Preview so both modes match:
   // KaTeX for [data-tex] spans, mermaid for ```mermaid fences, callout icons.
   const bodyRef = useRef<HTMLDivElement>(null);
+  useEffect(()=>{
+    const root=bodyRef.current,request=noteNavigation;
+    if(!root||source!==undefined||!request||request.path!==activePath)return;
+    const frame=requestAnimationFrame(()=>{
+      if(useStore.getState().noteNavigation!==request||!root.isConnected)return;
+      if(!request.fragment)root.closest<HTMLElement>('.markdown-preview')?.scrollTo({top:0});
+      else findRenderedNoteFragment(root,request.fragment)?.scrollIntoView({block:'start'});
+    });
+    return ()=>cancelAnimationFrame(frame);
+  },[html,activePath,noteNavigation,source]);
+  useEffect(()=>{if(bodyRef.current)return processPluginMarkdown(bodyRef.current,activePath??'');},[html,activePath,pluginRevision]);
   useEffect(() => {
     const root = bodyRef.current;
     if (!root) return;
     let cancelled = false;
+    addNoteEmbedOpenButtons(root,(target,kind)=>{void useStore.getState().openWikilink(target,kind)});
     for (const el of root.querySelectorAll<HTMLElement>('.callout-icon[data-callout-icon]')) {
       el.innerHTML = calloutIconSvg(el.dataset.calloutIcon ?? 'default');
     }
+    // Keep document-rendered HTML inert; create interactive PDF controls here.
+    const disposePdfs=mountPdfEmbeds(root,activePath??'',(target,origin,kind)=>{void (kind==='markdown'?useStore.getState().openWikilink(target,kind,origin):useStore.getState().openAttachment(target,origin))},(target,origin,kind)=>pdfFileActions(target,origin,{linkKind:kind}));
+    const disposeCanvases=mountCanvasEmbeds(root,activePath??'',(target,origin,kind)=>{void useStore.getState().openWikilink(target,kind,origin)});
+    mountImageActions(root);
     // Fold chevron on collapsible callouts (rotates via .is-collapsed CSS).
     for (const title of root.querySelectorAll<HTMLElement>(
       '.callout[data-callout-fold="-"] > .callout-title, .callout[data-callout-fold="+"] > .callout-title',
@@ -164,28 +191,14 @@ export default function Preview({ source }: { source?: string }) {
     for (const codeEl of root.querySelectorAll<HTMLElement>('pre > code.language-html')) {
       setupHtmlPreview(codeEl);
     }
-    const mmd = root.querySelectorAll<HTMLElement>('pre > code.language-mermaid');
-    if (mmd.length) {
-      void loadMermaid().then(async (mermaid) => {
-        for (const codeEl of mmd) {
-          if (cancelled) return;
-          const pre = codeEl.parentElement!;
-          try {
-            const { svg } = await mermaid.render(`read-mmd-${++mmdSeq}`, codeEl.textContent ?? '');
-            const div = document.createElement('div');
-            div.className = 'mermaid';
-            div.innerHTML = svg;
-            pre.replaceWith(div);
-          } catch {
-            document.getElementById(`dread-mmd-${mmdSeq}`)?.remove();
-          }
-        }
-      });
-    }
+    const disposeDiagrams=mountDiagramBlocks(root,activePath??'');
     return () => {
       cancelled = true;
+      disposePdfs();
+      disposeCanvases();
+      disposeDiagrams();
     };
-  }, [html]);
+  }, [html,activePath]);
 
   const onClick = (e: React.MouseEvent) => {
     // Click an embedded image → full-screen zoom/pan viewer.
@@ -199,7 +212,13 @@ export default function Preview({ source }: { source?: string }) {
     if (target) {
       e.preventDefault();
       const link = target.getAttribute('data-wikilink');
-      if (link) openWikilink(link);
+      if (link) openWikilink(link, target.dataset.linkKind==='markdown'?'markdown':'wiki',target.closest<HTMLElement>('[data-embed-source]')?.dataset.embedSource);
+      return;
+    }
+    const markdownLink = (e.target as HTMLElement).closest('a[data-link-kind="markdown"]') as HTMLAnchorElement | null;
+    if (markdownLink) {
+      const href = markdownLink.getAttribute('href');
+      if (href) { e.preventDefault(); openWikilink(href, 'markdown',markdownLink.closest<HTMLElement>('[data-embed-source]')?.dataset.embedSource); }
       return;
     }
     // Foldable callout: clicking the title toggles its content.
@@ -214,12 +233,12 @@ export default function Preview({ source }: { source?: string }) {
       x: e.clientX,
       y: e.clientY,
       items: [
-        { label: 'Copy', icon: 'file-text', onClick: () => sel && navigator.clipboard.writeText(sel).catch(() => {}) },
+        { get label() {return uiText("interface.menu.copy");}, icon: 'file-text', onClick: () => sel && navigator.clipboard.writeText(sel).catch(() => {}) },
         ...(sel
-          ? [{ label: `Search for “${sel.slice(0, 24)}”`, icon: 'search', onClick: () => setLeftPanel('search') }]
+          ? [{ get label() {return uiText("webobsidian.search-for-value0-73c0eb", {value0: sel.slice(0, 24)});}, icon: 'search', onClick: () => setLeftPanel('search') }]
           : []),
         { label: '', separator: true },
-        { label: 'Select all', onClick: () => {
+        { get label() {return uiText("webobsidian.select-all-913aff");}, onClick: () => {
             const r = document.createRange();
             const el = (e.currentTarget as HTMLElement);
             r.selectNodeContents(el);
@@ -233,19 +252,19 @@ export default function Preview({ source }: { source?: string }) {
 
   // Inline title (note filename), Obsidian-style — skipped when the note already
   // opens with an H1 equal to the title (avoids duplicating the Trilium heading).
-  const title = !source && activePath ? (activePath.split('/').pop() ?? '').replace(/\.(md|markdown)$/i, '') : '';
+  const title = !source && activePath ? displayTitle(activePath, content) : '';
   const firstLine = content
     .replace(/^---\r?\n[\s\S]*?\r?\n---[ \t]*\r?\n?/, '')
     .split(/\r?\n/)
     .find((l) => l.trim() !== '');
   const h1 = firstLine?.match(/^#\s+(.+?)\s*$/);
-  const showTitle = !!title && !(h1 && h1[1].trim().toLowerCase() === title.trim().toLowerCase());
+  const showTitle = showInlineTitle && !!title && !(h1 && h1[1].trim().toLowerCase() === title.trim().toLowerCase());
 
   return (
-    <div className="markdown-preview" onClick={onClick} onContextMenu={onContextMenu}>
+    <div className={`markdown-preview${preferences.values.readableLineLength?' is-readable-line-width':''}`} style={{'--font-text-size':`${fontSize??preferences.values.baseFontSize??16}px`} as CSSProperties} onClick={onClick} onContextMenu={onContextMenu}>
       <div className="preview-inner">
         {showTitle && <div className="inline-title">{title}</div>}
-        <div ref={bodyRef} dangerouslySetInnerHTML={{ __html: html }} />
+        <div key={activePath} ref={bodyRef} dangerouslySetInnerHTML={{ __html: html }} />
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import {t as uiText, useLanguage} from "../lib/i18n/runtime";
 import { useState } from 'react';
 import { api } from '../lib/api';
 import { useStore } from '../lib/store';
@@ -12,6 +13,8 @@ const DEFAULT_PASSWORD = '123456';
  * used until a custom password is set — there is no dismiss.
  */
 export default function ForceChangePassword() {
+  const languageRevision = useLanguage().revision;
+
   const setMustChangePassword = useStore((s) => s.setMustChangePassword);
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -26,11 +29,11 @@ export default function ForceChangePassword() {
       return;
     }
     if (next === DEFAULT_PASSWORD) {
-      setErr('Choose a password different from the default');
+      setErr(uiText("webobsidian.choose-a-password-different-from-the-default-566640"));
       return;
     }
     if (next !== confirm) {
-      setErr('Passwords do not match');
+      setErr(uiText("webobsidian.passwords-do-not-match-d69c3b"));
       return;
     }
     setBusy(true);
@@ -39,7 +42,7 @@ export default function ForceChangePassword() {
       await api.changePassword(DEFAULT_PASSWORD, next);
       setMustChangePassword(false);
     } catch (e: any) {
-      setErr(e.message ?? 'Failed to change password');
+      setErr(e.message ?? uiText("webobsidian.failed-to-change-password-2398d6"));
     } finally {
       setBusy(false);
     }
@@ -51,16 +54,14 @@ export default function ForceChangePassword() {
         <div className="logo">
           <Icon name="gem" size={40} />
         </div>
-        <h1>Set a new password</h1>
+        <h1>{uiText("webobsidian.set-a-new-password-1e83ae")}</h1>
         <p>
-          You are signed in with the default password (<code>123456</code>). Choose a
-          new password to secure your vault before continuing.
-        </p>
+          {uiText("webobsidian.you-are-signed-in-with-the-default-password-4ec7dd")}<code>123456</code>{uiText("webobsidian.-choose-a-new-password-to-secure-your-vault-befo-8842b7")} </p>
         <div className="err">{err}</div>
         <input
           className="text-input"
           type="password"
-          placeholder="New password"
+          placeholder={uiText("plugins.publish.action-new-password")}
           autoFocus
           autoComplete="new-password"
           value={next}
@@ -69,13 +70,13 @@ export default function ForceChangePassword() {
         <input
           className="text-input"
           type="password"
-          placeholder="Confirm new password"
+          placeholder={uiText("webobsidian.confirm-new-password-f85039")}
           autoComplete="new-password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
         />
         <button className="btn" type="submit" disabled={busy}>
-          {busy ? 'Saving…' : 'Set password & continue'}
+          {busy ? uiText("webobsidian.saving-56a228") : uiText("webobsidian.set-password-continue-ab4009")}
         </button>
       </form>
     </div>
