@@ -89,7 +89,7 @@ test('polygon metadata, partial list indents, inline links, task glyphs and call
       const button=v.dom.querySelector('.cm-mermaid .cm-block-edit');check(!!button,mode+': Mermaid has source action');
       if(button){await trustedPress(v.dom.querySelector('.cm-mermaid'),'hover');await wait();check(getComputedStyle(button.parentElement).opacity==='1','Mermaid source action appears on hover '+hoverDetails(v.dom.querySelector('.cm-mermaid')));await trustedPress(button,'pointer');await wait();const r=v.state.selection.main;check(v.state.doc.sliceString(r.from,r.to).startsWith(fence+'mermaid')&&v.state.doc.sliceString(r.from,r.to).endsWith(fence),'Mermaid pointer selects complete fenced source');await scroll(long.indexOf(fence+'mermaid'));}
      }
-     const shape=v.dom.querySelector('.cm-mermaid .node rect');if(shape)check(getComputedStyle(shape).fill==='rgb(236, 236, 255)'&&getComputedStyle(v.dom.querySelector('.cm-mermaid > svg')).filter==='invert(1) hue-rotate(180deg) saturate(1.25)',mode+': native Mermaid dark palette filter');
+     const shape=v.dom.querySelector('.cm-mermaid .pele-node rect');check(!!shape&&getComputedStyle(shape).fill==='rgb(38, 38, 38)'&&getComputedStyle(v.dom.querySelector('.cm-mermaid svg.pele')).filter==='none',mode+': native Pele dark palette');
      if(mode==='live'){await scroll(long.indexOf('[^named]'));const ref=v.dom.querySelector('.cm-footref');check(ref&&getComputedStyle(ref).color==='rgb(179, 179, 179)','Live footnote markers use muted text');}
      check(useStore.getState().content===long,mode+': long-page rendering preserves source');
     }

@@ -3,6 +3,7 @@ import {confirmDialog} from './confirm';
 import {getVaultPreferences} from './vaultPreferences';
 // Thin fetch wrapper around the WebObsidian server API.
 import type {ToolbarConfigV1} from './toolbar/config';
+import type {StoredLanguagePack} from './i18n/runtime';
 
 export interface Settings {
   version: number;
@@ -11,7 +12,7 @@ export interface Settings {
   git: {enabled:boolean;remote:string;branch:string;token:string;authorName:string;authorEmail:string;autoSync:boolean;autoCommitOnSave:boolean;intervalSec:number;lfsPatterns:string[]};
   search: {fuzzy:number;prefix:boolean;indexFrontmatter:boolean};
   api: {rateLimitPerMin:number;keys:unknown[]};
-  ui: {theme:string;defaultView:'live'|'source'|'reading';showInlineTitle:boolean;editingToolbar?:ToolbarConfigV1;codeFileViewer?:CodeFileViewerSettings};
+  ui: {theme:string;defaultView:'live'|'source'|'reading';showInlineTitle:boolean;editingToolbar?:ToolbarConfigV1;codeFileViewer?:CodeFileViewerSettings;languagePack?:StoredLanguagePack|null};
   plugins:{enabled:string[];installed:string[]};
 }
 

@@ -1,3 +1,5 @@
+import {translateLabel as uiLabel} from "../lib/i18n/runtime";
+import {t as uiText, useLanguage} from "../lib/i18n/runtime";
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore, type GraphSettings } from '../lib/store';
 import { resolveThemeColor } from '../lib/cssColor';
@@ -107,6 +109,8 @@ const FADE_DIM = 0.2;
  * Groups, Display sliders and Forces.
  */
 export default function GraphView() {
+  const languageRevision = useLanguage().revision;
+
   const openFile = useStore((s) => s.openFile);
   const searchFor = useStore((s) => s.searchFor);
   const settings = useStore((s) => s.graphSettings);
@@ -173,7 +177,7 @@ export default function GraphView() {
     scored.sort((a, b) => b.s - a.s || a.n.label.length - b.n.label.length);
     return scored.slice(0, 50).map((x) => x.n);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jumpQ, sceneVersion]);
+  }, [jumpQ, sceneVersion, languageRevision]);
   const [panelOpen, setPanelOpen] = useState(false); // Obsidian default: collapsed, cog only
   const [stats, setStats] = useState({ total: 0, shown: 0, orphans: 0 });
   const [buildError, setBuildError] = useState<string | null>(null);
@@ -725,17 +729,17 @@ export default function GraphView() {
         if (!blob) throw new Error('toBlob failed');
         if (navigator.clipboard && typeof ClipboardItem !== 'undefined') {
           await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-          useStore.getState().notify('Graph screenshot copied');
+          useStore.getState().notify(uiText("webobsidian.graph-screenshot-copied-9f9bfe"));
         } else {
           const a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
           a.download = 'graph.png';
           a.click();
           URL.revokeObjectURL(a.href);
-          useStore.getState().notify('Graph screenshot downloaded');
+          useStore.getState().notify(uiText("webobsidian.graph-screenshot-downloaded-3daff4"));
         }
       } catch {
-        useStore.getState().notify('Screenshot failed');
+        useStore.getState().notify(uiText("webobsidian.screenshot-failed-b82f52"));
       }
     };
     window.addEventListener('wo-graph-screenshot', onShot);
@@ -897,7 +901,7 @@ export default function GraphView() {
       simRef.current = null;
       nodesRef.current = [];
       linksRef.current = [];
-      setBuildError('Could not render the graph with the current filters.');
+      setBuildError(uiText("webobsidian.could-not-render-the-graph-with-the-current-filt-44e52f"));
       setSceneVersion((v) => v + 1);
     }
 
@@ -1254,7 +1258,7 @@ export default function GraphView() {
           <Icon name="search" size={14} />
           <input
             value={jumpQ}
-            placeholder="Find node…"
+            placeholder={uiText("webobsidian.find-node-e18fc8")}
             spellCheck={false}
             onChange={(e) => setJumpQ(e.target.value)}
             onKeyDown={(e) => {
@@ -1268,7 +1272,7 @@ export default function GraphView() {
           />
           {jumpQ.trim() !== '' && (
             <div className="graph-node-results">
-              {jumpResults.length === 0 && <div className="graph-node-empty">No matching nodes</div>}
+              {jumpResults.length === 0 && <div className="graph-node-empty">{uiText("webobsidian.no-matching-nodes-440ffa")}</div>}
               {jumpResults.map((n) => (
                 <button
                   key={n.id}
@@ -1287,20 +1291,18 @@ export default function GraphView() {
         </div>
 
         <div className="graph-hint">
-          {stats.shown} nodes · {stats.total} notes · {stats.orphans} orphans · scroll to zoom · drag to pan · click a tag to search
-        </div>
+          {stats.shown} {uiText("webobsidian.nodes-25d85b")} {stats.total} {uiText("webobsidian.notes-5571cd")} {stats.orphans} {uiText("webobsidian.orphans-scroll-to-zoom-drag-to-pan-click-a-tag-t-63b45b")} </div>
 
         {buildError && (
           <div className="graph-error">
             <span>{buildError}</span>
             <button className="btn secondary" onClick={reset}>
-              Reset filters
-            </button>
+              {uiText("webobsidian.reset-filters-565531")} </button>
           </div>
         )}
 
         {!panelOpen && (
-          <button className="graph-panel-open" title="Show filters" onClick={() => setPanelOpen(true)}>
+          <button className="graph-panel-open" title={uiText("webobsidian.show-filters-b1ad23")} onClick={() => setPanelOpen(true)}>
             <Icon name="settings" size={16} />
           </button>
         )}
@@ -1338,6 +1340,8 @@ function FilterPanel({
   onClose: () => void;
   onAnimate: () => void;
 }) {
+  const languageRevision = useLanguage().revision;
+
   const addGroup = () =>
     patch({
       groups: [...s.groups, { query: '', color: GROUP_COLORS[s.groups.length % GROUP_COLORS.length] }],
@@ -1349,13 +1353,13 @@ function FilterPanel({
   return (
     <div className="graph-panel">
       <Section
-        title="Filters"
+        title={uiText("plugins.graph-view.label-filters")}
         actions={
           <>
-            <button className="nav-action" title="Reset to defaults" onClick={reset}>
+            <button className="nav-action" title={uiText("webobsidian.reset-to-defaults-ddefe4")} onClick={reset}>
               <Icon name="refresh-cw" size={14} />
             </button>
-            <button className="nav-action" title="Close" onClick={onClose}>
+            <button className="nav-action" title={uiText("interface.menu.close")} onClick={onClose}>
               <Icon name="x" size={14} />
             </button>
           </>
@@ -1363,20 +1367,19 @@ function FilterPanel({
       >
         <input
           className="text-input"
-          placeholder="Search files..."
+          placeholder={uiText("plugins.graph-view.prompt-filter-nodes")}
           value={s.search}
           onChange={(e) => patch({ search: e.target.value })}
         />
-        <Toggle label="Tags" checked={s.tags} onChange={(v) => patch({ tags: v })} />
-        <Toggle label="Attachments" checked={s.attachments} onChange={(v) => patch({ attachments: v })} />
-        <Toggle label="Existing files only" checked={s.existingOnly} onChange={(v) => patch({ existingOnly: v })} />
-        <Toggle label="Orphans" checked={s.orphans} onChange={(v) => patch({ orphans: v })} />
+        <Toggle label={uiText("webobsidian.tags-848eed")} checked={s.tags} onChange={(v) => patch({ tags: v })} />
+        <Toggle label={uiText("webobsidian.attachments-6771ad")} checked={s.attachments} onChange={(v) => patch({ attachments: v })} />
+        <Toggle label={uiText("plugins.graph-view.option-show-existing-files-only")} checked={s.existingOnly} onChange={(v) => patch({ existingOnly: v })} />
+        <Toggle label={uiText("plugins.graph-view.option-show-orphans")} checked={s.orphans} onChange={(v) => patch({ orphans: v })} />
       </Section>
 
-      <Section title="Groups">
+      <Section title={uiText("plugins.graph-view.label-groups")}>
         <button className="btn" style={{ width: '100%' }} onClick={addGroup}>
-          New group
-        </button>
+          {uiText("webobsidian.new-group-f9850c")} </button>
         {s.groups.map((g, i) => (
           <div className="graph-group-row" key={i}>
             <input
@@ -1387,32 +1390,31 @@ function FilterPanel({
             />
             <input
               className="text-input"
-              placeholder="Search query"
+              placeholder={uiText("webobsidian.search-query-e5e053")}
               value={g.query}
               onChange={(e) => setGroup(i, { query: e.target.value })}
             />
-            <button className="nav-action" title="Remove group" onClick={() => delGroup(i)}>
+            <button className="nav-action" title={uiText("webobsidian.remove-group-9a5319")} onClick={() => delGroup(i)}>
               <Icon name="x" size={14} />
             </button>
           </div>
         ))}
       </Section>
 
-      <Section title="Display">
-        <Toggle label="Arrows" checked={s.arrows} onChange={(v) => patch({ arrows: v })} />
-        <Slider label="Text fade threshold" min={-3} max={3} step={0.1} value={s.textFade} onChange={(v) => patch({ textFade: v })} />
-        <Slider label="Node size" min={0.1} max={5} step={0.1} value={s.nodeSize} onChange={(v) => patch({ nodeSize: v })} />
-        <Slider label="Link thickness" min={0.1} max={5} step={0.1} value={s.linkThickness} onChange={(v) => patch({ linkThickness: v })} />
+      <Section title={uiText("webobsidian.display-574ff9")}>
+        <Toggle label={uiText("plugins.graph-view.option-show-arrows")} checked={s.arrows} onChange={(v) => patch({ arrows: v })} />
+        <Slider label={uiText("plugins.graph-view.option-text-fade")} min={-3} max={3} step={0.1} value={s.textFade} onChange={(v) => patch({ textFade: v })} />
+        <Slider label={uiText("plugins.graph-view.option-node-size")} min={0.1} max={5} step={0.1} value={s.nodeSize} onChange={(v) => patch({ nodeSize: v })} />
+        <Slider label={uiText("plugins.graph-view.option-link-thickness")} min={0.1} max={5} step={0.1} value={s.linkThickness} onChange={(v) => patch({ linkThickness: v })} />
         <button className="btn" style={{ width: '100%', marginTop: 6 }} onClick={onAnimate}>
-          Animate
-        </button>
+          {uiText("plugins.graph-view.button-animate-timelapse")} </button>
       </Section>
 
-      <Section title="Forces">
-        <Slider label="Center force" min={0} max={1} step={0.01} value={s.centerForce} onChange={(v) => patch({ centerForce: v })} />
-        <Slider label="Repel force" min={0} max={20} step={0.1} value={s.repelForce} onChange={(v) => patch({ repelForce: v })} />
-        <Slider label="Link force" min={0} max={1} step={0.01} value={s.linkForce} onChange={(v) => patch({ linkForce: v })} />
-        <Slider label="Link distance" min={30} max={500} step={1} value={s.linkDistance} onChange={(v) => patch({ linkDistance: v })} />
+      <Section title={uiText("plugins.graph-view.label-forces")}>
+        <Slider label={uiText("plugins.graph-view.option-center-force")} min={0} max={1} step={0.01} value={s.centerForce} onChange={(v) => patch({ centerForce: v })} />
+        <Slider label={uiText("plugins.graph-view.option-repel-force")} min={0} max={20} step={0.1} value={s.repelForce} onChange={(v) => patch({ repelForce: v })} />
+        <Slider label={uiText("plugins.graph-view.option-link-force")} min={0} max={1} step={0.01} value={s.linkForce} onChange={(v) => patch({ linkForce: v })} />
+        <Slider label={uiText("plugins.graph-view.option-link-distance")} min={30} max={500} step={1} value={s.linkDistance} onChange={(v) => patch({ linkDistance: v })} />
       </Section>
     </div>
   );
@@ -1427,13 +1429,15 @@ function Section({
   actions?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const languageRevision = useLanguage().revision;
+
   const [open, setOpen] = useState(true);
   return (
     <div className="graph-section">
       <div className="graph-section-head">
         <button className="graph-section-title" onClick={() => setOpen((o) => !o)}>
           <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
-          {title}
+          {uiLabel(title)}
         </button>
         <span style={{ flex: 1 }} />
         {actions}
@@ -1452,9 +1456,11 @@ function Toggle({
   checked: boolean;
   onChange: (v: boolean) => void;
 }) {
+  const languageRevision = useLanguage().revision;
+
   return (
     <div className="graph-row">
-      <span className="graph-row-label">{label}</span>
+      <span className="graph-row-label">{uiLabel(label)}</span>
       <button
         className={`graph-switch ${checked ? 'on' : ''}`}
         role="switch"
@@ -1482,9 +1488,11 @@ function Slider({
   step: number;
   onChange: (v: number) => void;
 }) {
+  const languageRevision = useLanguage().revision;
+
   return (
     <div className="graph-slider">
-      <span className="graph-row-label">{label}</span>
+      <span className="graph-row-label">{uiLabel(label)}</span>
       <input
         type="range"
         min={min}

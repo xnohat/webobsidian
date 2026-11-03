@@ -45,6 +45,15 @@ It is **single-user** and self-hosted: one master password protects the whole ap
 configuration lives in a plain `data/settings.json` (no database engine), and the entire
 stack runs from a single `docker compose up`.
 
+### Interface language
+
+Open **Settings → Language** to import a UTF-8 `.txt` language file or download a
+blank template. The selected translation is saved on the server and shared by
+your browsers. Missing translations use the app's English text.
+
+An independently authored Russian translation is available for manual import.
+[Download the Russian language file](translations/ru.txt).
+
 > **Why?** To access and edit your knowledge base from any browser, on any device, while
 > keeping full ownership of your files — and to let AI agents read/write your vault through
 > a safe, scoped REST API.
@@ -637,7 +646,6 @@ the disposable smoke tests passing before merging changes.
 <div align="center">
 <sub>Built for people who want to own their notes. Not affiliated with Obsidian.md.</sub>
 </div>
-
 
 ### Local drafts, conflict recovery and toolbar width
 

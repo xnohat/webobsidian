@@ -1,3 +1,4 @@
+import {t as uiText, useLanguage} from "../lib/i18n/runtime";
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from '../lib/store';
 import { type TreeNode } from '../lib/api';
@@ -26,6 +27,8 @@ function collectFolders(node: TreeNode | null, showAttachments: boolean): string
  * folder and move there, esc to dismiss. Driven by store.movePath.
  */
 export default function FolderPicker() {
+  const languageRevision = useLanguage().revision;
+
   const movePath = useStore((s) => s.movePath);
   const setMovePath = useStore((s) => s.setMovePath);
   const tree = useStore((s) => s.tree);
@@ -41,7 +44,7 @@ export default function FolderPicker() {
   // movePath is a single path (string) or several (array, bulk move).
   const froms = useMemo(
     () => (movePath == null ? [] : pruneDescendants(Array.isArray(movePath) ? movePath : [movePath])),
-    [movePath],
+    [movePath, languageRevision],
   );
   const single = froms.length === 1 ? froms[0] : null;
   const currentDir = single && single.includes('/') ? single.slice(0, single.lastIndexOf('/')) : '';
@@ -55,12 +58,12 @@ export default function FolderPicker() {
       if (froms.some((src) => f === src || f.startsWith(`${src}/`))) return false;
       return true;
     });
-  }, [tree, showAttachmentFolders, froms, single, currentDir]);
+  }, [tree, showAttachmentFolders, froms, single, currentDir, languageRevision]);
 
   const lc = q.trim().toLowerCase();
   const matches = useMemo(
     () => folders.filter((f) => !lc || (f || '/').toLowerCase().includes(lc)),
-    [folders, lc],
+    [folders, lc, languageRevision],
   );
 
   // shift+↵ creates a new folder — offer it when the typed name isn't an exact match.
@@ -91,14 +94,14 @@ export default function FolderPicker() {
         await renamePath(src, to);
         moved++;
       } catch (e: any) {
-        notify(e?.message ?? 'Move failed');
+        notify(e?.message ?? uiText("webobsidian.move-failed-795434"));
       }
     }
     await loadTree();
     useStore.getState().setSelected([]);
     if (moved) {
       const dest = folder || 'vault root';
-      notify(moved > 1 ? `Moved ${moved} items to ${dest}` : `Moved to ${dest}`);
+      notify(moved > 1 ? uiText("webobsidian.moved-value0-items-to-value1-08976d", {value0: moved, value1: dest}) : uiText("webobsidian.moved-to-value0-e22c9c", {value0: dest}));
     }
   };
 
@@ -123,7 +126,7 @@ export default function FolderPicker() {
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <input
           className="palette-input"
-          placeholder={froms.length > 1 ? `Move ${froms.length} items to which folder?` : 'Type a folder'}
+          placeholder={froms.length > 1 ? uiText("webobsidian.move-value0-items-to-which-folder-2cf3f0", {value0: froms.length}) : uiText("plugins.file-explorer.prompt-type-folder")}
           autoFocus
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -146,17 +149,17 @@ export default function FolderPicker() {
               onMouseEnter={() => setSel(-1)}
               onClick={() => move(typed)}
             >
-              <span>Create “{typed}”</span>
+              <span>{uiText("webobsidian.create-15f8f8")}{typed}”</span>
               <span className="kbd">⇧↵</span>
             </div>
           )}
-          {matches.length === 0 && !canCreate && <div className="palette-item">No folders</div>}
+          {matches.length === 0 && !canCreate && <div className="palette-item">{uiText("webobsidian.no-folders-9415d8")}</div>}
         </div>
         <div className="palette-footer">
-          <span><span className="kbd">↑↓</span> to navigate</span>
-          <span><span className="kbd">↵</span> to move</span>
-          <span><span className="kbd">⇧↵</span> to create</span>
-          <span><span className="kbd">esc</span> to dismiss</span>
+          <span><span className="kbd">↑↓</span> {uiText("webobsidian.to-navigate-130c10")}</span>
+          <span><span className="kbd">↵</span> {uiText("plugins.file-explorer.instruction-move")}</span>
+          <span><span className="kbd">⇧↵</span> {uiText("webobsidian.to-create-1c4810")}</span>
+          <span><span className="kbd">{uiText("webobsidian.esc-abb761")}</span> {uiText("webobsidian.to-dismiss-df901e")}</span>
         </div>
       </div>
     </div>

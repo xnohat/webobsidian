@@ -1,3 +1,4 @@
+import {t as uiText, useLanguage} from "../lib/i18n/runtime";
 import {useVisualViewport} from '../lib/useVisualViewport';
 import { useEffect, useRef, useState } from 'react';
 import { EditorState, Compartment } from '@codemirror/state';
@@ -12,6 +13,8 @@ export default function ConflictResolver({ session, onClose }: {
     session: ConflictSession;
     onClose: () => void;
 }) {
+  const languageRevision = useLanguage().revision;
+
     const viewport=useVisualViewport();
     const dialog=useRef<HTMLElement>(null);
     const busyRef=useRef(false);
@@ -27,7 +30,7 @@ export default function ConflictResolver({ session, onClose }: {
         const diff = !/\.canvas$/i.test(session.source.path) && remote !== null && canDiff(remote) && canDiff(session.result);
         const view = new EditorView({ parent: host.current, state: EditorState.create({ doc: session.result, extensions: [editable.current.of(EditorState.readOnly.of(false)), history(), keymap.of(historyKeymap), EditorView.lineWrapping, ...(diff ? unifiedMergeView({ original: remote!, diffConfig: { scanLimit: 500 }, mergeControls: true }) : []), EditorView.updateListener.of(update => { if (update.docChanged) {
                         session.result = update.state.doc.toString();
-                        void persistConflictResult(session).catch(e => setError('Local save failed: ' + String(e)));
+                        void persistConflictResult(session).catch(e => setError(uiText("webobsidian.local-save-failed-dbf50c") + String(e)));
                     } })] }) });
         viewRef.current = view;
         view.focus();
@@ -44,7 +47,7 @@ export default function ConflictResolver({ session, onClose }: {
         try {
             const path = copy ? copyPath : session.source.path;
             if (!path.trim())
-                throw new Error('Enter a path for the copy');
+                throw new Error(uiText("webobsidian.enter-a-path-for-the-copy-0fcdc5"));
             const receipt=await saveConflictResult(session, path, copy);
             if(!isDraftScopeCurrent(session.source.scopeId,session.scopeEpoch))return;
             const current = useStore.getState();
@@ -53,7 +56,7 @@ export default function ConflictResolver({ session, onClose }: {
                 acceptResolvedDocument(path,receipt.content,receipt.version!);
             }
             else if (copy)
-                current.notify('Recovered copy saved: ' + path);
+                current.notify(uiText("webobsidian.recovered-copy-saved-d17f7e") + path);
             if(receipt.cleanupWarning)current.notify(receipt.cleanupWarning,7000);
             onClose();
         }
@@ -65,10 +68,10 @@ export default function ConflictResolver({ session, onClose }: {
                     session.remoteVersion = newer.remoteVersion;
                     setRemote(newer.remoteContent);
                     setGeneration(v => v + 1);
-                    setError('Server changed again. Review the new comparison before saving.');
+                    setError(uiText("webobsidian.server-changed-again-review-the-new-comparison-b-1bbca3"));
                 }
                 catch (refreshError) {
-                    setError('Could not refresh comparison: ' + String(refreshError));
+                    setError(uiText("webobsidian.could-not-refresh-comparison-701c9f") + String(refreshError));
                 }
             }
             else
@@ -78,10 +81,10 @@ export default function ConflictResolver({ session, onClose }: {
             setBusy(false);
         }
     };
-    return <div className="draft-dialog-bg" style={{inset:'auto',left:viewport.left,top:viewport.top,width:viewport.width,height:viewport.height}}><section ref={dialog} style={{maxHeight:Math.max(0,viewport.height-16),maxWidth:Math.max(0,viewport.width-16)}} className="draft-dialog" role="dialog" aria-modal="true" aria-label="Resolve conflict"><h2>Review recovered text: {session.source.path}</h2>
- {remote===null?<p className="draft-deleted-notice" role="status">Original file was deleted. This browser copy has not restored it. Save a copy if you want to keep this text, or close this review and remove the browser copy if the deletion was intentional.</p>:<p>Compare this browser copy with the file in your vault. Edit the result below, then save it to the original file or save a separate copy. Nothing changes in your vault until you save.</p>}
- <details><summary>Base version</summary><pre>{session.source.baseContent}</pre></details><details><summary>Local version</summary><pre>{session.source.content}</pre></details><details><summary>Server version{remote === null ? ' (deleted)' : ''}</summary><pre>{remote}</pre></details>
- {(!canDiff(session.result) || /\.canvas$/i.test(session.source.path)) && <p>Whole-document editor. For Canvas, choose a complete valid document or save a copy.</p>}
- <fieldset disabled={busy}><button disabled={remote===null} onClick={() => { session.result = remote ?? ''; setGeneration(v => v + 1); void persistConflictResult(session).catch(e => setError(String(e))); }}>Use server text</button><div ref={host} className="conflict-editor"/></fieldset>
- {error && <p role="alert">{error}</p>}<label>Copy path <input aria-label="Recovered copy path" value={copyPath} onChange={e => setCopyPath(e.target.value)} disabled={busy}/></label><footer><button disabled={busy||remote===null} onClick={() => void save(false)}>Save result</button><button disabled={busy} onClick={() => void save(true)}>Save a copy</button><button disabled={busy} onClick={() => { void persistConflictResult(session).then(onClose).catch(e => setError(String(e))); }}>Later</button></footer></section></div>;
+    return <div className="draft-dialog-bg" style={{inset:'auto',left:viewport.left,top:viewport.top,width:viewport.width,height:viewport.height}}><section ref={dialog} style={{maxHeight:Math.max(0,viewport.height-16),maxWidth:Math.max(0,viewport.width-16)}} className="draft-dialog" role="dialog" aria-modal="true" aria-label={uiText("webobsidian.resolve-conflict-8b7233")}><h2>{uiText("webobsidian.review-recovered-text-962d8a")} {session.source.path}</h2>
+ {remote===null?<p className="draft-deleted-notice" role="status">{uiText("webobsidian.original-file-was-deleted-this-browser-copy-has-a31f2e")}</p>:<p>{uiText("webobsidian.compare-this-browser-copy-with-the-file-in-your-8f378e")}</p>}
+ <details><summary>{uiText("webobsidian.base-version-0faebd")}</summary><pre>{session.source.baseContent}</pre></details><details><summary>{uiText("webobsidian.local-version-da5268")}</summary><pre>{session.source.content}</pre></details><details><summary>{uiText("webobsidian.server-version-254631")}{remote === null ? uiText("webobsidian.-deleted-cfcf98") : ''}</summary><pre>{remote}</pre></details>
+ {(!canDiff(session.result) || /\.canvas$/i.test(session.source.path)) && <p>{uiText("webobsidian.whole-document-editor-for-canvas-choose-a-comple-e4b816")}</p>}
+ <fieldset disabled={busy}><button disabled={remote===null} onClick={() => { session.result = remote ?? ''; setGeneration(v => v + 1); void persistConflictResult(session).catch(e => setError(String(e))); }}>{uiText("webobsidian.use-server-text-ad99fc")}</button><div ref={host} className="conflict-editor"/></fieldset>
+ {error && <p role="alert">{error}</p>}<label>{uiText("interface.menu.copy-path")} <input aria-label={uiText("webobsidian.recovered-copy-path-6717b7")} value={copyPath} onChange={e => setCopyPath(e.target.value)} disabled={busy}/></label><footer><button disabled={busy||remote===null} onClick={() => void save(false)}>{uiText("webobsidian.save-result-20d5d6")}</button><button disabled={busy} onClick={() => void save(true)}>{uiText("webobsidian.save-a-copy-9056f9")}</button><button disabled={busy} onClick={() => { void persistConflictResult(session).then(onClose).catch(e => setError(String(e))); }}>{uiText("webobsidian.later-56e2f5")}</button></footer></section></div>;
 }

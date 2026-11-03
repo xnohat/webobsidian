@@ -1,3 +1,4 @@
+import {t as uiText, useLanguage} from "../lib/i18n/runtime";
 import { useStore } from '../lib/store';
 import { displayChildren } from '../lib/attachments';
 import { findNode } from '../lib/tree';
@@ -20,6 +21,8 @@ function entryIcon(n: TreeNode): string {
  * folder as an empty note.
  */
 export default function FolderView({ path }: { path: string }) {
+  const languageRevision = useLanguage().revision;
+
   const { values: preferences } = useVaultPreferences();
   const tree = useStore((s) => s.tree);
   const openFile = useStore((s) => s.openFile);
@@ -41,15 +44,15 @@ export default function FolderView({ path }: { path: string }) {
       <div className="preview-inner folder-view">
         <div className="folder-view-head">
           <h1><Icon name="folder" size={26} /> {node?.name ?? path}</h1>
-          <button className="tool-btn" title="New note in this folder" onClick={() => newNote(path)}>
+          <button className="tool-btn" title={uiText("webobsidian.new-note-in-this-folder-245cda")} onClick={() => newNote(path)}>
             <Icon name="plus" size={18} />
           </button>
         </div>
         <div className="folder-view-meta">
-          {folders.length} folder{folders.length === 1 ? '' : 's'} · {files.length} file{files.length === 1 ? '' : 's'}
+          {uiText('webobsidian.folder-count',{count:folders.length})} · {uiText('webobsidian.file-count',{count:files.length})}
         </div>
         {ordered.length === 0 ? (
-          <p className="folder-empty">This folder is empty.</p>
+          <p className="folder-empty">{uiText("webobsidian.this-folder-is-empty-60db81")}</p>
         ) : (
           <div className="folder-list">
             {ordered.map((c) => (

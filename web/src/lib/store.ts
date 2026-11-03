@@ -1,3 +1,4 @@
+import {t as uiText} from "./i18n/runtime";
 import {defaultCodeFileViewer,resolveCodeLanguage,type CodeFileViewerSettings,type CodeFileReadResult} from './codeFiles';
 import {listDrafts} from './drafts/storage';
 import {resolveNewNoteDirectory} from './vaultLinks';
@@ -513,8 +514,8 @@ function saveActiveDraft(): Promise<void> {
         if (state.activePath === path) {
           state.markLocked((error.data as { reason?: string } | undefined)?.reason ?? null);
         }
-        state.notify('Read-only note — ask the agent to change it');
-      } else state.notify(error instanceof Error ? `Save failed: ${error.message}` : 'Save failed');
+        state.notify(uiText("webobsidian.read-only-note-ask-the-agent-to-change-it-b0d374"));
+      } else state.notify(error instanceof Error ? uiText("webobsidian.save-failed-value0-4c82cd", {value0: error.message}) : uiText("webobsidian.save-failed-0a4444"));
       throw error;
     } finally {
       saves.delete(path);
@@ -731,7 +732,7 @@ export const useStore = create<AppState>()(
         set((s) => ({
           tabs: s.tabs.some((t) => t.path === GRAPH_PATH)
             ? s.tabs
-            : [...s.tabs, { path: GRAPH_PATH, title: 'Graph view' }],
+            : [...s.tabs, { path: GRAPH_PATH, get title() {return uiText("plugins.graph-view.name");} }],
           activePath: GRAPH_PATH,
           content: '',
           dirty: false,
@@ -751,7 +752,7 @@ export const useStore = create<AppState>()(
         set((s) => ({
           tabs: s.tabs.some((t) => t.path === TASKS_PATH)
             ? s.tabs
-            : [...s.tabs, { path: TASKS_PATH, title: 'Tasks' }],
+            : [...s.tabs, { path: TASKS_PATH, get title() {return uiText("webobsidian.tasks-090ec5");} }],
           activePath: TASKS_PATH,
           content: '',
           dirty: false,
@@ -781,7 +782,7 @@ export const useStore = create<AppState>()(
         // Files panel, then let FileTree scroll the now-visible row into view.
         const st0 = get();
         if (!st0.showAttachmentFolders && isInsideHiddenAttachmentFolder(st0.tree, path)) {
-          st0.notify('That file is in a hidden attachments folder — turn on Settings → Vault & Files → Show attachment folders.', 4500);
+          st0.notify(uiText("webobsidian.that-file-is-in-a-hidden-attachments-folder-turn-f05280"), 4500);
           return;
         }
         const segs = path.split('/');
@@ -814,7 +815,7 @@ export const useStore = create<AppState>()(
         try {
           const { path } = await api.resolveAttachment(target, from);
           if (path) await get().openFile(path,/\.pdf$/i.test(path)&&target.includes('#')?{pdfFragment:target.slice(target.indexOf('#')+1)}:undefined);
-          else get().notify('Attachment not found');
+          else get().notify(uiText("webobsidian.attachment-not-found-cf2258"));
         } catch (err: any) {
           get().notify(err?.message ?? 'Could not open attachment');
         }
@@ -914,12 +915,12 @@ export const useStore = create<AppState>()(
           else if (isAttachmentTarget(target)||resolveCodeLanguage(target,get().codeFileViewer)!==null) {
             // FR-21: a picture/media/PDF target the vault does not hold is a broken
             // link, not a new note — creating `report.pdf` for a typo pollutes the vault.
-            get().notify(`File not found: ${target}`);
+            get().notify(uiText("webobsidian.file-not-found-value0-603728", {value0: target}));
           } else {
             // Only append `.md` when the target has no extension at all — a target
             // like `Foo.canvas` must stay `Foo.canvas`, not become `Foo.canvas.md`.
             let file=target.split('#')[0];if(kind==='markdown')try{file=decodeURIComponent(file)}catch{}
-            if(!file){get().notify('Section or block not found');return}
+            if(!file){get().notify(uiText("webobsidian.section-or-block-not-found-095a45"));return}
             const hasExt = /\.[^./]+$/.test(file);
             const name=hasExt?file:`${file}.md`;
             const directory=file.includes('/')?'':resolveNewNoteDirectory({sourcePath:from??get().activePath,preferences:(await api.vaultPreferences()).values});
@@ -928,7 +929,7 @@ export const useStore = create<AppState>()(
             await get().createNote(newPath, `# ${file.replace(/\.md$/, '')}\n`);
           }
         } catch(error) {
-          get().notify(error instanceof ApiError && error.status===503 ? 'The index is updating. Try opening this link again shortly.' : 'Could not resolve this link. Check the connection.');
+          get().notify(error instanceof ApiError && error.status===503 ? uiText("webobsidian.the-index-is-updating-try-opening-this-link-agai-9c9232") : uiText("webobsidian.could-not-resolve-this-link-check-the-connection-8f9aed"));
         }
       },
 
@@ -939,7 +940,7 @@ export const useStore = create<AppState>()(
           try {
             if (mutationsPending) await waitForFileMutations();
             if (get().activePath === path && get().dirty && !TEXT_RE.test(path)) {
-              get().notify('Cannot save this file type — keep this tab open and copy your changes');
+              get().notify(uiText("webobsidian.cannot-save-this-file-type-keep-this-tab-open-an-314f3c"));
               return false;
             }
             while (get().activePath === path && (get().dirty || saves.has(path))) {
@@ -954,7 +955,7 @@ export const useStore = create<AppState>()(
               const activePath = tabs.at(-1)?.path ?? null;
               set({ tabs, activePath, content: '', dirty: false, locked: false, lockReason: null });
               if (activePath) await get().openFile(activePath).catch((error: unknown) => {
-                get().notify(error instanceof Error ? error.message : 'Could not open file');
+                get().notify(error instanceof Error ? error.message : uiText("webobsidian.could-not-open-file-ac6e99"));
               });
             }
             return true;
@@ -980,7 +981,7 @@ export const useStore = create<AppState>()(
         const renameResult=await api.rename(from, to);
         const remap = (path: string) => withinPath(path, from) ? `${to}${path.slice(from.length)}` : path;
         for(const [name,session] of documentSessions){if(withinPath(name,from)){documentSessions.delete(name);session.key.path=remap(name);documentSessions.set(session.key.path,session);}}
-        if(currentDraftScope)await remapDrafts(currentDraftScope,from,to).catch(()=>get().notify('Rename succeeded; local draft paths could not be updated. Recover them from Local drafts.'));
+        if(currentDraftScope)await remapDrafts(currentDraftScope,from,to).catch(()=>get().notify(uiText("webobsidian.rename-succeeded-local-draft-paths-could-not-be-d1e17b")));
         const remapNullable = (path: string | null) => path === null ? null : remap(path);
         set((s) => ({
           tabs: s.tabs.map((tab) => {
@@ -999,7 +1000,7 @@ export const useStore = create<AppState>()(
           shareDialogPath: remapNullable(s.shareDialogPath),
           clipboard: s.clipboard ? { ...s.clipboard, path: remap(s.clipboard.path) } : null,
         }));
-        for(const changed of renameResult?.changedPaths??[]){const session=documentSessions.get(changed);if(!session)continue;const old=[...revisions.keys()].find(p=>remap(p)===changed);if(old===undefined||session.revision!==revisions.get(old)){get().notify('Links changed on the server. Unsaved local text was kept; review before saving.');continue;}const current=await api.read(changed);if(session.revision!==revisions.get(old))continue;if(typeof current.content==='string'&&current.version){session.acceptServerResult(current.content,current.version);if(get().activePath===changed)set({content:current.content,dirty:false});if(get().splitPath===changed)set({splitContent:current.content});}}
+        for(const changed of renameResult?.changedPaths??[]){const session=documentSessions.get(changed);if(!session)continue;const old=[...revisions.keys()].find(p=>remap(p)===changed);if(old===undefined||session.revision!==revisions.get(old)){get().notify(uiText("webobsidian.links-changed-on-the-server-unsaved-local-text-w-6984c9"));continue;}const current=await api.read(changed);if(session.revision!==revisions.get(old))continue;if(typeof current.content==='string'&&current.version){session.acceptServerResult(current.content,current.version);if(get().activePath===changed)set({content:current.content,dirty:false});if(get().splitPath===changed)set({splitContent:current.content});}}
       }).then(async()=>{const {activePath,splitPath}=get();if(activePath)await get().openFile(activePath,{preview:false});if(splitPath)await get().openToSide(splitPath);}),
 
       deletePath: (path, permanent,confirmedMode) => mutateFiles(async () => {
@@ -1030,7 +1031,7 @@ export const useStore = create<AppState>()(
         });
         // Run after the deletion gate releases, otherwise openFile would wait on itself.
         if (wasActive && activePath) void get().openFile(activePath).catch((error: unknown) => {
-          get().notify(error instanceof Error ? error.message : 'Could not open file');
+          get().notify(error instanceof Error ? error.message : uiText("webobsidian.could-not-open-file-ac6e99"));
         });
       },
 
@@ -1062,7 +1063,7 @@ export const useStore = create<AppState>()(
         if (unlockMode === 'password' && !password) return;
         setUnlock({ active: true, password: unlockMode === 'password' ? password : undefined });
         set({ locked: false, lockReason: null });
-        get().notify('Unlocked for this session — the agent still maintains this note');
+        get().notify(uiText("webobsidian.unlocked-for-this-session-the-agent-still-mainta-267fac"));
       },
 
       createNote: async (path, body) => {
@@ -1156,7 +1157,7 @@ export const useStore = create<AppState>()(
             return;
           }
         } catch(error) {
-          get().notify(error instanceof ApiError && error.status===503 ? 'The index is updating. Try opening the daily note again shortly.' : 'Could not check for an existing daily note. Check the connection.');
+          get().notify(error instanceof ApiError && error.status===503 ? uiText("webobsidian.the-index-is-updating-try-opening-the-daily-note-e18576") : uiText("webobsidian.could-not-check-for-an-existing-daily-note-check-90f19b"));
           return;
         }
         // Create the note inside a `daily/` folder when the vault has one, and only fall back to
@@ -1177,7 +1178,7 @@ export const useStore = create<AppState>()(
         })();
         const path = `${dailyDir || 'Daily'}/${iso}.md`;
         await get().createNote(path, `# ${iso}\n\n`);
-        get().notify(`Daily note ${iso} ready`);
+        get().notify(uiText("webobsidian.daily-note-value0-ready-56d639", {value0: iso}));
       },
 
       newFromTemplate: async (templatePath, title, folder) => {
@@ -1218,7 +1219,7 @@ export const useStore = create<AppState>()(
         await get().loadTree();
         await get().openFile(path, { preview: false });
         if (dir) get().revealInTree(path);
-        get().notify(`Created from template: ${path}`);
+        get().notify(uiText("webobsidian.created-from-template-value0-cc66d7", {value0: path}));
         return path;
       },
 

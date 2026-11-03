@@ -1,5 +1,15 @@
 # IMPLEMENTATION PLAN — WebObsidian
 
+## Native colors, Canvas, diagrams and language packs — 2026-11-03
+
+- [x] Match fenced JavaScript/Python/YAML colors with lazy grammars, compact Canvas text/controls/borders, native arrowheads and capped initial zoom; add the fingerprinted Obsidian SVG favicon.
+- [x] Use a shared lazy Pele 1.8.0 adapter for existing Mermaid fences across editor/preview/nested notes, preserving source actions, navigation, themes and cleanup.
+- [x] Add an English UI catalogue, compatible text-file import, template download and Settings → Language, with authenticated server persistence, startup cache, migration and serialized save/reset.
+- [x] Preserve literal document/custom labels, validate translation placeholders and update existing editor/PDF widgets. Include an independently authored Russian pack for manual import.
+- [x] Cover code colors, Canvas geometry, diagram safety, language persistence/failure/reset and stable toolbar overflow with browser/server regressions.
+
+Design and validation: `docs/superpowers/plans/2026-11-02-pele-diagrams.md` and `docs/superpowers/plans/2026-11-03-language-packs.md`. Public server-rendered pages, native Electron menus and third-party plugin strings remain outside the language-pack scope.
+
 ## Code viewing, Canvas and native embeds — 2026-11-01
 
 - [x] Add a bounded UTF-8 code-file API and read-only main/split CodeMirror viewers with settings, language mappings, Find and Copy; preserve drafts and mixed-pane focus/navigation.
@@ -105,7 +115,6 @@ and toolbar assertions, avoiding reads of the previous asynchronous layout.
 - [x] Regression tests, builds and integration verification.
 
 Progress 2026-10-30: all six review fixes implemented. Regression tests first reproduced default override login, dirty-tab loss, rename clobbering, concurrent CAS/append loss, nested outside-link copy, and temporary-file collisions. Independent review additionally closed Git-metadata aliases, unsupported-tab close loops, and temporary-copy exposure through watcher indexes and application Git snapshots. Final validation: 224 server tests passed / 9 Windows file-symlink skips; 388 web tests passed; all workspace and desktop typechecks, full build, desktop build, and disposable integration smoke passed. Linux-only smoke and manual browser interaction were not run.
-
 
 ## Upstream contribution preparation — 2026-10-29
 
@@ -1143,7 +1152,6 @@ Cập nhật lần cuối: 2026-10-16 (issue #36 reveal active file in explorer;
   `confirm` để khoá không trở thành ngõ cụt. 13 unit test + scenario G phủ cả ca quan trọng nhất: **key
   của agent ghi được note đang bị khoá**. Live: build `06860d4` rồi `b7233be`, 58 đường dẫn bị khoá trong
   vault thật, `deploy/smoke.sh` khẳng định lại sau mỗi lần deploy.
-
 
 - 2026-09-26 (Phase 40 — popup gợi ý `[[` chữ đen trên theme tối, issue #49): người dùng báo gõ `[[` thì
   chữ trong danh sách gợi ý hiện màu đen khi ở dark mode. Dựng lại bằng headless: theme thật của vault
@@ -2270,11 +2278,9 @@ Cập nhật lần cuối: 2026-10-16 (issue #36 reveal active file in explorer;
 - 2026-10-16: Sửa click outline nổi (issue #32) cuộn thiếu ở note dài — `DocOutline.tsx` `go()` dùng `EditorView.scrollIntoView(pos, {y:'start', yMargin})` + 1 lượt chốt lại sau 150ms thay cho `scrollTo(lineBlockAt().top, smooth)`: dòng nằm xa viewport chỉ có chiều cao ƯỚC LƯỢNG tới khi được render/đo, nên offset tính một lần bị thiếu và animation smooth bị CodeMirror huỷ khi đo lại (dừng cách heading hàng nghìn px, section active sai). Verify: click chuột thật trên 5 heading (xa xuôi, xa ngược, giữa, tiêu đề trùng, gần) đều tới đúng heading + đúng section active; typecheck/build sạch.
 - 2026-10-16: Outline nổi — cuộn có easing (ease-in-out cubic) khi click heading (issue #32): `DocOutline.tsx` `go()` chạy animation rAF tự viết (chậm → nhanh → chậm; thời lượng 300–900ms theo khoảng cách; tôn trọng `prefers-reduced-motion`; huỷ khi người dùng wheel/touch/click/phím hoặc khi outline unmount). Mỗi frame đi đúng phần quãng đường CÒN LẠI tính từ vị trí hiện tại tới đích, đích tính lại mỗi frame (ước lượng chiều cao dòng của CodeMirror đổi khi dòng được render/đo; khi heading đã render thì nhắm vị trí thật) → không giật khi CodeMirror re-measure và không còn cú giật cuối. Verify (click chuột thật + lấy mẫu scrollTop mỗi frame): xuống xa tốc độ 1→~130→0 px/frame ~870ms, lên xa tới H1 mượt, wheel giữa chừng dừng ngay, reduced-motion nhảy tức thì, chuyển Source giữa chừng không lỗi; typecheck/build sạch.
 
-
 ## 2026-10-30: adaptive toolbar, drafts and conflicts
 
 Status: in progress. Execution order: container-sized one-row toolbar with More menu, then persistent local drafts, then version-conflict resolution. Existing explicit scroll/wrap layouts remain supported. See `docs/superpowers/plans/2026-10-30-drafts-conflicts-adaptive-toolbar.md`.
-
 
 ### 2026-10-30 — drafts/conflicts/toolbar implementation
 

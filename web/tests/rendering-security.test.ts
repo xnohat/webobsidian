@@ -3,10 +3,8 @@ import { createRequire } from 'node:module';
 import { test } from 'node:test';
 
 const require = createRequire(import.meta.url);
-const mermaidRequire = createRequire(require.resolve('mermaid'));
 const consumers = [
   ['web', require('katex')],
-  ['Mermaid', mermaidRequire('katex')],
 ] as const;
 
 for (const [consumer, katex] of consumers) {

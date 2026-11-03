@@ -1,3 +1,4 @@
+import {t as uiText, useLanguage} from "../lib/i18n/runtime";
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { EditorView } from '@codemirror/view';
 
@@ -47,10 +48,12 @@ const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2
 const scrollDuration = (distancePx: number) => Math.min(900, Math.max(300, 250 + distancePx * 0.15));
 
 export default function DocOutline({ view, content }: { view: EditorView | null; content: string }) {
-  const headings = useMemo(() => extractHeadings(content), [content]);
+  const languageRevision = useLanguage().revision;
+
+  const headings = useMemo(() => extractHeadings(content), [content, languageRevision]);
   const [active, setActive] = useState(-1);
   const stopScroll = useRef<(() => void) | null>(null);
-  const minLevel = useMemo(() => headings.reduce((m, h) => Math.min(m, h.level), 6), [headings]);
+  const minLevel = useMemo(() => headings.reduce((m, h) => Math.min(m, h.level), 6), [headings, languageRevision]);
 
   // Track the section at the top of the viewport.
   useEffect(() => {
@@ -148,7 +151,7 @@ export default function DocOutline({ view, content }: { view: EditorView | null;
   };
 
   return (
-    <nav className="doc-outline" aria-label="Document outline">
+    <nav className="doc-outline" aria-label={uiText("webobsidian.document-outline-12ebeb")}>
       <ul className="doc-outline-markers">
         {headings.map((h, i) => (
           <li key={`${i}-${h.pos}`}>

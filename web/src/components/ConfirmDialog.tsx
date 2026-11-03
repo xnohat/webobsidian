@@ -1,8 +1,11 @@
+import {t as uiText, useLanguage} from "../lib/i18n/runtime";
 import { useEffect, useRef } from 'react';
 import { useConfirm } from '../lib/confirm';
 
 /** Modal host for confirmDialog(): Esc / backdrop / Cancel resolve false, the action button true. */
 export default function ConfirmDialog() {
+  const languageRevision = useLanguage().revision;
+
   const req = useConfirm((s) => s.req);
   const cancelRef = useRef<HTMLButtonElement>(null);
 
@@ -33,7 +36,7 @@ export default function ConfirmDialog() {
         className="modal confirm-dialog"
         role="alertdialog"
         aria-modal="true"
-        aria-label={req.detail ? `${req.message} ${req.detail}` : req.message}
+        aria-label={req.detail ? uiText("webobsidian.-value0-value1-843a2d", {value0: req.message, value1: req.detail}) : req.message}
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
@@ -54,8 +57,7 @@ export default function ConfirmDialog() {
         {req.items&&<div style={{maxHeight:240,overflowY:'auto'}}>{req.items.map(item=><label key={item} style={{display:'block'}}><input type="checkbox" checked={req.selected?.includes(item)??false} onChange={e=>useConfirm.setState({req:{...req,selected:e.target.checked?[...(req.selected??[]),item]:(req.selected??[]).filter(p=>p!==item)}})}/>{item}</label>)}</div>}
         <div className="confirm-dialog-actions">
           <button ref={cancelRef} className="btn secondary" onClick={cancel}>
-            Cancel
-          </button>
+            {uiText("dialogue.button-cancel")} </button>
           <button className={req.danger ? 'btn danger' : 'btn'} onClick={() => req.resolve(true)}>
             {req.confirmLabel}
           </button>

@@ -1,3 +1,4 @@
+import {t as uiText, useLanguage} from "../lib/i18n/runtime";
 import {captureContext,executeCommand,commands as toolbarCommands} from '../lib/toolbar/registry';
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import DocOutline from './DocOutline';
@@ -8,7 +9,7 @@ import { editorStructure, outlineMarkdown, persistentFolding } from '../lib/edit
 import { search, searchKeymap } from '@codemirror/search';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { yamlFrontmatter } from '@codemirror/lang-yaml';
-import { languages } from '@codemirror/language-data';
+import {nativeFencedCodeLanguages,nativeFencedCodeHighlightStyle} from '../lib/nativeCodeLanguages';
 import { syntaxHighlighting } from '@codemirror/language';
 import { obsidianHighlightStyle, literalAngleColors } from '../lib/highlight';
 import { useStore, documentSessions } from '../lib/store';
@@ -73,6 +74,8 @@ const readonlyExt = (reading: boolean) =>
 const isReadonly = (viewMode: string, locked: boolean) => viewMode === 'reading' || locked;
 
 export default function Editor() {
+  const languageRevision = useLanguage().revision;
+
   const preferences=useVaultPreferences();
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
@@ -177,7 +180,7 @@ export default function Editor() {
       group('Paragraph',['header1-text','header2-text','header3-text','header4-text','header5-text','header6-text','header0-text','toggle-bullet-list','toggle-numbered-list','editor:toggle-checklist-status','editor:toggle-blockquote']),
       group('Insert',['editor:insert-wikilink','insert-link','editor:insert-embed','insert-callout','editor:insert-table','codeblock','hrline','editor:insert-tag','editor:attach-file']),
       ...['editor-cut','editor-copy','editor-paste'].map(id=>{const c=toolbarCommands.find(x=>x.id==='editing-toolbar:'+id)!;return {label:c.label,disabled:!c.getState(ctx).enabled,onClick:()=>{void executeCommand(c.id,ctx);}};}),
-      {label:'Select all',onClick:()=>v.dispatch({selection:{anchor:0,head:v.state.doc.length}})},
+      {get label() {return uiText("webobsidian.select-all-913aff");},onClick:()=>v.dispatch({selection:{anchor:0,head:v.state.doc.length}})},
     ]});
   };
 
@@ -220,13 +223,14 @@ export default function Editor() {
         editorStructure,
         persistentFolding(documentScope,activePath??''),
         // GFM base so Strikethrough/Table/TaskList nodes exist (Obsidian dialect);
-        // codeLanguages lazy-loads grammars for fenced blocks (Obsidian: Prism).
+        // Fence grammars follow the native editor's tokenization and palette.
         // YAML front matter (--- … ---) is parsed as YAML; the rest stays Markdown.
-        yamlFrontmatter({ content: markdown({ base: markdownLanguage, codeLanguages: languages,extensions:[outlineMarkdown] }) }),
+        yamlFrontmatter({ content: markdown({ base: markdownLanguage, codeLanguages: nativeFencedCodeLanguages,extensions:[outlineMarkdown] }) }),
         suggesterPlugin,
         // Obsidian token palette via CSS vars (works in both themes); markdown
         // structure styling is owned by the Live Preview decorations.
         syntaxHighlighting(obsidianHighlightStyle),
+        syntaxHighlighting(nativeFencedCodeHighlightStyle),
         literalAngleColors,
         EditorView.lineWrapping,
         ...(isMd ? selectionToolbar : []),
@@ -343,7 +347,7 @@ export default function Editor() {
       )}
       <div className="cm-outline-wrap">
         <div className={cls} style={{'--font-text-size':`${preferences.values.baseFontSize??16}px`} as CSSProperties} ref={host} onContextMenu={onContextMenu} />
-        {viewMode !== 'source' && activePath && /\.(md|markdown)$/i.test(activePath) && (
+        {viewMode !== "source" && activePath && /\.(md|markdown)$/i.test(activePath) && (
           <DocOutline view={editorView} content={content} />
         )}
       </div>
@@ -364,26 +368,28 @@ function LockBanner({
   mode: 'off' | 'confirm' | 'password';
   onUnlock: (password?: string) => void;
 }) {
+  const languageRevision = useLanguage().revision;
+
   const [pw, setPw] = useState('');
   return (
     <div className="lock-banner" role="status">
       <Icon name="lock" size={13} />
       <span className="lock-msg">
-        <strong>Read-only.</strong> {reason ?? 'This note is maintained by the agent.'}
+        <strong>{uiText("webobsidian.read-only-65834d")}</strong> {reason ?? uiText("webobsidian.this-note-is-maintained-by-the-agent-edf7ea")}
       </span>
-      {mode !== 'off' && (
+      {mode !== "off" && (
         <span className="lock-actions">
-          {mode === 'password' ? (
+          {mode === "password" ? (
             <>
               <input
                 type="password"
                 value={pw}
-                placeholder="password"
-                aria-label="unlock password"
+                placeholder={uiText("webobsidian.password-5baa61")}
+                aria-label={uiText("webobsidian.unlock-password-b418b3")}
                 onChange={(e) => setPw(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') onUnlock(pw); }}
               />
-              <button type="button" onClick={() => onUnlock(pw)}>Unlock</button>
+              <button type="button" onClick={() => onUnlock(pw)}>{uiText("webobsidian.unlock-1526a1")}</button>
             </>
           ) : (
             <button
@@ -391,15 +397,14 @@ function LockBanner({
               onClick={() => {
                 if (
                   confirm(
-                    'Edit this note anyway? The agent maintains it and will keep writing to it — your change can be overwritten.',
+                    uiText("webobsidian.edit-this-note-anyway-the-agent-maintains-it-and-bc8e4e"),
                   )
                 ) {
                   onUnlock();
                 }
               }}
             >
-              Edit anyway
-            </button>
+              {uiText("webobsidian.edit-anyway-68f5f5")} </button>
           )}
         </span>
       )}

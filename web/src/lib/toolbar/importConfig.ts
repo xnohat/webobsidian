@@ -1,3 +1,4 @@
+import {t as uiText} from "../i18n/runtime";
 import {getDefaultToolbarConfig,parseToolbarConfig,record,toolbarSurfaces,toolbarColor,safeToolbarIcon,knownToolbarCommandIds,type ToolbarConfigV1,type ToolbarNode} from './config';
 export interface ImportReport { config:ToolbarConfigV1; unknownCommands:string[]; warnings:string[]; importedItems:number }
 /** Supports native exports and pinned upstream data.json's *Commands/SubmenuCommands format. */
@@ -33,7 +34,7 @@ export function importEditingToolbar(input:unknown):ImportReport {
         if(id==='editingToolbar-Divider-Line'||c.type==='separator')return {type:'separator',instanceId};
         if(Array.isArray(c.SubmenuCommands)){
           if(depth>=3)throw Error('Toolbar groups exceed maximum depth of 3');
-          return {type:'group',instanceId,label:typeof c.name==='string'?c.name:'Group',icon:safeToolbarIcon(c.icon),style:c.menuType==='dropdown'?'menu':'compact',children:convert(c.SubmenuCommands,depth+1)};
+          return {type:'group',instanceId,label:typeof c.name==='string'?c.name:uiText("plugins.bases.label-group"),icon:safeToolbarIcon(c.icon),style:c.menuType==='dropdown'?'menu':'compact',children:convert(c.SubmenuCommands,depth+1)};
         }
         const commandId=idMap.get(id)||id;
         if(!knownToolbarCommandIds.has(commandId)&&!customIds.has(commandId))unknown.add(commandId);

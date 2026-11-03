@@ -1,0 +1,3811 @@
+# Русский перевод интерфейса WebObsidian
+# Собственный перевод по каталогу приложения, 3 ноября 2026 года.
+# Импорт через Settings → Language → Import language file.
+
+[commands.open-settings]
+original=Open settings
+translation=Открыть настройки
+
+[commands.save-file]
+original=Save current file
+translation=Сохранить текущий файл
+
+[commands.split-down]
+original=Split down
+translation=Разделить снизу
+
+[commands.split-right]
+original=Split right
+translation=Разделить справа
+
+[commands.toggle-right-sidebar]
+original=Toggle right sidebar
+translation=Показать или скрыть правую боковую панель
+
+[commands.zoom-in]
+original=Zoom in
+translation=Увеличить масштаб
+
+[commands.zoom-out]
+original=Zoom out
+translation=Уменьшить масштаб
+
+[dialogue.button-cancel]
+original=Cancel
+translation=Отмена
+
+[dialogue.button-delete]
+original=Delete
+translation=Удалить
+
+[dialogue.button-download]
+original=Download
+translation=Скачать
+
+[dialogue.button-save]
+original=Save
+translation=Сохранить
+
+[editor.menu.delete-image]
+original=Delete image
+translation=Удалить изображение
+
+[interface.formatting.insert-code-block]
+original=Code block
+translation=Блок кода
+
+[interface.formatting.insert-external-link]
+original=Add external link
+translation=Добавить внешнюю ссылку
+
+[interface.formatting.insert-horizontal-rule]
+original=Horizontal rule
+translation=Горизонтальная линия
+
+[interface.formatting.insert-link]
+original=Add link
+translation=Добавить ссылку
+
+[interface.formatting.insert-math-block]
+original=Math block
+translation=Блок формулы
+
+[interface.formatting.label-formatting]
+original=Format
+translation=Форматирование
+
+[interface.formatting.label-insert]
+original=Insert
+translation=Вставка
+
+[interface.formatting.label-paragraph]
+original=Paragraph
+translation=Абзац
+
+[interface.formatting.toggle-bullet-list]
+original=Bullet list
+translation=Маркированный список
+
+[interface.formatting.toggle-checklist]
+original=Task list
+translation=Список задач
+
+[interface.formatting.toggle-italics]
+original=Italic
+translation=Курсив
+
+[interface.formatting.toggle-numbered-list]
+original=Numbered list
+translation=Нумерованный список
+
+[interface.menu.close]
+original=Close
+translation=Закрыть
+
+[interface.menu.copy]
+original=Copy
+translation=Копировать
+
+[interface.menu.copy-path]
+original=Copy path
+translation=Копировать путь
+
+[interface.menu.cut]
+original=Cut
+translation=Вырезать
+
+[interface.menu.edit]
+original=Edit
+translation=Редактировать
+
+[interface.menu.more-options]
+original=More options
+translation=Дополнительные действия
+
+[interface.menu.open-in-new-window]
+original=Open in new window
+translation=Открыть в новом окне
+
+[interface.menu.open-linked-view]
+original=Open linked view
+translation=Открыть связанное представление
+
+[interface.menu.open-to-the-right]
+original=Open to the right
+translation=Открыть справа
+
+[interface.menu.paste]
+original=Paste
+translation=Вставить
+
+[interface.menu.preview]
+original=Preview
+translation=Предпросмотр
+
+[interface.settings]
+original=Settings
+translation=Настройки
+
+[plugins.backlinks.label-linked-mentions]
+original=Linked mentions
+translation=Упоминания со ссылками
+
+[plugins.backlinks.label-no-backlinks]
+original=No backlinks found.
+translation=Обратные ссылки не найдены.
+
+[plugins.backlinks.label-no-unlinked-mentions]
+original=No unlinked mentions found.
+translation=Упоминания без ссылок не найдены.
+
+[plugins.backlinks.menu-opt-backlinks-in-document]
+original=Backlinks in document
+translation=Обратные ссылки в документе
+
+[plugins.backlinks.name]
+original=Backlinks
+translation=Обратные ссылки
+
+[plugins.bases.action-add-group]
+original=Add group
+translation=Добавить группу
+
+[plugins.bases.command-add-item]
+original=Add item
+translation=Добавить элемент
+
+[plugins.bases.label-file-prop-file]
+original=file
+translation=файл
+
+[plugins.bases.label-file-prop-folder]
+original=folder
+translation=папка
+
+[plugins.bases.label-group]
+original=Group
+translation=Группа
+
+[plugins.bases.label-sort-manual]
+original=Manual
+translation=Вручную
+
+[plugins.bases.table.tooltip-drag-to-resize]
+original=Drag to resize
+translation=Перетащите, чтобы изменить размер
+
+[plugins.bookmarks.label-bookmark]
+original=Bookmark
+translation=Закладка
+
+[plugins.bookmarks.option-title]
+original=Title
+translation=Заголовок
+
+[plugins.canvas.action-add-card]
+original=Add card
+translation=Добавить карточку
+
+[plugins.canvas.action-add-note]
+original=Add note from vault
+translation=Добавить заметку из хранилища
+
+[plugins.canvas.action-align]
+original=Align
+translation=Выровнять
+
+[plugins.canvas.action-align-bottom]
+original=Align bottom
+translation=Выровнять по нижнему краю
+
+[plugins.canvas.action-align-top]
+original=Align top
+translation=Выровнять по верхнему краю
+
+[plugins.canvas.action-edit-label]
+original=Edit label
+translation=Изменить подпись
+
+[plugins.canvas.action-new-canvas]
+original=New canvas
+translation=Новый холст
+
+[plugins.canvas.action-remove-label]
+original=Remove label
+translation=Удалить подпись
+
+[plugins.canvas.action-set-color]
+original=Set color
+translation=Задать цвет
+
+[plugins.canvas.action-zoom-to-fit]
+original=Zoom to fit
+translation=Вместить в окно
+
+[plugins.canvas.action-zoom-to-selection]
+original=Zoom to selection
+translation=Масштабировать по выделению
+
+[plugins.canvas.label-style]
+original=Style
+translation=Стиль
+
+[plugins.editor-status.read]
+original=Reading
+translation=Чтение
+
+[plugins.file-explorer.action-change-sort]
+original=Change sort order
+translation=Изменить порядок сортировки
+
+[plugins.file-explorer.action-collapse-all]
+original=Collapse all
+translation=Свернуть всё
+
+[plugins.file-explorer.action-expand-all]
+original=Expand all
+translation=Развернуть всё
+
+[plugins.file-explorer.action-new-folder]
+original=New folder
+translation=Новая папка
+
+[plugins.file-explorer.action-new-note]
+original=New note
+translation=Новая заметка
+
+[plugins.file-explorer.action-reveal-file]
+original=Reveal file in navigation
+translation=Показать файл в навигации
+
+[plugins.file-explorer.instruction-move]
+original=to move
+translation=для перемещения
+
+[plugins.file-explorer.label-sort-a-to-z]
+original=File name (A to Z)
+translation=По имени файла (А–Я)
+
+[plugins.file-explorer.label-sort-created-new-to-old]
+original=Created time (new to old)
+translation=По дате создания (сначала новые)
+
+[plugins.file-explorer.label-sort-created-old-to-new]
+original=Created time (old to new)
+translation=По дате создания (сначала старые)
+
+[plugins.file-explorer.label-sort-new-to-old]
+original=Modified time (new to old)
+translation=По дате изменения (сначала новые)
+
+[plugins.file-explorer.label-sort-old-to-new]
+original=Modified time (old to new)
+translation=По дате изменения (сначала старые)
+
+[plugins.file-explorer.label-sort-z-to-a]
+original=File name (Z to A)
+translation=По имени файла (Я–А)
+
+[plugins.file-explorer.menu-opt-make-copy]
+original=Make a copy
+translation=Создать копию
+
+[plugins.file-explorer.menu-opt-new-folder]
+original=New folder
+translation=Новая папка
+
+[plugins.file-explorer.menu-opt-new-note]
+original=New note
+translation=Новая заметка
+
+[plugins.file-explorer.name]
+original=Files
+translation=Файлы
+
+[plugins.file-explorer.prompt-type-folder]
+original=Type a folder
+translation=Введите имя папки
+
+[plugins.file-recovery.button-clear-history]
+original=Clear
+translation=Очистить
+
+[plugins.graph-view.action-copy-screenshot]
+original=Copy screenshot
+translation=Скопировать снимок экрана
+
+[plugins.graph-view.action-open]
+original=Open graph view
+translation=Открыть граф
+
+[plugins.graph-view.button-animate-timelapse]
+original=Animate
+translation=Анимировать
+
+[plugins.graph-view.label-filters]
+original=Filters
+translation=Фильтры
+
+[plugins.graph-view.label-forces]
+original=Forces
+translation=Силы
+
+[plugins.graph-view.label-groups]
+original=Groups
+translation=Группы
+
+[plugins.graph-view.name]
+original=Graph view
+translation=Граф связей
+
+[plugins.graph-view.option-center-force]
+original=Center force
+translation=Притяжение к центру
+
+[plugins.graph-view.option-link-distance]
+original=Link distance
+translation=Длина связей
+
+[plugins.graph-view.option-link-force]
+original=Link force
+translation=Сила связей
+
+[plugins.graph-view.option-link-thickness]
+original=Link thickness
+translation=Толщина связей
+
+[plugins.graph-view.option-node-size]
+original=Node size
+translation=Размер узлов
+
+[plugins.graph-view.option-repel-force]
+original=Repel force
+translation=Сила отталкивания
+
+[plugins.graph-view.option-show-arrows]
+original=Arrows
+translation=Стрелки
+
+[plugins.graph-view.option-show-existing-files-only]
+original=Existing files only
+translation=Только существующие файлы
+
+[plugins.graph-view.option-show-orphans]
+original=Orphans
+translation=Изолированные узлы
+
+[plugins.graph-view.option-text-fade]
+original=Text fade threshold
+translation=Порог исчезновения текста
+
+[plugins.graph-view.prompt-filter-nodes]
+original=Search files...
+translation=Поиск файлов…
+
+[plugins.outline.name]
+original=Outline
+translation=Структура
+
+[plugins.properties.opt-delete-properties]
+original=Delete property
+translation=Удалить свойство
+
+[plugins.publish.action-new-password]
+original=New password
+translation=Новый пароль
+
+[plugins.publish.option-theme]
+original=Theme
+translation=Тема
+
+[plugins.search.label-collapse-results]
+original=Collapse results
+translation=Свернуть результаты
+
+[plugins.search.label-match-case]
+original=Match case
+translation=Учитывать регистр
+
+[plugins.search.label-more-context]
+original=Show more context
+translation=Показать больше контекста
+
+[plugins.search.label-search-options]
+original=Search options
+translation=Параметры поиска
+
+[plugins.sync.label-restore-this-version]
+original=Restore
+translation=Восстановить
+
+[plugins.sync.label-sync-log]
+original=Sync log
+translation=Журнал синхронизации
+
+[plugins.sync.label-version-history]
+original=Version history
+translation=История версий
+
+[plugins.sync.menu-opt-view-version-history]
+original=Open version history
+translation=Открыть историю версий
+
+[plugins.web-viewer.action-forward]
+original=Forward
+translation=Вперёд
+
+[properties.types.option-checkbox]
+original=Checkbox
+translation=Флажок
+
+[properties.types.option-date]
+original=Date
+translation=Дата
+
+[properties.types.option-datetime]
+original=Date & time
+translation=Дата и время
+
+[properties.types.option-folder]
+original=Folder
+translation=Папка
+
+[properties.types.option-text]
+original=Text
+translation=Текст
+
+[setting.about.option-language]
+original=Language
+translation=Язык
+
+[setting.account.name]
+original=Account
+translation=Учётная запись
+
+[setting.appearance.name]
+original=Appearance
+translation=Оформление
+
+[setting.editor.option-properties-source]
+original=Source
+translation=Исходный текст
+
+[setting.file.option-choice-daily-note]
+original=Daily note
+translation=Ежедневная заметка
+
+[setting.file.option-choice-permanent-delete]
+original=Permanently delete
+translation=Удалять безвозвратно
+
+[setting.file.option-trash]
+original=Trash
+translation=Корзина
+
+[setting.third-party-plugin.button-disable]
+original=Disable
+translation=Отключить
+
+[setting.third-party-plugin.button-enable]
+original=Enable
+translation=Включить
+
+[setting.third-party-plugin.button-install]
+original=Install
+translation=Установить
+
+[table.action-column-left]
+original=Move column left
+translation=Переместить столбец влево
+
+[table.action-column-right]
+original=Move column right
+translation=Переместить столбец вправо
+
+[table.action-delete-column]
+original=Delete column
+translation=Удалить столбец
+
+[table.action-delete-row]
+original=Delete row
+translation=Удалить строку
+
+[table.action-row-down]
+original=Move row down
+translation=Переместить строку вниз
+
+[table.action-row-up]
+original=Move row up
+translation=Переместить строку вверх
+
+[webobsidian.-add-property-e2852e]
+original=+ Add property
+translation=+ Добавить свойство
+
+[webobsidian.-api-v1-cd775f]
+original=/api/v1
+translation=/api/v1
+
+[webobsidian.-back-c32ae9]
+original=← Back
+translation=← Назад
+
+[webobsidian.-change-it-to-secure-your-vault-691d15]
+original=— change it to secure your vault.
+translation=— измените его, чтобы защитить хранилище.
+
+[webobsidian.-choose-a-new-password-to-secure-your-vault-befo-8842b7]
+original=). Choose a new password to secure your vault before continuing.
+translation=). Перед продолжением выберите новый пароль, чтобы защитить хранилище.
+
+[webobsidian.-copy-now-it-will-not-be-shown-again-b6a98c]
+original=⚠ Copy now — it will not be shown again.
+translation=⚠ Скопируйте сейчас — ключ больше не будет показан.
+
+[webobsidian.-created-bcdf32]
+original=· created
+translation=· создана
+
+[webobsidian.-deleted-cfcf98]
+original= (deleted)
+translation= (удалено)
+
+[webobsidian.-document-changed-insert-the-link-manually-0eb16a]
+original=; document changed, insert the link manually.
+translation=. Документ изменился, вставьте ссылку вручную.
+
+[webobsidian.-document-changed-insert-the-link-manually-67093b]
+original=. Document changed; insert the link manually.
+translation=. Документ изменился. Вставьте ссылку вручную.
+
+[webobsidian.-ff0000-00ff0080-feaf63]
+original=#ff0000, #00ff0080
+translation=#ff0000, #00ff0080
+
+[webobsidian.-or-the-345ba6]
+original=, or the
+translation=или переменную окружения
+
+[webobsidian.-password-protected-e0a870]
+original= · password-protected
+translation= · защищена паролем
+
+[webobsidian.-pdf-3f9328]
+original=Open PDF
+translation=Открыть PDF
+
+[webobsidian.-pdf-4dac1a]
+original=Could not display PDF. 
+translation=Не удалось отобразить PDF. 
+
+[webobsidian.-pdf-698ba2]
+original=Loading PDF…
+translation=Загрузка PDF…
+
+[webobsidian.-pdf-7bf10a]
+original=PDF password. 
+translation=Пароль PDF. 
+
+[webobsidian.-read-only-f17d4c]
+original=· Read only
+translation=· Только для чтения
+
+[webobsidian.-rrggbbaa-3641b8]
+original=#RRGGBBAA
+translation=#RRGGBBAA
+
+[webobsidian.-source-684ce4]
+original=· source:
+translation=· источник:
+
+[webobsidian.-the-raw-key-is-shown-once-7ed2ba]
+original=. The raw key is shown once.
+translation=. Сам ключ показывается только один раз.
+
+[webobsidian.-unavailable-b2cac2]
+original=(unavailable)
+translation=(недоступно)
+
+[webobsidian.-used-cd76e3]
+original=· used:
+translation=· использован:
+
+[webobsidian.-value0-ce415a]
+original= · {{value0}}
+translation= · {{value0}}
+
+[webobsidian.-value0-hidden-by-the-status-filter-4e20b2]
+original={{value0}} hidden by the status filter
+translation=Скрыто фильтром статуса: {{value0}}
+
+[webobsidian.-value0-label-value1-3f0a5d]
+original={{value0}} label {{value1}}
+translation={{value0}} — подпись {{value1}}
+
+[webobsidian.-value0-note-value1-aebb4e]
+original={{value0}} note{{value1}}
+translation=Заметок: {{value0}}{{value1}}
+
+[webobsidian.-value0-notes-value1-value2-pending-75e7bb]
+original={{value0}} notes · {{value1}} · {{value2}} pending
+translation=Заметок: {{value0}} · {{value1}} · в очереди: {{value2}}
+
+[webobsidian.-value0-preview-double-click-to-keep-open-c07eae]
+original={{value0}} (preview — double-click to keep open)
+translation={{value0}} (предпросмотр — дважды нажмите, чтобы закрепить вкладку)
+
+[webobsidian.-value0-value1-49127b]
+original=({{value0}} of {{value1}})
+translation=({{value0}} из {{value1}})
+
+[webobsidian.-value0-value1-52917d]
+original={{value0}}: {{value1}}
+translation={{value0}}: {{value1}}
+
+[webobsidian.-value0-value1-843a2d]
+original={{value0}} {{value1}}
+translation={{value0}} {{value1}}
+
+[webobsidian.-value0-value1-matches-0a2408]
+original= · {{value0}}{{value1}} matches
+translation= · совпадений: {{value0}}{{value1}}
+
+[webobsidian.-value0-zoom-483765]
+original={{value0}} zoom
+translation=Масштаб {{value0}}
+
+[webobsidian.-without-login-create-a-link-from-a-note-s-conte-89d87e]
+original=, without login. Create a link from a note's context menu ("Share…"). Disable keeps the URL for re-enabling later; delete revokes it permanently.
+translation=, без входа в систему. Создайте ссылку через контекстное меню заметки («Поделиться…»). Отключение сохраняет адрес для повторного включения; удаление отзывает его навсегда.
+
+[webobsidian.a-self-hosted-obsidian-compatible-web-app-vault-065725]
+original=A self-hosted, Obsidian-compatible web app. Vault, QMD search, GitHub sync (with LFS), agent API and community plugins.
+translation=Веб-приложение для собственного сервера, совместимое с Obsidian. Хранилище, поиск QMD, синхронизация с GitHub (с LFS), API для агентов и плагины сообщества.
+
+[webobsidian.aa-2c419e]
+original=Aa
+translation=Aa
+
+[webobsidian.about-6b21fb]
+original=About
+translation=О программе
+
+[webobsidian.about-webobsidian-ad29b2]
+original=About WebObsidian
+translation=О WebObsidian
+
+[webobsidian.absolute-path-on-the-server-to-your-notes-folder-9f667c]
+original=Absolute path on the server to your notes folder
+translation=Абсолютный путь на сервере к папке с заметками
+
+[webobsidian.access-token-pat-7e5d5c]
+original=Access token (PAT)
+translation=Токен доступа (PAT)
+
+[webobsidian.action-failed-57af94]
+original=Action failed
+translation=Не удалось выполнить действие
+
+[webobsidian.active-2bb6b9]
+original=active
+translation=активна
+
+[webobsidian.add-card-from-note-9e31f2]
+original=Add card from note
+translation=Добавить карточку из заметки
+
+[webobsidian.add-card-or-double-click-canvas-c4198b]
+original=Add card (or double-click canvas)
+translation=Добавить карточку (или дважды нажмите на холст)
+
+[webobsidian.add-column-e77ea6]
+original=Add column
+translation=Добавить столбец
+
+[webobsidian.add-command-079e41]
+original=Add command
+translation=Добавить команду
+
+[webobsidian.add-command-to-4226a6]
+original=Add command to
+translation=Добавить команду в
+
+[webobsidian.add-file-property-94c385]
+original=Add file property
+translation=Добавить свойство файла
+
+[webobsidian.add-image-537563]
+original=Add image
+translation=Добавить изображение
+
+[webobsidian.add-item]
+original=Add item
+translation=Добавить элемент
+
+[webobsidian.add-row-f648af]
+original=Add row
+translation=Добавить строку
+
+[webobsidian.add-separator-230f65]
+original=Add separator
+translation=Добавить разделитель
+
+[webobsidian.add-separator-to-90793c]
+original=Add separator to
+translation=Добавить разделитель в
+
+[webobsidian.add-subgroup-6fd13d]
+original=Add subgroup
+translation=Добавить подгруппу
+
+[webobsidian.add-supported-obsidian-mobile-commands-339cf3]
+original=Add supported Obsidian mobile commands
+translation=Добавить поддерживаемые мобильные команды Obsidian
+
+[webobsidian.add-template-b612a2]
+original=Add template
+translation=Добавить шаблон
+
+[webobsidian.align--e3b3ac]
+original=Align 
+translation=Выровнять 
+
+[webobsidian.align-center-97b689]
+original=Align center
+translation=Выровнять по центру
+
+[webobsidian.align-center-horizontally-0f49ab]
+original=Align center horizontally
+translation=Выровнять по центру по горизонтали
+
+[webobsidian.align-center-vertically-685eac]
+original=Align center vertically
+translation=Выровнять по центру по вертикали
+
+[webobsidian.align-column-a52f38]
+original=Align column
+translation=Выравнивание столбца
+
+[webobsidian.align-left-b442b4]
+original=Align left
+translation=Выровнять по левому краю
+
+[webobsidian.align-right-9bb446]
+original=Align right
+translation=Выровнять по правому краю
+
+[webobsidian.alignment-7f8c51]
+original=Alignment
+translation=Выравнивание
+
+[webobsidian.all-hidden-by-the-status-filter-b38284]
+original=All hidden by the status filter
+translation=Всё скрыто фильтром статуса
+
+[webobsidian.any-owner-96b7b5]
+original=Any owner
+translation=Любой ответственный
+
+[webobsidian.any-priority-266ecf]
+original=Any priority
+translation=Любой приоритет
+
+[webobsidian.anyone-with-the-link-can-open-it-a4f493]
+original=Anyone with the link can open it
+translation=Любой, у кого есть ссылка, может открыть её
+
+[webobsidian.anyone-with-the-url-8c7152]
+original=anyone with the URL
+translation=любой, у кого есть адрес ссылки,
+
+[webobsidian.anyone-with-the-url-can-view-this-note-aa7107]
+original=Anyone with the URL can view this note
+translation=Любой, у кого есть ссылка, может просмотреть эту заметку
+
+[webobsidian.api-keys-e18ffc]
+original=API Keys
+translation=Ключи API
+
+[webobsidian.apply-cfea41]
+original=Apply
+translation=Применить
+
+[webobsidian.apply-last-highlight-color-7dd1ba]
+original=Apply last highlight color
+translation=Применить последний цвет выделения
+
+[webobsidian.apply-last-text-color-bd57be]
+original=Apply last text color
+translation=Применить последний цвет текста
+
+[webobsidian.arrow-direction-d8e9ea]
+original=Arrow direction
+translation=Направление стрелки
+
+[webobsidian.at-least-6-characters-d5af56]
+original=At least 6 characters
+translation=Не менее 6 символов
+
+[webobsidian.attach-file-0c431f]
+original=Attach file
+translation=Прикрепить файл
+
+[webobsidian.attachment-not-found-cf2258]
+original=Attachment not found
+translation=Вложение не найдено
+
+[webobsidian.attachments-6771ad]
+original=Attachments
+translation=Вложения
+
+[webobsidian.auth-passwordhash-fed5a6]
+original=auth.passwordHash
+translation=auth.passwordHash
+
+[webobsidian.author-email-50bc7d]
+original=Author email
+translation=Электронная почта автора
+
+[webobsidian.author-name-ae05c6]
+original=Author name
+translation=Имя автора
+
+[webobsidian.auto-commit-on-save-c6d609]
+original=Auto-commit on save
+translation=Автоматический коммит при сохранении
+
+[webobsidian.auto-sync-6321ef]
+original=Auto-sync
+translation=Автоматическая синхронизация
+
+[webobsidian.back-b52b36]
+original=Back
+translation=Назад
+
+[webobsidian.backed-up-in-this-browser-saving-to-vault-7c35b6]
+original=Backed up in this browser · saving to vault…
+translation=Резервная копия в браузере создана · сохранение в хранилище…
+
+[webobsidian.backlinks-for-value0-35ec2b]
+original=Backlinks for {{value0}}
+translation=Обратные ссылки на {{value0}}
+
+[webobsidian.base-version-0faebd]
+original=Base version
+translation=Базовая версия
+
+[webobsidian.blacksmithgu-obsidian-dataview-73e763]
+original=blacksmithgu/obsidian-dataview
+translation=blacksmithgu/obsidian-dataview
+
+[webobsidian.blockquote-4362c1]
+original=Blockquote
+translation=Цитата
+
+[webobsidian.board-e879b0]
+original=Board
+translation=Доска
+
+[webobsidian.board-view-dcbb4d]
+original=Board view
+translation=Вид доски
+
+[webobsidian.body-718a7e]
+original=Body
+translation=Обычный текст
+
+[webobsidian.bold-19e074]
+original=Bold
+translation=Полужирный
+
+[webobsidian.bookmark-current-file-dfc9f6]
+original=Bookmark current file
+translation=Добавить текущий файл в закладки
+
+[webobsidian.bookmarks-ca3cdd]
+original=Bookmarks
+translation=Закладки
+
+[webobsidian.bookmarks-recent-16210f]
+original=Bookmarks & recent
+translation=Закладки и недавние
+
+[webobsidian.branch-162751]
+original=Branch
+translation=Ветка
+
+[webobsidian.bring-to-front-1f65ed]
+original=Bring to front
+translation=На передний план
+
+[webobsidian.browse-c1b20f]
+original=Browse…
+translation=Обзор…
+
+[webobsidian.browser-backup-failed-5b3f25]
+original=Browser backup failed
+translation=Не удалось сохранить резервную копию в браузере
+
+[webobsidian.browser-copy-976be5]
+original=Browser copy ·
+translation=Копия в браузере ·
+
+[webobsidian.browser-fullscreen-unavailable-workspace-focus-e-583683]
+original=Browser fullscreen unavailable; workspace focus enabled
+translation=Полноэкранный режим браузера недоступен. Включён режим фокусировки рабочей области
+
+[webobsidian.callout-f1647a]
+original=Callout
+translation=Выноска
+
+[webobsidian.can-read-this-note-without-login-19ec52]
+original=can read this note without login.
+translation=мог прочитать эту заметку без входа в систему.
+
+[webobsidian.cannot-paste-into-itself-c7da78]
+original=Cannot paste into itself
+translation=Нельзя вставить объект в самого себя
+
+[webobsidian.cannot-save-this-file-type-keep-this-tab-open-an-314f3c]
+original=Cannot save this file type — keep this tab open and copy your changes
+translation=Этот тип файла нельзя сохранить. Оставьте вкладку открытой и скопируйте свои изменения
+
+[webobsidian.catppuccin-0a67e4]
+original=Catppuccin
+translation=Catppuccin
+
+[webobsidian.catppuccin-frapp-d934db]
+original=Catppuccin Frappé
+translation=Catppuccin Frappé
+
+[webobsidian.catppuccin-latte-2a75d8]
+original=Catppuccin Latte
+translation=Catppuccin Latte
+
+[webobsidian.catppuccin-macchiato-d14a9c]
+original=Catppuccin Macchiato
+translation=Catppuccin Macchiato
+
+[webobsidian.catppuccin-mocha-aed8c1]
+original=Catppuccin Mocha
+translation=Catppuccin Mocha
+
+[webobsidian.center-a23911]
+original=Center
+translation=По центру
+
+[webobsidian.change-49b1cd]
+original=Change…
+translation=Изменить…
+
+[webobsidian.change-or-remove-password-5421c4]
+original=Change or remove password
+translation=Изменить или удалить пароль
+
+[webobsidian.change-password-8c6842]
+original=Change password
+translation=Изменить пароль
+
+[webobsidian.changes-need-review-94185f]
+original=Changes need review
+translation=Изменения требуют проверки
+
+[webobsidian.characters-aa908a]
+original=characters
+translation=символов
+
+[webobsidian.check-for-changes-67828b]
+original=Check for changes
+translation=Проверить изменения
+
+[webobsidian.checking-changes-326126]
+original=Checking changes…
+translation=Проверка изменений…
+
+[webobsidian.checking-changes-cached-results-are-preliminary-543f34]
+original=Checking changes. Cached results are preliminary.
+translation=Проверка изменений. Результаты из кэша предварительные.
+
+[webobsidian.checklist-61b294]
+original=Checklist
+translation=Список задач
+
+[webobsidian.choose-a-password-different-from-the-default-566640]
+original=Choose a password different from the default
+translation=Выберите пароль, отличающийся от пароля по умолчанию
+
+[webobsidian.choose-a-template-25c120]
+original=Choose a template…
+translation=Выберите шаблон…
+
+[webobsidian.choose-a-value0-7f4d9e]
+original=Choose a {{value0}}
+translation=Выберите значение ({{value0}})
+
+[webobsidian.choose-date]
+original=Choose date
+translation=Выбрать дату
+
+[webobsidian.clear-due-date-b96659]
+original=Clear due date
+translation=Удалить срок выполнения
+
+[webobsidian.clear-formatting-6c8a26]
+original=Clear formatting
+translation=Очистить форматирование
+
+[webobsidian.clear-the-due-date-due-none-252ff6]
+original=Clear the due date (due: none)
+translation=Убрать срок выполнения (due: none)
+
+[webobsidian.cleared-the-due-date-on-value0-f3d938]
+original=Cleared the due date on "{{value0}}"
+translation=Срок выполнения для «{{value0}}» удалён
+
+[webobsidian.clipboard-unavailable-use-ctrl-cmd-4b581b]
+original=Clipboard unavailable. Use Ctrl/Cmd+
+translation=Буфер обмена недоступен. Нажмите Ctrl/Cmd+
+
+[webobsidian.clone-d8cdb5]
+original=Clone
+translation=Клонировать
+
+[webobsidian.close-other-tabs-1a6d5b]
+original=Close other tabs
+translation=Закрыть другие вкладки
+
+[webobsidian.close-split-1024a7]
+original=Close split
+translation=Закрыть разделённую область
+
+[webobsidian.close-tab-296b59]
+original=Close tab
+translation=Закрыть вкладку
+
+[webobsidian.code-adac69]
+original=Code
+translation=Код
+
+[webobsidian.code-file-contents-53d5b3]
+original=Code file contents
+translation=Содержимое файла с кодом
+
+[webobsidian.code-files-4b0d81]
+original=Code files
+translation=Файлы с кодом
+
+[webobsidian.color-value0-e68c76]
+original=Color {{value0}}
+translation=Цвет {{value0}}
+
+[webobsidian.column--faf722]
+original=Column 
+translation=Столбец 
+
+[webobsidian.columns-1-20-5e6693]
+original=Columns (1–20)
+translation=Столбцы (1–20)
+
+[webobsidian.comfortable-231370]
+original=Comfortable
+translation=Просторная
+
+[webobsidian.command-890189]
+original=Command
+translation=Команда
+
+[webobsidian.command-is-unavailable-cb5bb9]
+original=Command is unavailable
+translation=Команда недоступна
+
+[webobsidian.command-is-unavailable-in-webobsidian-d14858]
+original=Command is unavailable in WebObsidian
+translation=Команда недоступна в WebObsidian
+
+[webobsidian.command-palette-p-1c8f74]
+original=Command palette (⌘P)
+translation=Палитра команд (⌘P)
+
+[webobsidian.command-value0-8ac4d9]
+original=Command {{value0}}
+translation=Команда {{value0}}
+
+[webobsidian.comment-153d7a]
+original=Comment
+translation=Комментарий
+
+[webobsidian.commit-1a1873]
+original=Commit
+translation=Создать коммит
+
+[webobsidian.commit-push-5s-after-each-edit-a5d5de]
+original=Commit (+push) ~5s after each edit
+translation=Выполнять commit (+push) примерно через 5 с после каждого изменения
+
+[webobsidian.community-plugins-3d3966]
+original=Community Plugins
+translation=Плагины сообщества
+
+[webobsidian.compact-1df39a]
+original=Compact
+translation=Компактная
+
+[webobsidian.compact-panel-32c2e8]
+original=Compact panel
+translation=Компактная панель
+
+[webobsidian.compare-this-browser-copy-with-the-file-in-your-8f378e]
+original=Compare this browser copy with the file in your vault. Edit the result below, then save it to the original file or save a separate copy. Nothing changes in your vault until you save.
+translation=Сравните эту копию в браузере с файлом в хранилище. Отредактируйте результат ниже, затем сохраните его в исходный файл или как отдельную копию. До сохранения в хранилище ничего не изменится.
+
+[webobsidian.compress-spaces-1dedb5]
+original=Compress spaces
+translation=Сократить повторяющиеся пробелы
+
+[webobsidian.configuration-error-336957]
+original=Configuration error
+translation=Ошибка конфигурации
+
+[webobsidian.confirm-delete-file]
+original=Delete "{{name}}"?
+translation=Удалить «{{name}}»?
+
+[webobsidian.confirm-delete-items]
+original=Delete {{count}} item?
+translation=Удалить выбранные элементы ({{count}})?
+
+[webobsidian.confirm-delete-items_plural]
+original=Delete {{count}} items?
+translation=Удалить выбранные элементы ({{count}})?
+
+[webobsidian.confirm-new-password-f85039]
+original=Confirm new password
+translation=Подтвердите новый пароль
+
+[webobsidian.confirm-password-4a7c56]
+original=Confirm password
+translation=Подтвердите пароль
+
+[webobsidian.copied-8e3df4]
+original=Copied
+translation=Скопировано
+
+[webobsidian.copy-entire-file-contents-to-the-clipboard-9ee8bb]
+original=Copy entire file contents to the clipboard
+translation=Скопировать всё содержимое файла в буфер обмена
+
+[webobsidian.copy-link-2f84ee]
+original=Copy link
+translation=Копировать ссылку
+
+[webobsidian.copy-unavailable-select-the-text-and-copy-it-60dfd9]
+original=Copy unavailable. Select the text and copy it.
+translation=Копирование недоступно. Выделите текст и скопируйте его.
+
+[webobsidian.copy-url-path-1d4a42]
+original=Copy URL path
+translation=Копировать URL
+
+[webobsidian.copy-value-4c924d]
+original=Copy value
+translation=Копировать значение
+
+[webobsidian.could-not-change-plugin-state-ff696c]
+original=Could not change plugin state.
+translation=Не удалось изменить состояние плагина.
+
+[webobsidian.could-not-check-for-an-existing-daily-note-check-90f19b]
+original=Could not check for an existing daily note. Check the connection.
+translation=Не удалось проверить наличие ежедневной заметки. Проверьте подключение.
+
+[webobsidian.could-not-create-the-note-2bf964]
+original=Could not create the note
+translation=Не удалось создать заметку
+
+[webobsidian.could-not-load-code-viewer-settings-reload-to-re-f53504]
+original=Could not load code viewer settings. Reload to retry.
+translation=Не удалось загрузить настройки просмотра кода. Перезагрузите страницу, чтобы повторить попытку.
+
+[webobsidian.could-not-load-index-status-9525e1]
+original=Could not load index status.
+translation=Не удалось загрузить состояние индекса.
+
+[webobsidian.could-not-load-plugin-catalog-e0f267]
+original=Could not load plugin catalog.
+translation=Не удалось загрузить каталог плагинов.
+
+[webobsidian.could-not-move-value0-value1-1383a1]
+original=Could not move "{{value0}}": {{value1}}
+translation=Не удалось переместить «{{value0}}». {{value1}}
+
+[webobsidian.could-not-open-file-ac6e99]
+original=Could not open file
+translation=Не удалось открыть файл
+
+[webobsidian.could-not-refresh-comparison-701c9f]
+original=Could not refresh comparison: 
+translation=Не удалось обновить сравнение: 
+
+[webobsidian.could-not-render-the-graph-with-the-current-filt-44e52f]
+original=Could not render the graph with the current filters.
+translation=Не удалось отобразить граф с текущими фильтрами.
+
+[webobsidian.could-not-resolve-this-link-check-the-connection-8f9aed]
+original=Could not resolve this link. Check the connection.
+translation=Не удалось определить назначение ссылки. Проверьте подключение.
+
+[webobsidian.could-not-save-settings-7768c8]
+original=Could not save settings
+translation=Не удалось сохранить настройки
+
+[webobsidian.could-not-set-the-due-date-on-value0-value1-102847]
+original=Could not set the due date on "{{value0}}": {{value1}}
+translation=Не удалось установить срок выполнения для «{{value0}}». {{value1}}
+
+[webobsidian.could-not-start-index-update-check-the-connectio-9bfc58]
+original=Could not start index update. Check the connection and try again.
+translation=Не удалось начать обновление индекса. Проверьте соединение и попробуйте снова.
+
+[webobsidian.create-15f8f8]
+original=Create “
+translation=Создать «
+
+[webobsidian.create-a-public-link-so-9a5987]
+original=Create a public link so
+translation=Создайте публичную ссылку, чтобы
+
+[webobsidian.create-key-e028cb]
+original=Create key
+translation=Создать ключ
+
+[webobsidian.create-note-4fd52d]
+original=Create note
+translation=Создать заметку
+
+[webobsidian.create-public-link-2b4d90]
+original=Create public link
+translation=Создать публичную ссылку
+
+[webobsidian.create-unlock-a097cb]
+original=Create & Unlock
+translation=Создать и разблокировать
+
+[webobsidian.created-from-template-value0-cc66d7]
+original=Created from template: {{value0}}
+translation=Создано из шаблона {{value0}}
+
+[webobsidian.creates-4e852e]
+original=Creates
+translation=Будет создано
+
+[webobsidian.creating-94d7d8]
+original=Creating…
+translation=Создание…
+
+[webobsidian.current-password-19dff4]
+original=Current password
+translation=Текущий пароль
+
+[webobsidian.custom-081ae3]
+original=Custom
+translation=Свой
+
+[webobsidian.custom-color-34cfc6]
+original=Custom color
+translation=Свой цвет
+
+[webobsidian.custom-color-856257]
+original=Custom color…
+translation=Свой цвет…
+
+[webobsidian.custom-color-hex-8cd624]
+original=Custom color HEX
+translation=Свой цвет в формате HEX
+
+[webobsidian.custom-command-44d3fd]
+original=Custom command
+translation=Пользовательская команда
+
+[webobsidian.custom-palette-colors-0d4cda]
+original=Custom palette colors
+translation=Свои цвета палитры
+
+[webobsidian.daily-note-value0-ready-56d639]
+original=Daily note {{value0}} ready
+translation=Ежедневная заметка {{value0}} готова
+
+[webobsidian.data-settings-json-976e4b]
+original=data/settings.json
+translation=data/settings.json
+
+[webobsidian.days-ahead-of-today-that-are-on-screen-at-this-w-bc886f]
+original=Days ahead of today that are on screen at this width
+translation=Число дней после сегодняшнего, видимых на экране при текущей ширине
+
+[webobsidian.dedupe-lines-d36e99]
+original=Dedupe lines
+translation=Удалить повторяющиеся строки
+
+[webobsidian.deduplicate-lines-4c04ab]
+original=Deduplicate lines
+translation=Удалить повторяющиеся строки
+
+[webobsidian.default-808d7d]
+original=Default
+translation=По умолчанию
+
+[webobsidian.default-color-60ea2b]
+original=Default color
+translation=Цвет по умолчанию
+
+[webobsidian.default-language-852814]
+original=Default language
+translation=Язык по умолчанию
+
+[webobsidian.default-password-1ec195]
+original=default password
+translation=пароль по умолчанию
+
+[webobsidian.defaults-to-123456-df0f81]
+original=Defaults to 123456
+translation=По умолчанию: 123456
+
+[webobsidian.delete-empty-folder]
+original=The empty folder will be removed.
+translation=Пустая папка будет удалена.
+
+[webobsidian.delete-failed-64513b]
+original=Delete failed
+translation=Не удалось удалить
+
+[webobsidian.delete-folder-contents]
+original=The folder and its contents ({{count}} item) will be removed.
+translation=Папка и всё её содержимое будут удалены. Элементов — {{count}}.
+
+[webobsidian.delete-folder-contents_plural]
+original=The folder and its contents ({{count}} items) will be removed.
+translation=Папка и всё её содержимое будут удалены. Элементов — {{count}}.
+
+[webobsidian.delete-folders]
+original=Folders and everything inside them will be removed.
+translation=Папки и всё их содержимое будут удалены.
+
+[webobsidian.delete-link-943845]
+original=Delete link
+translation=Удалить ссылку
+
+[webobsidian.delete-permanently-e63b51]
+original=Delete permanently
+translation=Удалить безвозвратно
+
+[webobsidian.delete-the-public-link-for-value0-the-url-stops-7a7ed6]
+original=Delete the public link for "{{value0}}"? The URL stops working permanently.
+translation=Удалить публичную ссылку для «{{value0}}»? Её адрес навсегда перестанет работать.
+
+[webobsidian.delete-this-public-link-the-url-stops-working-pe-9594a0]
+original=Delete this public link? The URL stops working permanently.
+translation=Удалить эту публичную ссылку? Её адрес навсегда перестанет работать.
+
+[webobsidian.delete-value0-7b7c88]
+original=Delete "{{value0}}"?
+translation=Удалить «{{value0}}»?
+
+[webobsidian.delete-value0-ea5388]
+original=Delete {{value0}}
+translation=Удалить {{value0}}
+
+[webobsidian.delete-value0-items-f93b00]
+original=Delete {{value0}} items
+translation=Удалить элементы ({{value0}})
+
+[webobsidian.deleted-items]
+original=Deleted {{count}} item
+translation=Удалено элементов — {{count}}
+
+[webobsidian.deleted-items_plural]
+original=Deleted {{count}} items
+translation=Удалено элементов — {{count}}
+
+[webobsidian.deleted-permanently-ca75d5]
+original=Deleted permanently
+translation=Удалено безвозвратно
+
+[webobsidian.deletemode-639989]
+original=deleteMode
+translation=deleteMode
+
+[webobsidian.deletionsource-86fb92]
+original=deletionSource
+translation=deletionSource
+
+[webobsidian.density-f9160c]
+original=Density
+translation=Плотность
+
+[webobsidian.disabled-07596f]
+original=disabled
+translation=отключена
+
+[webobsidian.disabled-in-toolbar-settings-b9a656]
+original=Disabled in toolbar settings
+translation=Отключено в настройках панели инструментов
+
+[webobsidian.display-574ff9]
+original=Display
+translation=Отображение
+
+[webobsidian.display-the-file-name-as-a-title-above-the-note-cbc72e]
+original=Display the file name as a title above the note. Turn it off if your notes start with their own heading.
+translation=Показывать имя файла как заголовок над заметкой. Отключите, если ваши заметки начинаются с собственного заголовка.
+
+[webobsidian.divider-912fc1]
+original=Divider
+translation=Разделитель
+
+[webobsidian.document-outline-12ebeb]
+original=Document outline
+translation=Структура документа
+
+[webobsidian.done-e9b450]
+original=Done
+translation=Готово
+
+[webobsidian.download-a-txt-file-there-then-choose-it-below-y-02cf17]
+original=Download a .txt file there, then choose it below. Your imported language is saved on this server and used by your browsers.
+translation=Скачайте оттуда файл .txt и выберите его ниже. Импортированный язык сохранится на этом сервере и будет использоваться в ваших браузерах.
+
+[webobsidian.download-copy-f779a1]
+original=Download copy
+translation=Скачать копию
+
+[webobsidian.download-template-d26856]
+original=Download template
+translation=Скачать шаблон
+
+[webobsidian.drag-to-move-0d84b3]
+original=Drag to move
+translation=Перетащите для перемещения
+
+[webobsidian.due-date-4c1aee]
+original=Due date
+translation=Срок выполнения
+
+[webobsidian.due-date-on-value0-set-to-value1-a42e65]
+original=Due date on "{{value0}}" set to {{value1}}
+translation=Срок выполнения для «{{value0}}» установлен на {{value1}}
+
+[webobsidian.due-value0-click-to-change-96a896]
+original=Due {{value0}} — click to change
+translation=Срок: {{value0}} — нажмите, чтобы изменить
+
+[webobsidian.duplicate-972d57]
+original=Duplicate
+translation=Дублировать
+
+[webobsidian.e-g-wiki-meetings-a0cb52]
+original=e.g. Wiki/meetings
+translation=например, Wiki/Встречи
+
+[webobsidian.each-toolbar-has-its-own-commands-and-groups-cha-3f3fc5]
+original=Each toolbar has its own commands and groups. Changes apply when saved. Move items with the arrow buttons or Alt+↑ / Alt+↓.
+translation=У каждой панели свой набор команд и групп. Изменения применяются после сохранения. Перемещайте элементы кнопками со стрелками или сочетаниями Alt+↑ / Alt+↓.
+
+[webobsidian.edit-anyway-68f5f5]
+original=Edit anyway
+translation=Всё равно редактировать
+
+[webobsidian.edit-layout-b46931]
+original=Edit layout
+translation=Редактировать расположение
+
+[webobsidian.edit-this-note-anyway-the-agent-maintains-it-and-bc8e4e]
+original=Edit this note anyway? The agent maintains it and will keep writing to it — your change can be overwritten.
+translation=Всё равно редактировать эту заметку? Её ведёт агент и продолжит вносить изменения — ваши правки могут быть перезаписаны.
+
+[webobsidian.edit-toolbar-layout-5584b0]
+original=Edit toolbar layout
+translation=Редактировать расположение панели
+
+[webobsidian.editing-3b9ba1]
+original=Editing
+translation=Редактирование
+
+[webobsidian.editing-toolbar-98490d]
+original=Editing toolbar
+translation=Панель редактирования
+
+[webobsidian.editing-toolbar-saved-921b88]
+original=Editing toolbar saved.
+translation=Панель редактирования сохранена.
+
+[webobsidian.editing-toolbar-value0-a3deb5]
+original=editing-toolbar:{{value0}}
+translation=editing-toolbar:{{value0}}
+
+[webobsidian.editor-focus-3636c6]
+original=Editor focus
+translation=Фокус на редакторе
+
+[webobsidian.effective-deletion-18d044]
+original=Effective deletion:
+translation=Текущий способ удаления:
+
+[webobsidian.effective-vault-preferences-f1dc2d]
+original=Effective vault preferences
+translation=Действующие настройки хранилища
+
+[webobsidian.embed-ad02e1]
+original=Embed
+translation=Встраивание
+
+[webobsidian.embed-note-f6e3f5]
+original=Embed note
+translation=Встроить заметку
+
+[webobsidian.empty-card-double-click-to-edit-e21e85]
+original=Empty card — double-click to edit
+translation=Пустая карточка — дважды нажмите, чтобы редактировать
+
+[webobsidian.empty-trash-04382a]
+original=Empty trash
+translation=Очистить корзину
+
+[webobsidian.empty-trash-failed-4802b8]
+original=Empty trash failed
+translation=Не удалось очистить корзину
+
+[webobsidian.empty-trash-value0-item-s-will-be-permanently-de-d69a6c]
+original=Empty trash? {{value0}} item(s) will be permanently deleted.
+translation=Очистить корзину? Будут безвозвратно удалены объекты в количестве {{value0}}.
+
+[webobsidian.enable-code-viewer-c9b8ae]
+original=Enable code viewer
+translation=Включить просмотр кода
+
+[webobsidian.enable-git-sync-d96bbc]
+original=Enable git sync
+translation=Включить синхронизацию Git
+
+[webobsidian.enabled-3ea3f9]
+original=enabled
+translation=включён
+
+[webobsidian.end-string-0a6e9b]
+original=End string
+translation=Конечная строка
+
+[webobsidian.enter-a-path-for-the-copy-0fcdc5]
+original=Enter a path for the copy
+translation=Введите путь для копии
+
+[webobsidian.enter-whole-days-from-0-to-3650-6d33d4]
+original=Enter whole days from 0 to 3650.
+translation=Введите целое число дней от 0 до 3650.
+
+[webobsidian.enter-your-password-to-unlock-fceff5]
+original=Enter your password to unlock
+translation=Введите пароль для разблокировки
+
+[webobsidian.environment-variable-as-a-recovery-override-pass-2f0929]
+original=environment variable, as a recovery (override) password, then log back in to set a new one.
+translation=как пароль восстановления (он переопределит текущий), затем войдите снова и задайте новый пароль.
+
+[webobsidian.esc-abb761]
+original=esc
+translation=esc
+
+[webobsidian.explicit-opt-in-obsidian-requests-value0-your-sa-337d67]
+original=Explicit opt-in. Obsidian requests {{value0}}. Your saved WebObsidian selection is retained when following is disabled.
+translation=Требуется явное включение. Obsidian запрашивает {{value0}}. Когда следование отключено, используется сохранённый выбор WebObsidian.
+
+[webobsidian.explicitly-add-supported-commands-to-the-existin-d2f215]
+original=Explicitly add supported commands to the existing mobile toolbar. Existing commands, other layouts, appearance and custom commands are preserved. Unknown commands remain in Obsidian and are not imported.
+translation=Добавить поддерживаемые команды на существующую мобильную панель инструментов. Текущие команды, другие компоновки, оформление и пользовательские команды сохраняются. Неизвестные команды остаются в Obsidian и не импортируются.
+
+[webobsidian.export-json-bc3990]
+original=Export JSON
+translation=Экспортировать JSON
+
+[webobsidian.export-to-pdf-860da2]
+original=Export to PDF…
+translation=Экспортировать в PDF…
+
+[webobsidian.export-unsaved-text-42fe26]
+original=Export unsaved text
+translation=Экспортировать несохранённый текст
+
+[webobsidian.extension-language-mappings-47bae0]
+original=Extension → language mappings
+translation=Соответствия расширений и языков
+
+[webobsidian.extension-to-language-mappings-7b47fd]
+original=Extension to language mappings
+translation=Соответствия расширений и языков
+
+[webobsidian.extract-between-bd76a2]
+original=Extract between
+translation=Извлечь текст между разделителями
+
+[webobsidian.extract-between-strings-b59626]
+original=Extract between strings
+translation=Извлечь текст между строками
+
+[webobsidian.failed-to-change-password-2398d6]
+original=Failed to change password
+translation=Не удалось изменить пароль
+
+[webobsidian.failed-to-load-history-47b413]
+original=Failed to load history
+translation=Не удалось загрузить историю
+
+[webobsidian.failed-to-load-trash-c104f6]
+original=Failed to load trash
+translation=Не удалось загрузить корзину
+
+[webobsidian.failed-to-rebuild-search-index-bc018d]
+original=Failed to rebuild search index
+translation=Не удалось перестроить поисковый индекс
+
+[webobsidian.file-changed-or-is-no-longer-available-reopen-it-e55828]
+original=File changed or is no longer available. Reopen it to retry.
+translation=Файл изменён или больше недоступен. Откройте его заново, чтобы повторить попытку.
+
+[webobsidian.file-count]
+original={{count}} file
+translation=Файлов — {{count}}
+
+[webobsidian.file-count_plural]
+original={{count}} files
+translation=Файлов — {{count}}
+
+[webobsidian.file-exceeds-the-10-mib-preview-limit-9ab369]
+original=File exceeds the 10 MiB preview limit.
+translation=Размер файла превышает ограничение предпросмотра в 10 МиБ.
+
+[webobsidian.file-not-found-value0-603728]
+original=File not found: {{value0}}
+translation=Файл не найден. {{value0}}
+
+[webobsidian.file-uploaded-55b4e8]
+original=File uploaded: 
+translation=Файл загружен. 
+
+[webobsidian.files-open-outside-the-vault-download-it-and-ope-fc4182]
+original=files open outside the vault. Download it and open it in the application that made it — the vault keeps reading it where it already sits.
+translation=открываются вне хранилища. Скачайте файл и откройте его в приложении, в котором он создан. Хранилище продолжит читать файл по прежнему пути.
+
+[webobsidian.filter-by-status-f43653]
+original=Filter by status
+translation=Фильтр по статусу
+
+[webobsidian.find-6383e5]
+original=Find…
+translation=Найти…
+
+[webobsidian.find-language-files-in-the-obsidian-translations-f3de40]
+original=Find language files in the Obsidian translations repository
+translation=Найти языковые файлы в репозитории переводов Obsidian
+
+[webobsidian.find-node-e18fc8]
+original=Find node…
+translation=Найти узел…
+
+[webobsidian.focus-editor-5ae9cf]
+original=Focus editor
+translation=Перейти к редактору
+
+[webobsidian.fold-all-headings-and-lists-fe51fa]
+original=Fold all headings and lists
+translation=Свернуть все заголовки и списки
+
+[webobsidian.fold-less-c812b7]
+original=Fold less
+translation=Развернуть больше
+
+[webobsidian.fold-more-7be5b1]
+original=Fold more
+translation=Свернуть больше
+
+[webobsidian.folder-count]
+original={{count}} folder
+translation=Папок — {{count}}
+
+[webobsidian.folder-count_plural]
+original={{count}} folders
+translation=Папок — {{count}}
+
+[webobsidian.folder-scope-0623bf]
+original=Folder scope
+translation=Область поиска по папкам
+
+[webobsidian.follow-obsidian-deletion-c418a0]
+original=Follow Obsidian deletion
+translation=Использовать способ удаления Obsidian
+
+[webobsidian.footnote-40e31a]
+original=Footnote
+translation=Сноска
+
+[webobsidian.forgot-your-password-set-3130af]
+original=Forgot your password? Set
+translation=Забыли пароль? Задайте
+
+[webobsidian.format-brush-2ef446]
+original=Format brush
+translation=Копировать форматирование
+
+[webobsidian.formatting-841f83]
+original=Formatting
+translation=Форматирование
+
+[webobsidian.formatting-menu-e47fca]
+original=Formatting menu
+translation=Меню форматирования
+
+[webobsidian.fullscreen-workspace-5a2371]
+original=Fullscreen workspace
+translation=Открыть рабочую область на весь экран
+
+[webobsidian.get-plain-text-a5ba05]
+original=Get plain text
+translation=Получить текст без форматирования
+
+[webobsidian.git-lfs-patterns-138324]
+original=Git LFS patterns
+translation=Шаблоны Git LFS
+
+[webobsidian.git-sync-08b886]
+original=Git sync
+translation=Синхронизация Git
+
+[webobsidian.github-sync-3bd85c]
+original=GitHub Sync
+translation=Синхронизация с GitHub
+
+[webobsidian.graph-screenshot-copied-9f9bfe]
+original=Graph screenshot copied
+translation=Снимок графа скопирован
+
+[webobsidian.graph-screenshot-downloaded-3daff4]
+original=Graph screenshot downloaded
+translation=Снимок графа скачан
+
+[webobsidian.group-presentation-178524]
+original=Group presentation
+translation=Вид группы
+
+[webobsidian.heading--aedca6]
+original=Heading 
+translation=Заголовок 
+
+[webobsidian.heading-value0-390a28]
+original=Heading {{value0}}
+translation=Заголовок {{value0}}
+
+[webobsidian.headings-c97d4c]
+original=Headings
+translation=Заголовки
+
+[webobsidian.hex-887bb1]
+original=HEX
+translation=HEX
+
+[webobsidian.hidden-99d72c]
+original=hidden
+translation=скрыто
+
+[webobsidian.hidden-show-all-6b4eb2]
+original=hidden — show all
+translation=скрыто — показать всё
+
+[webobsidian.hide-html-0fab51]
+original=Hide HTML
+translation=Скрыть HTML
+
+[webobsidian.hide-value0-value1-0d8b9f]
+original=Hide {{value0}} ({{value1}})
+translation=Скрыть {{value0}} ({{value1}})
+
+[webobsidian.highlight-color-844a35]
+original=Highlight color
+translation=Цвет выделения
+
+[webobsidian.highlight-color-palette-055d0e]
+original=Highlight color palette
+translation=Палитра цветов выделения
+
+[webobsidian.highlight-e1da92]
+original=Highlight
+translation=Выделение цветом
+
+[webobsidian.highlighting-off-large-file-05e959]
+original=Highlighting off (large file)
+translation=Подсветка отключена (большой файл)
+
+[webobsidian.highlighting-unavailable-plain-text-a284fe]
+original=Highlighting unavailable — plain text
+translation=Подсветка недоступна — обычный текст
+
+[webobsidian.horizontal-divider-5ea4f1]
+original=Horizontal divider
+translation=Горизонтальный разделитель
+
+[webobsidian.https-github-com-owner-repo-git-240879]
+original=https://github.com/owner/repo.git
+translation=https://github.com/owner/repo.git
+
+[webobsidian.icon-716f63]
+original=Icon
+translation=Значок
+
+[webobsidian.icon-color-dd2228]
+original=Icon color
+translation=Цвет значков
+
+[webobsidian.icon-size-7a6728]
+original=Icon size
+translation=Размер значков
+
+[webobsidian.icon-value0-af2e3e]
+original=Icon {{value0}}
+translation=Значок {{value0}}
+
+[webobsidian.import-a-language-file-or-download-a-template-to-02f3d1]
+original=Import a language file or download a template to create your own translation.
+translation=Импортируйте языковой файл или скачайте шаблон, чтобы создать свой перевод.
+
+[webobsidian.import-json-1a5894]
+original=Import JSON
+translation=Импортировать JSON
+
+[webobsidian.import-language-file-ba526c]
+original=Import language file
+translation=Импортировать языковой файл
+
+[webobsidian.import-obsidian-mobile-toolbar-commands-2034fc]
+original=Import Obsidian mobile toolbar commands
+translation=Импортировать команды мобильной панели Obsidian
+
+[webobsidian.import-report-debcdc]
+original=Import report:
+translation=Результат импорта
+
+[webobsidian.import-toolbar-json-336d29]
+original=Import toolbar JSON
+translation=Импортировать JSON панели
+
+[webobsidian.imported-for-review-save-to-apply-78f898]
+original=Imported for review. Save to apply.
+translation=Импортировано для проверки. Сохраните, чтобы применить.
+
+[webobsidian.imported-successfully-285766]
+original=Imported successfully.
+translation=Импорт завершён.
+
+[webobsidian.in-af10ef]
+original=in
+translation=в
+
+[webobsidian.in-this-note-daf5dc]
+original=in this note
+translation=в этой заметке
+
+[webobsidian.indent-aacf42]
+original=Indent
+translation=Увеличить отступ
+
+[webobsidian.index-is-current-but-its-cache-could-not-be-save-d752e4]
+original=Index is current, but its cache could not be saved.
+translation=Индекс актуален, но сохранить его кэш не удалось.
+
+[webobsidian.index-updates-are-delayed-results-may-be-outdate-7e121c]
+original=Index updates are delayed. Results may be outdated.
+translation=Обновление индекса задерживается. Результаты могут быть устаревшими.
+
+[webobsidian.indexing-notes-1f3004]
+original=Indexing notes…
+translation=Индексация заметок…
+
+[webobsidian.indexing-notes-search-will-update-when-ready-7dbe35]
+original=Indexing notes. Search will update when ready.
+translation=Индексирование заметок. Поиск обновится по завершении.
+
+[webobsidian.init-repo-e9f858]
+original=Init repo
+translation=Создать репозиторий
+
+[webobsidian.inline-code-6f3a42]
+original=Inline code
+translation=Строчный код
+
+[webobsidian.inline-math-788283]
+original=Inline math
+translation=Строчная формула
+
+[webobsidian.insert-blank-lines-8bffa4]
+original=Insert blank lines
+translation=Вставить пустые строки
+
+[webobsidian.insert-callout-b709b1]
+original=Insert callout
+translation=Вставить выноску
+
+[webobsidian.insert-column-left-ef42ff]
+original=Insert column left
+translation=Вставить столбец слева
+
+[webobsidian.insert-column-right-d39b92]
+original=Insert column right
+translation=Вставить столбец справа
+
+[webobsidian.insert-link-4d4ac9]
+original=Insert link
+translation=Вставить ссылку
+
+[webobsidian.insert-row-above-506ad5]
+original=Insert row above
+translation=Вставить строку выше
+
+[webobsidian.insert-row-below-168f7d]
+original=Insert row below
+translation=Вставить строку ниже
+
+[webobsidian.insert-table-cb0188]
+original=Insert table
+translation=Вставить таблицу
+
+[webobsidian.inserted-value0-dac12f]
+original=Inserted {{value0}}
+translation=Вставлено {{value0}}
+
+[webobsidian.install-from-github-9393a6]
+original=Install from GitHub
+translation=Установить из GitHub
+
+[webobsidian.internal-link-e3976f]
+original=Internal link
+translation=Внутренняя ссылка
+
+[webobsidian.interval-sec-10359a]
+original=Interval (sec)
+translation=Интервал (с)
+
+[webobsidian.invalid-command-7ac533]
+original=Invalid command
+translation=Недопустимая команда
+
+[webobsidian.invalid-group-nesting-b4a6d7]
+original=Invalid group nesting
+translation=Недопустимая вложенность групп
+
+[webobsidian.invalid-toolbar-json-0f3a06]
+original=Invalid toolbar JSON.
+translation=Некорректный JSON панели инструментов.
+
+[webobsidian.item-s-c0e2ec]
+original=item(s)
+translation=объектов
+
+[webobsidian.items-a01256]
+original=items,
+translation=элементов,
+
+[webobsidian.items-in-trash-are-permanently-deleted-this-many-04caed]
+original=Items in .trash are permanently deleted this many days after they were moved there. 0 keeps them forever.
+translation=Через указанное число дней после перемещения в .trash объекты удаляются безвозвратно. Значение 0 означает бессрочное хранение.
+
+[webobsidian.justify-536d27]
+original=Justify
+translation=Выровнять по ширине
+
+[webobsidian.keys-let-ai-agents-call-b173ff]
+original=Keys let AI agents call
+translation=Ключи позволяют ИИ-агентам обращаться к
+
+[webobsidian.label-74341e]
+original=Label
+translation=Подпись
+
+[webobsidian.language-file-is-too-large-maximum-5-mb-120492]
+original=Language file is too large (maximum 5 MB).
+translation=Языковой файл слишком большой (максимум 5 МБ).
+
+[webobsidian.last-check-4b5c0b]
+original=Last check:
+translation=Последняя проверка:
+
+[webobsidian.later-56e2f5]
+original=Later
+translation=Позже
+
+[webobsidian.latest-decd7c]
+original=Latest
+translation=Последняя
+
+[webobsidian.layout-207b87]
+original=layout
+translation=расположение
+
+[webobsidian.left-8ae1c3]
+original=Left
+translation=По левому краю
+
+[webobsidian.link-d05170]
+original=Link
+translation=Ссылка
+
+[webobsidian.link-to-note-ac6487]
+original=Link to note…
+translation=Ссылка на заметку…
+
+[webobsidian.links-014bcd]
+original=Links
+translation=Ссылки
+
+[webobsidian.links-changed-on-the-server-unsaved-local-text-w-6984c9]
+original=Links changed on the server. Unsaved local text was kept; review before saving.
+translation=Ссылки изменились на сервере. Несохранённый локальный текст сохранён. Проверьте его перед записью.
+
+[webobsidian.links-to-d5c72a]
+original=links to
+translation=ссылается на
+
+[webobsidian.list-38b62b]
+original=list
+translation=список
+
+[webobsidian.list-a1fffa]
+original=List
+translation=Список
+
+[webobsidian.list-to-table-542e38]
+original=List to table
+translation=Преобразовать список в таблицу
+
+[webobsidian.lists-57c950]
+original=Lists
+translation=Списки
+
+[webobsidian.literal-text-templates-c8cb07]
+original=Literal text templates
+translation=Шаблоны обычного текста
+
+[webobsidian.live-65c821]
+original=Live
+translation=Редактор
+
+[webobsidian.live-preview-131a90]
+original=Live preview
+translation=Предпросмотр при редактировании
+
+[webobsidian.loading-33ce41]
+original=Loading…
+translation=Загрузка…
+
+[webobsidian.loading-code-664a3b]
+original=Loading code…
+translation=Загрузка кода…
+
+[webobsidian.loading-index-status-0a609d]
+original=Loading index status…
+translation=Загрузка состояния индекса…
+
+[webobsidian.loading-vault-preferences-86d4b2]
+original=Loading vault preferences…
+translation=Загрузка настроек хранилища…
+
+[webobsidian.local-drafts-unavailable-f45964]
+original=Local drafts unavailable: 
+translation=Локальные черновики недоступны: 
+
+[webobsidian.local-save-failed-dbf50c]
+original=Local save failed: 
+translation=Не удалось сохранить локально: 
+
+[webobsidian.local-version-da5268]
+original=Local version
+translation=Локальная версия
+
+[webobsidian.log-out-6e78c9]
+original=Log out
+translation=Выйти
+
+[webobsidian.made-a-copy-7728ff]
+original=Made a copy
+translation=Копия создана
+
+[webobsidian.markdown-23e67f]
+original=Markdown
+translation=Markdown
+
+[webobsidian.math-3edf0d]
+original=Math
+translation=Формула
+
+[webobsidian.menu-57f5f5]
+original=Menu
+translation=Меню
+
+[webobsidian.merge-lines-834cae]
+original=Merge lines
+translation=Объединить строки
+
+[webobsidian.missing-file]
+original=“{{name}}” could not be found.
+translation=Не удалось найти «{{name}}».
+
+[webobsidian.missing-fragment]
+original=Could not find “{{fragment}}” in {{name}}
+translation=Не удалось найти «{{fragment}}» в {{name}}
+
+[webobsidian.more-4bab2d]
+original=More
+translation=Ещё
+
+[webobsidian.move-failed-795434]
+original=Move failed
+translation=Не удалось переместить
+
+[webobsidian.move-file-to-ffc312]
+original=Move file to…
+translation=Переместить файл в…
+
+[webobsidian.move-folder-to-84c68b]
+original=Move folder to…
+translation=Переместить папку в…
+
+[webobsidian.move-item-value0-down-019695]
+original=Move item {{value0}} down
+translation=Переместить элемент {{value0}} ниже
+
+[webobsidian.move-item-value0-up-e8f797]
+original=Move item {{value0}} up
+translation=Переместить элемент {{value0}} выше
+
+[webobsidian.move-line--fe259d]
+original=Move line 
+translation=Переместить строку 
+
+[webobsidian.move-line-down-95e0e0]
+original=Move line down
+translation=Переместить строку вниз
+
+[webobsidian.move-line-up-4cd8a8]
+original=Move line up
+translation=Переместить строку вверх
+
+[webobsidian.move-to-c0a3ef]
+original=Move to…
+translation=Переместить в…
+
+[webobsidian.move-to-trash-keeps-a-recoverable-copy-open-tras-6342cb]
+original=Move to .trash keeps a recoverable copy (Open trash to restore). Permanently delete removes it immediately.
+translation=При перемещении в .trash сохраняется копия для восстановления (откройте корзину, чтобы восстановить). Безвозвратное удаление сразу удаляет файл.
+
+[webobsidian.move-to-trash-recoverable-cf9903]
+original=Move to .trash (recoverable)
+translation=Перемещать в .trash (можно восстановить)
+
+[webobsidian.move-to-value0-249e97]
+original=Move to → {{value0}}
+translation=Переместить в → {{value0}}
+
+[webobsidian.move-toolbar-49ebbd]
+original=Move toolbar
+translation=Переместить панель инструментов
+
+[webobsidian.move-value0-items-to-72feb2]
+original=Move {{value0}} items to…
+translation=Переместить элементы ({{value0}}) в…
+
+[webobsidian.move-value0-items-to-which-folder-2cf3f0]
+original=Move {{value0}} items to which folder?
+translation=В какую папку переместить объекты ({{value0}})?
+
+[webobsidian.moved-0fc28d]
+original=Moved
+translation=Перемещено
+
+[webobsidian.moved-to-trash-0987dd]
+original=Moved to trash
+translation=Перемещено в корзину
+
+[webobsidian.moved-to-value0-e22c9c]
+original=Moved to {{value0}}
+translation=Перемещено в {{value0}}
+
+[webobsidian.moved-value0-items-576aa1]
+original=Moved {{value0}} items
+translation=Перемещено элементов: {{value0}}
+
+[webobsidian.moved-value0-items-to-value1-08976d]
+original=Moved {{value0}} items to {{value1}}
+translation=Перемещено объектов: {{value0}}. Папка: {{value1}}
+
+[webobsidian.name-709a23]
+original=Name
+translation=Имя
+
+[webobsidian.needs-a-due-date-194548]
+original=Needs a due date
+translation=Без срока выполнения
+
+[webobsidian.new-canvas-in-value0-ef9429]
+original=New canvas in {{value0}}
+translation=Новый холст в {{value0}}
+
+[webobsidian.new-group-f9850c]
+original=New group
+translation=Новая группа
+
+[webobsidian.new-note-from-template-8a05d2]
+original=New note from template
+translation=Новая заметка из шаблона
+
+[webobsidian.new-note-in-this-folder-245cda]
+original=New note in this folder
+translation=Новая заметка в этой папке
+
+[webobsidian.new-note-in-value0-bb6245]
+original=New note in {{value0}}
+translation=Новая заметка в {{value0}}
+
+[webobsidian.new-note-n-5f4099]
+original=New note (⌘N)
+translation=Новая заметка (⌘N)
+
+[webobsidian.new-password-for-this-link-leave-empty-to-remove-c299e3]
+original=New password for this link (leave empty to REMOVE the password):
+translation=Новый пароль для этой ссылки (оставьте поле пустым, чтобы УДАЛИТЬ пароль):
+
+[webobsidian.new-password-must-be-at-least-6-characters-7aeee4]
+original=New password must be at least 6 characters
+translation=Новый пароль должен содержать не менее 6 символов
+
+[webobsidian.no-bookmarks-yet-aaf8c3]
+original=No bookmarks yet
+translation=Закладок пока нет
+
+[webobsidian.no-due-63bded]
+original=no due
+translation=без срока
+
+[webobsidian.no-due-date-click-to-set-one-fb5f0e]
+original=No due date — click to set one
+translation=Срок не указан — нажмите, чтобы задать
+
+[webobsidian.no-file-is-open-pick-a-note-or-press-o-40acb8]
+original=No file is open — pick a note, or press ⌘O
+translation=Файл не открыт — выберите заметку или нажмите ⌘O
+
+[webobsidian.no-files-ccc17f]
+original=No files
+translation=Нет файлов
+
+[webobsidian.no-folders-9415d8]
+original=No folders
+translation=Нет папок
+
+[webobsidian.no-git-activity-yet-click-an-action-above-sync-n-5c31f0]
+original=No git activity yet. Click an action above (Sync now, Pull, Push…) to see logs here.
+translation=Действий Git пока нет. Выберите действие выше («Синхронизировать сейчас», Pull, Push…), чтобы увидеть журнал здесь.
+
+[webobsidian.no-grammar-available-plain-text-4557ad]
+original=No grammar available — plain text
+translation=Нет правил подсветки — обычный текст
+
+[webobsidian.no-headings-3c425f]
+original=No headings
+translation=Нет заголовков
+
+[webobsidian.no-history-enable-git-sync-to-track-versions-d2dff9]
+original=No history. Enable Git Sync to track versions.
+translation=История отсутствует. Включите синхронизацию Git для сохранения версий.
+
+[webobsidian.no-matches-cd0af6]
+original=No matches
+translation=Совпадений нет
+
+[webobsidian.no-matching-nodes-440ffa]
+original=No matching nodes
+translation=Подходящие узлы не найдены
+
+[webobsidian.no-matching-template-2670da]
+original=No matching template
+translation=Подходящие шаблоны не найдены
+
+[webobsidian.no-notes-are-shared-publicly-977057]
+original=No notes are shared publicly.
+translation=Нет заметок с публичным доступом.
+
+[webobsidian.no-outgoing-links-ecad85]
+original=No outgoing links.
+translation=Нет исходящих ссылок.
+
+[webobsidian.no-plugins-installed-969f6c]
+original=No plugins installed
+translation=Нет установленных плагинов
+
+[webobsidian.no-recent-files-60b6ba]
+original=No recent files
+translation=Нет недавних файлов
+
+[webobsidian.no-shared-note-matches-the-search-c106ae]
+original=No shared note matches the search.
+translation=По запросу не найдено общедоступных заметок.
+
+[webobsidian.no-status-field-8030af]
+original=no status field
+translation=нет поля статуса
+
+[webobsidian.no-tags-found-ed4525]
+original=No tags found
+translation=Теги не найдены
+
+[webobsidian.no-tasks-e54269]
+original=No tasks
+translation=Нет задач
+
+[webobsidian.no-tasks-found-add-e9cf6d]
+original=No tasks found. Add
+translation=Задачи не найдены. Добавьте
+
+[webobsidian.no-tasks-to-place-on-the-timeline-bad6f5]
+original=No tasks to place on the timeline.
+translation=Нет задач для размещения на временной шкале.
+
+[webobsidian.no-templates-folder-in-this-vault-expected-a-fol-50c0ea]
+original=No templates folder in this vault — expected a folder named
+translation=В хранилище нет папки шаблонов. Ожидается папка с именем
+
+[webobsidian.no-text-needs-recovery-your-current-edits-are-sa-5718bc]
+original=No text needs recovery. Your current edits are saved automatically.
+translation=Нет текста для восстановления. Текущие правки сохраняются автоматически.
+
+[webobsidian.no-vault-sync-6fb8d9]
+original=No vault sync
+translation=Нет синхронизации хранилища
+
+[webobsidian.nodes-25d85b]
+original=nodes ·
+translation=узлов ·
+
+[webobsidian.none-chosen-917493]
+original=none chosen
+translation=не выбран
+
+[webobsidian.normal-paragraph-8806b4]
+original=Normal paragraph
+translation=Обычный абзац
+
+[webobsidian.not-created-yet-click-to-create-d86f92]
+original=Not created yet — click to create
+translation=Ещё не создано — нажмите, чтобы создать
+
+[webobsidian.not-saved-to-vault-b031e1]
+original=Not saved to vault
+translation=Не сохранено в хранилище
+
+[webobsidian.note-count]
+original={{count}} note
+translation=Заметок — {{count}}
+
+[webobsidian.note-count_plural]
+original={{count}} notes
+translation=Заметок — {{count}}
+
+[webobsidian.note-file-42102d]
+original=Note / file
+translation=Заметка / файл
+
+[webobsidian.note-webobsidian-supports-a-subset-of-the-obsidi-7cf3b1]
+original=Note: WebObsidian supports a subset of the Obsidian plugin API. Compatibility is limited. Runtime status shows failures and unsupported APIs; Node/Electron plugins require separate support. Web installations and settings are stored separately from desktop Obsidian.
+translation=Примечание: WebObsidian поддерживает часть API плагинов Obsidian. Совместимость ограничена. Состояние выполнения показывает ошибки и неподдерживаемые API; для плагинов Node/Electron требуется отдельная поддержка. Установки и настройки веб-версии хранятся отдельно от настольного Obsidian.
+
+[webobsidian.notes-5571cd]
+original=notes ·
+translation=заметок ·
+
+[webobsidian.notes-shared-via-a-public-link-are-readable-by-3307a4]
+original=Notes shared via a public link are readable by
+translation=Заметки с публичной ссылкой может читать
+
+[webobsidian.number-b7baa1]
+original=Number
+translation=Число
+
+[webobsidian.number-lines-5f6f9e]
+original=Number lines
+translation=Пронумеровать строки
+
+[webobsidian.obsidian-24c869]
+original=Obsidian
+translation=Obsidian
+
+[webobsidian.obsidian-command-091bf6]
+original=Obsidian command
+translation=Команда Obsidian
+
+[webobsidian.obsidian-dark-f52498]
+original=Obsidian Dark
+translation=Obsidian Dark
+
+[webobsidian.obsidian-light-3ccf1b]
+original=Obsidian Light
+translation=Obsidian Light
+
+[webobsidian.of-de04fa]
+original=of
+translation=из
+
+[webobsidian.one-mapping-per-line-e-g-py-python-use-plain-for-286cba]
+original=One mapping per line, e.g. py: python. Use plain for unhighlighted text. Lines starting with # are comments.
+translation=По одному соответствию на строку, например py: python. Используйте plain для текста без подсветки. Строки, начинающиеся с #, — комментарии.
+
+[webobsidian.one-row-more-8d7a27]
+original=One row + More
+translation=Одна строка и меню «Ещё»
+
+[webobsidian.open-bookmarks-recent-b8a389]
+original=Open bookmarks & recent
+translation=Открыть закладки и недавние файлы
+
+[webobsidian.open-cf9b77]
+original=Open
+translation=Открыть
+
+[webobsidian.open-current-file-to-the-right-c26047]
+original=Open current file to the right
+translation=Открыть текущий файл справа
+
+[webobsidian.open-date-note]
+original=Open date note
+translation=Открыть заметку за дату
+
+[webobsidian.open-link-d2de1a]
+original=Open link
+translation=Открыть ссылку
+
+[webobsidian.open-mapped-file-types-in-a-read-only-code-viewe-51d598]
+original=Open mapped file types in a read-only code viewer. Disable this viewer to use the existing editor for previously supported text formats.
+translation=Открывать файлы указанных типов в средстве просмотра кода только для чтения. Отключите его, чтобы использовать обычный редактор для ранее поддерживаемых текстовых форматов.
+
+[webobsidian.open-menu-197101]
+original=Open menu
+translation=Открыть меню
+
+[webobsidian.open-search-5b003a]
+original=Open search
+translation=Открыть поиск
+
+[webobsidian.open-tasks-board-726f82]
+original=Open tasks board
+translation=Открыть доску задач
+
+[webobsidian.open-tasks-timeline-2e8281]
+original=Open tasks timeline
+translation=Открыть временную шкалу задач
+
+[webobsidian.open-the-note-to-add-a-property-b43666]
+original=Open the note to add a property
+translation=Откройте заметку, чтобы добавить свойство
+
+[webobsidian.open-the-note-to-search-inside-it-1d417f]
+original=Open the note to search inside it
+translation=Откройте заметку для поиска в её содержимом
+
+[webobsidian.open-today-s-daily-note-0d484c]
+original=Open today’s daily note
+translation=Открыть ежедневную заметку за сегодня
+
+[webobsidian.open-trash-3131d6]
+original=Open trash
+translation=Открыть корзину
+
+[webobsidian.open-value0-4c1e7f]
+original=Open {{value0}}
+translation=Открыть {{value0}}
+
+[webobsidian.opening-or-switching-documents-expands-parent-fo-f259f6]
+original=Opening or switching documents expands parent folders and reveals the active file.
+translation=При открытии документов или переключении между ними раскрываются родительские папки и показывается активный файл.
+
+[webobsidian.opening-or-switching-documents-reveals-visible-f-4024ea]
+original=Opening or switching documents reveals visible files. Files inside hidden attachment folders cannot be revealed; enable Show attachment folders to reveal them.
+translation=При открытии документов или переключении между ними показываются видимые файлы. Файлы в скрытых папках вложений показать нельзя; включите «Показывать папки вложений».
+
+[webobsidian.ordered-list-6b5d4e]
+original=Ordered list
+translation=Нумерованный список
+
+[webobsidian.original-file-was-deleted-this-browser-copy-has-a31f2e]
+original=Original file was deleted. This browser copy has not restored it. Save a copy if you want to keep this text, or close this review and remove the browser copy if the deletion was intentional.
+translation=Исходный файл удалён. Эта копия в браузере не восстановила его. Сохраните копию, если хотите оставить этот текст. Если файл удалён намеренно, закройте просмотр и удалите копию из браузера.
+
+[webobsidian.orphans-scroll-to-zoom-drag-to-pan-click-a-tag-t-63b45b]
+original=orphans · scroll to zoom · drag to pan · click a tag to search
+translation=без связей · прокрутка — масштаб · перетаскивание — перемещение · нажатие на тег — поиск
+
+[webobsidian.outdent-b4d812]
+original=Outdent
+translation=Уменьшить отступ
+
+[webobsidian.outgoing-links-f4ba79]
+original=Outgoing links
+translation=Исходящие ссылки
+
+[webobsidian.outgoing-links-from-value0-118524]
+original=Outgoing links from {{value0}}
+translation=Исходящие ссылки из {{value0}}
+
+[webobsidian.overflow-4da7bc]
+original=Overflow
+translation=При нехватке места
+
+[webobsidian.owner-89ff31]
+original=Owner
+translation=Ответственный
+
+[webobsidian.owner-repo-pulls-manifest-json-main-js-from-late-b975d8]
+original=owner/repo — pulls manifest.json + main.js from latest release
+translation=owner/repo — загружает manifest.json + main.js из последнего релиза
+
+[webobsidian.pale-yellow-3405f9]
+original=Pale yellow
+translation=Бледно-жёлтый
+
+[webobsidian.panel-background-f05bb4]
+original=Panel background
+translation=Фон панели
+
+[webobsidian.password-5baa61]
+original=password
+translation=пароль
+
+[webobsidian.password-8be3c9]
+original=Password
+translation=Пароль
+
+[webobsidian.password-9ba3b9]
+original=Password ✓
+translation=Пароль ✓
+
+[webobsidian.password-changed-0e6883]
+original=Password changed ✓
+translation=Пароль изменён ✓
+
+[webobsidian.password-dce691]
+original=Password…
+translation=Пароль…
+
+[webobsidian.password-for-this-link-2ab0e0]
+original=Password for this link:
+translation=Пароль для этой ссылки:
+
+[webobsidian.password-protection-5828c6]
+original=Password protection
+translation=Защита паролем
+
+[webobsidian.password-removed-114bea]
+original=Password removed
+translation=Пароль удалён
+
+[webobsidian.password-set-676101]
+original=Password set
+translation=Пароль установлен
+
+[webobsidian.passwords-do-not-match-d69c3b]
+original=Passwords do not match
+translation=Пароли не совпадают
+
+[webobsidian.paste-failed-18bdc4]
+original=Paste failed
+translation=Не удалось вставить
+
+[webobsidian.paste-or-use-ctrl-cmd-v-0b49f5]
+original=Paste — or use Ctrl/Cmd+V
+translation=Вставить — или нажмите Ctrl/Cmd+V
+
+[webobsidian.pasted-a3a089]
+original=Pasted
+translation=Вставлено
+
+[webobsidian.path-3150ec]
+original=path
+translation=путь
+
+[webobsidian.path-copied-12ec0d]
+original=Path copied
+translation=Путь скопирован
+
+[webobsidian.path-must-stay-inside-the-vault-b1b4e8]
+original=Path must stay inside the vault
+translation=Путь должен находиться внутри хранилища
+
+[webobsidian.pdf-0071b9d89d]
+original=Fit width
+translation=По ширине
+
+[webobsidian.pdf-012f37de0b]
+original=Two pages (even)
+translation=Две страницы (чётные)
+
+[webobsidian.pdf-108d9ea56d]
+original=Page 
+translation=Страница 
+
+[webobsidian.pdf-188247ca83]
+original=PDF outline
+translation=Оглавление PDF
+
+[webobsidian.pdf-229344e7a2]
+original=Adapt to theme
+translation=Адаптировать к теме
+
+[webobsidian.pdf-2449d65241]
+original=of 
+translation=из 
+
+[webobsidian.pdf-252e1acb5d]
+original=Sidebar options
+translation=Параметры боковой панели
+
+[webobsidian.pdf-6a79213d18]
+original=PDF password
+translation=Пароль PDF
+
+[webobsidian.pdf-6eaed50006]
+original=Display options
+translation=Параметры отображения
+
+[webobsidian.pdf-702e488f39]
+original=of …
+translation=из …
+
+[webobsidian.pdf-71bf47a728]
+original=Open in new tab
+translation=Открыть в новой вкладке
+
+[webobsidian.pdf-7ba8cf8ed1]
+original=Reveal page in outline
+translation=Показать страницу в оглавлении
+
+[webobsidian.pdf-7e380db1f7]
+original=Incorrect PDF password. Try again. 
+translation=Неверный пароль PDF. Попробуйте ещё раз. 
+
+[webobsidian.pdf-8b08ca4222]
+original=Page number
+translation=Номер страницы
+
+[webobsidian.pdf-8b9b1bbd66]
+original=Toggle sidebar
+translation=Показать или скрыть боковую панель
+
+[webobsidian.pdf-ac82463cf5]
+original=PDF thumbnails
+translation=Миниатюры PDF
+
+[webobsidian.pdf-add13aac45]
+original=Edit block
+translation=Редактировать блок
+
+[webobsidian.pdf-c64eedff97]
+original=Could not run command
+translation=Не удалось выполнить команду
+
+[webobsidian.pdf-db19485e8b]
+original=Single page
+translation=Одна страница
+
+[webobsidian.pdf-e33d6802d1]
+original=Fit height
+translation=По высоте
+
+[webobsidian.pdf-f339ca1216]
+original=Two pages (odd)
+translation=Две страницы (нечётные)
+
+[webobsidian.pdf-fcecbb00b4]
+original=Thumbnails
+translation=Миниатюры
+
+[webobsidian.pdf-fcf7c01b99]
+original=PDF controls
+translation=Управление PDF
+
+[webobsidian.pdf-stylesheet-could-not-be-loaded-05aaba]
+original=PDF stylesheet could not be loaded
+translation=Не удалось загрузить стили PDF
+
+[webobsidian.periodic-pull-commit-push-on-the-interval-below-6b4cff]
+original=Periodic pull+commit+push on the interval below
+translation=Периодически выполнять pull+commit+push с указанным ниже интервалом
+
+[webobsidian.permanently-delete-abbcb4]
+original=permanently delete
+translation=удалять безвозвратно
+
+[webobsidian.permanently-delete-value0-this-cannot-be-undone-d82ad7]
+original=Permanently delete "{{value0}}"? This cannot be undone.
+translation=Безвозвратно удалить «{{value0}}»? Это действие нельзя отменить.
+
+[webobsidian.pick-a-template-above-6f2f3f]
+original=Pick a template above
+translation=Выберите шаблон выше
+
+[webobsidian.plain-text-9580fc]
+original=Plain text
+translation=Обычный текст
+
+[webobsidian.plain-text-copy-manually-55027b]
+original=Plain text — copy manually
+translation=Обычный текст — скопируйте вручную
+
+[webobsidian.portable-rules-are-read-from-this-vault-s-obsidi-533d9b]
+original=Portable rules are read from this vault’s .obsidian/app.json. Changes are checked every three seconds. WebObsidian interface visibility is saved separately.
+translation=Переносимые правила считываются из файла .obsidian/app.json этого хранилища. Изменения проверяются каждые три секунды. Настройки видимости интерфейса WebObsidian сохраняются отдельно.
+
+[webobsidian.preference-97d9b2]
+original=Preference
+translation=Настройка
+
+[webobsidian.prefix-90eceb]
+original=Prefix
+translation=Префикс
+
+[webobsidian.prefix-and-suffix-are-inserted-as-written-around-4ed1c4]
+original=Prefix and suffix are inserted as written around every selection. Variables and scripts are never evaluated.
+translation=Префикс и суффикс вставляются без изменений вокруг каждой выделенной области. Переменные и скрипты не выполняются.
+
+[webobsidian.priority-886cbf]
+original=Priority
+translation=Приоритет
+
+[webobsidian.properties-bc6c88]
+original=Properties
+translation=Свойства
+
+[webobsidian.property-type-8ad7ea]
+original=Property type
+translation=Тип свойства
+
+[webobsidian.public-link-copied-147450]
+original=Public link copied
+translation=Публичная ссылка скопирована
+
+[webobsidian.public-link-created-d4717a]
+original=Public link created
+translation=Публичная ссылка создана
+
+[webobsidian.public-link-dd39ae]
+original=Public link
+translation=Публичная ссылка
+
+[webobsidian.public-link-deleted-8b12fc]
+original=Public link deleted
+translation=Публичная ссылка удалена
+
+[webobsidian.pull-5219eb]
+original=Pull
+translation=Получить (pull)
+
+[webobsidian.push-8f7f57]
+original=Push
+translation=Отправить (push)
+
+[webobsidian.quote-309028]
+original=Quote
+translation=Цитата
+
+[webobsidian.quotes-7b0257]
+original=Quotes
+translation=Цитаты
+
+[webobsidian.read-only-65834d]
+original=Read-only.
+translation=Только для чтения.
+
+[webobsidian.read-only-maintained-by-the-agent-b93b79]
+original=Read-only — maintained by the agent
+translation=Только для чтения — ведётся агентом
+
+[webobsidian.read-only-note-ask-the-agent-to-change-it-b0d374]
+original=Read-only note — ask the agent to change it
+translation=Заметка доступна только для чтения — попросите агента изменить её
+
+[webobsidian.read-only-note-b27581]
+original=Read-only note
+translation=Заметка доступна только для чтения
+
+[webobsidian.rebuild-index-848ded]
+original=Rebuild index
+translation=Перестроить индекс
+
+[webobsidian.rebuild-search-index-2f4e96]
+original=Rebuild search index
+translation=Перестроить поисковый индекс
+
+[webobsidian.rebuilding-index-showing-the-previous-results-9c544d]
+original=Rebuilding index. Showing the previous results.
+translation=Перестроение индекса. Показаны предыдущие результаты.
+
+[webobsidian.rebuilding-search-index-7c9e99]
+original=Rebuilding search index…
+translation=Перестроение поискового индекса…
+
+[webobsidian.recent-76eec7]
+original=Recent
+translation=Недавние
+
+[webobsidian.recent-color-6ad686]
+original=Recent color
+translation=Недавний цвет
+
+[webobsidian.recent-colors-025112]
+original=Recent colors
+translation=Недавние цвета
+
+[webobsidian.recover-unsaved-text-b2918d]
+original=Recover unsaved text (
+translation=Восстановить несохранённый текст (
+
+[webobsidian.recovered-copy-path-6717b7]
+original=Recovered copy path
+translation=Путь к восстановленной копии
+
+[webobsidian.recovered-copy-saved-d17f7e]
+original=Recovered copy saved: 
+translation=Восстановленная копия сохранена: 
+
+[webobsidian.recovery-copies-unavailable-33a975]
+original=Recovery copies unavailable
+translation=Копии для восстановления недоступны
+
+[webobsidian.redo-471b94]
+original=Redo
+translation=Повторить
+
+[webobsidian.redo-z-b09f9e]
+original=Redo (⌘⇧Z)
+translation=Повторить (⌘⇧Z)
+
+[webobsidian.refresh-56e3ba]
+original=Refresh
+translation=Обновить
+
+[webobsidian.remote-url-861ea4]
+original=Remote URL
+translation=URL удалённого репозитория
+
+[webobsidian.remove-all-whitespace-688ece]
+original=Remove all whitespace
+translation=Удалить все пробельные символы
+
+[webobsidian.remove-blank-lines-26fd49]
+original=Remove blank lines
+translation=Удалить пустые строки
+
+[webobsidian.remove-bookmark-7da720]
+original=Remove bookmark
+translation=Удалить закладку
+
+[webobsidian.remove-browser-copy-2fa645]
+original=Remove browser copy
+translation=Удалить копию из браузера
+
+[webobsidian.remove-copy-4f1f63]
+original=Remove copy
+translation=Удалить копию
+
+[webobsidian.remove-e96390]
+original=Remove
+translation=Удалить
+
+[webobsidian.remove-from-recent-b8561a]
+original=Remove from recent
+translation=Убрать из недавних
+
+[webobsidian.remove-group-9a5319]
+original=Remove group
+translation=Удалить группу
+
+[webobsidian.remove-item-value0-3199b4]
+original=Remove item {{value0}}
+translation=Удалить элемент {{value0}}
+
+[webobsidian.remove-template-12605e]
+original=Remove template
+translation=Удалить шаблон
+
+[webobsidian.remove-this-browser-copy-e1e0eb]
+original=Remove this browser copy?
+translation=Удалить эту копию из браузера?
+
+[webobsidian.remove-value]
+original=Remove value
+translation=Удалить значение
+
+[webobsidian.remove-whitespace-bb1635]
+original=Remove whitespace
+translation=Удалить пробельные символы
+
+[webobsidian.rename-94ac9a]
+original=Rename…
+translation=Переименовать…
+
+[webobsidian.rename-failed-85aa47]
+original=Rename failed
+translation=Не удалось переименовать
+
+[webobsidian.rename-move-to-vault-relative-path-9c85cf]
+original=Rename / move to (vault-relative path):
+translation=Переименовать / переместить (путь от корня хранилища)
+
+[webobsidian.rename-succeeded-local-draft-paths-could-not-be-d1e17b]
+original=Rename succeeded; local draft paths could not be updated. Recover them from Local drafts.
+translation=Файл переименован, но пути локальных черновиков обновить не удалось. Восстановите их из раздела «Локальные черновики».
+
+[webobsidian.render-html-e2fc37]
+original=Render HTML
+translation=Показать результат HTML
+
+[webobsidian.renumber-list-2808d9]
+original=Renumber list
+translation=Перенумеровать список
+
+[webobsidian.require-a-password-to-open-the-link-6f1bba]
+original=Require a password to open the link
+translation=Требовать пароль для открытия ссылки
+
+[webobsidian.reset-44c57a]
+original=Reset
+translation=Сбросить
+
+[webobsidian.reset-color-24525a]
+original=Reset color
+translation=Сбросить цвет
+
+[webobsidian.reset-filters-565531]
+original=Reset filters
+translation=Сбросить фильтры
+
+[webobsidian.reset-to-defaults-ddefe4]
+original=Reset to defaults
+translation=Восстановить значения по умолчанию
+
+[webobsidian.reset-zoom-100-8e1bda]
+original=Reset zoom (100%)
+translation=Сбросить масштаб (100%)
+
+[webobsidian.resolve-conflict-8b7233]
+original=Resolve conflict
+translation=Разрешить конфликт
+
+[webobsidian.restore-default-language-a41d48]
+original=Restore default language
+translation=Восстановить язык по умолчанию
+
+[webobsidian.restore-defaults-894a58]
+original=Restore defaults
+translation=Восстановить настройки по умолчанию
+
+[webobsidian.restore-failed-c848a6]
+original=Restore failed
+translation=Не удалось восстановить
+
+[webobsidian.restore-this-version-86a899]
+original=Restore this version
+translation=Восстановить эту версию
+
+[webobsidian.restore-this-version-the-current-content-will-be-62a1d6]
+original=Restore this version? The current content will be overwritten.
+translation=Восстановить эту версию? Текущее содержимое будет перезаписано.
+
+[webobsidian.restore-to-original-location-90c680]
+original=Restore to original location
+translation=Восстановить в исходную папку
+
+[webobsidian.restored-earlier-version-fea4c2]
+original=Restored earlier version
+translation=Предыдущая версия восстановлена
+
+[webobsidian.restored-value0-ce9831]
+original=Restored {{value0}}
+translation=Восстановлено {{value0}}
+
+[webobsidian.retention-31e69a]
+original=retention
+translation=срок хранения
+
+[webobsidian.reveal-active-file-in-explorer-d789fe]
+original=Reveal active file in explorer
+translation=Показать активный файл в проводнике
+
+[webobsidian.review-a-copy-to-recover-text-you-need-or-remove-d3d3d5]
+original=Review a copy to recover text you need, or remove it if you no longer need it. Reviewing does not change or restore a file.
+translation=Просмотрите копию, чтобы восстановить нужный текст, или удалите её, если она больше не нужна. Просмотр не изменяет и не восстанавливает файл.
+
+[webobsidian.review-recovered-text-962d8a]
+original=Review recovered text:
+translation=Просмотр восстановленного текста:
+
+[webobsidian.review-text-9fa54a]
+original=Review text
+translation=Просмотреть текст
+
+[webobsidian.revoke-0be720]
+original=Revoke
+translation=Отозвать
+
+[webobsidian.revokes-the-url-permanently-595bc4]
+original=Revokes the URL permanently
+translation=Адрес навсегда перестанет работать
+
+[webobsidian.right-954daa]
+original=Right
+translation=По правому краю
+
+[webobsidian.rows-1-100-6fb533]
+original=Rows (1–100)
+translation=Строки (1–100)
+
+[webobsidian.run-a-command-6000fe]
+original=Run a command…
+translation=Выполнить команду…
+
+[webobsidian.save-a-copy-9056f9]
+original=Save a copy
+translation=Сохранить копию
+
+[webobsidian.save-failed-0a4444]
+original=Save failed
+translation=Не удалось сохранить
+
+[webobsidian.save-failed-value0-4c82cd]
+original=Save failed: {{value0}}
+translation=Не удалось сохранить. {{value0}}
+
+[webobsidian.save-result-20d5d6]
+original=Save result
+translation=Сохранить результат
+
+[webobsidian.save-toolbar-settings-725244]
+original=Save toolbar settings
+translation=Сохранить настройки панели
+
+[webobsidian.save-vault-path-146393]
+original=Save vault path
+translation=Сохранить путь к хранилищу
+
+[webobsidian.saved-color-f419ef]
+original=Saved color
+translation=Сохранённый цвет
+
+[webobsidian.saved-colors-84663e]
+original=Saved colors
+translation=Сохранённые цвета
+
+[webobsidian.saved-git-settings-f07866]
+original=Saved git settings
+translation=Настройки Git сохранены
+
+[webobsidian.saved-to-vault-f158e0]
+original=Saved to vault
+translation=Сохранено в хранилище
+
+[webobsidian.saving-56a228]
+original=Saving…
+translation=Сохранение…
+
+[webobsidian.saving-changes-804053]
+original=Saving changes…
+translation=Сохранение изменений…
+
+[webobsidian.saving-to-vault-993b6e]
+original=Saving to vault…
+translation=Сохранение в хранилище…
+
+[webobsidian.scopes-c23540]
+original=Scopes
+translation=Области доступа
+
+[webobsidian.scopes-c37449]
+original=scopes:
+translation=права:
+
+[webobsidian.screenshot-failed-b82f52]
+original=Screenshot failed
+translation=Не удалось создать снимок
+
+[webobsidian.scroll-090a3c]
+original=Scroll
+translation=Прокрутка
+
+[webobsidian.scroll-to-today-a05eee]
+original=Scroll to today
+translation=Перейти к сегодняшнему дню
+
+[webobsidian.search-bce064]
+original=Search
+translation=Поиск
+
+[webobsidian.search-could-not-be-refreshed-check-the-connecti-5905f0]
+original=Search could not be refreshed. Check the connection and try again.
+translation=Не удалось обновить поиск. Проверьте соединение и попробуйте снова.
+
+[webobsidian.search-f-cb85d0]
+original=Search (⌘⇧F)
+translation=Поиск (⌘⇧F)
+
+[webobsidian.search-files-prefix-for-commands-23d578]
+original=Search files… (prefix > for commands)
+translation=Поиск файлов… (начните с > для поиска команд)
+
+[webobsidian.search-for-value0-73c0eb]
+original=Search for “{{value0}}”
+translation=Найти «{{value0}}»
+
+[webobsidian.search-index-3bc3d2]
+original=Search index
+translation=Поисковый индекс
+
+[webobsidian.search-index-rebuilt-7c37e8]
+original=Search index rebuilt
+translation=Поисковый индекс перестроен
+
+[webobsidian.search-notes-300225]
+original=Search notes…
+translation=Поиск заметок…
+
+[webobsidian.search-query-e5e053]
+original=Search query
+translation=Поисковый запрос
+
+[webobsidian.search-shared-notes-3ec547]
+original=Search shared notes…
+translation=Поиск общедоступных заметок…
+
+[webobsidian.search-titles-ec8135]
+original=Search titles…
+translation=Поиск по заголовкам…
+
+[webobsidian.search-try-tag-idea-path-notes-c9baba]
+original=Search   (try tag:idea, path:notes)
+translation=Поиск   (попробуйте tag:idea, path:notes)
+
+[webobsidian.search-value0-250d06]
+original=Search #{{value0}}
+translation=Найти #{{value0}}
+
+[webobsidian.searching-1a6a5b]
+original=Searching…
+translation=Поиск…
+
+[webobsidian.section-or-block-not-found-095a45]
+original=Section or block not found
+translation=Раздел или блок не найден
+
+[webobsidian.select-859822]
+original=Select
+translation=Выбрать
+
+[webobsidian.select-a-formatted-source-first-8dac14]
+original=Select a formatted source first
+translation=Сначала выделите образец форматирования
+
+[webobsidian.select-all-913aff]
+original=Select all
+translation=Выделить всё
+
+[webobsidian.select-format-column-b6b1d2]
+original=Select / format column
+translation=Выделить / форматировать столбец
+
+[webobsidian.select-format-row-9d74cf]
+original=Select / format row
+translation=Выделить / форматировать строку
+
+[webobsidian.select-text-first-88ab4c]
+original=Select text first
+translation=Сначала выделите текст
+
+[webobsidian.send-to-back-e259d4]
+original=Send to back
+translation=На задний план
+
+[webobsidian.separator-b4b289]
+original=Separator
+translation=Разделитель
+
+[webobsidian.server-changed-again-review-the-new-comparison-b-1bbca3]
+original=Server changed again. Review the new comparison before saving.
+translation=Версия на сервере снова изменилась. Просмотрите обновлённое сравнение перед сохранением.
+
+[webobsidian.server-version-254631]
+original=Server version
+translation=Версия на сервере
+
+[webobsidian.set-a-master-password-to-secure-your-vault-9bf510]
+original=Set a master password to secure your vault
+translation=Задайте мастер-пароль для защиты хранилища
+
+[webobsidian.set-a-new-password-1e83ae]
+original=Set a new password
+translation=Задайте новый пароль
+
+[webobsidian.set-due-date-f91b98]
+original=Set due date…
+translation=Установить срок выполнения…
+
+[webobsidian.set-password-bf0373]
+original=Set password…
+translation=Установить пароль…
+
+[webobsidian.set-password-continue-ab4009]
+original=Set password & continue
+translation=Установить пароль и продолжить
+
+[webobsidian.share-24897b]
+original=Share…
+translation=Поделиться…
+
+[webobsidian.share-canvas-c02682]
+original=Share canvas
+translation=Поделиться холстом
+
+[webobsidian.share-note-81fd73]
+original=Share note
+translation=Поделиться заметкой
+
+[webobsidian.sharing-78779b]
+original=Sharing
+translation=Общий доступ
+
+[webobsidian.sharing-is-paused-the-url-returns-404-11c45e]
+original=Sharing is paused — the URL returns 404
+translation=Общий доступ приостановлен — адрес возвращает ошибку 404
+
+[webobsidian.show-attachment-folders-c10406]
+original=Show attachment folders
+translation=Показывать папки вложений
+
+[webobsidian.show-existing-folders-named-attachments-and-the-1c3488]
+original=Show existing folders named "attachments" and the separate attachment folder selected in Obsidian. This only changes visibility, not the upload location. The vault root and folders containing notes or canvases are always shown.
+translation=Показывать существующие папки с именем «attachments» и отдельную папку вложений, выбранную в Obsidian. Это влияет только на видимость, а не на место загрузки. Корень хранилища и папки с заметками или холстами отображаются всегда.
+
+[webobsidian.show-filters-b1ad23]
+original=Show filters
+translation=Показать фильтры
+
+[webobsidian.show-inline-title-3930e8]
+original=Show inline title
+translation=Показывать заголовок в заметке
+
+[webobsidian.show-labels-b0a687]
+original=Show labels
+translation=Показывать подписи
+
+[webobsidian.show-line-numbers-89aac6]
+original=Show line numbers
+translation=Показывать номера строк
+
+[webobsidian.show-only-tasks-with-no-due-date-b6df3f]
+original=Show only tasks with no due date
+translation=Показывать только задачи без срока выполнения
+
+[webobsidian.show-tooltips-bd57ff]
+original=Show tooltips
+translation=Показывать подсказки
+
+[webobsidian.show-value0-value1-db3d46]
+original=Show {{value0}} ({{value1}})
+translation=Показать {{value0}} ({{value1}})
+
+[webobsidian.showing-163d81]
+original=Showing
+translation=Показано
+
+[webobsidian.showing-only-undated-show-all-46d63c]
+original=showing only undated — show all
+translation=показаны только задачи без срока — показать все
+
+[webobsidian.shrink-extra-spaces-bc9446]
+original=Shrink extra spaces
+translation=Сократить лишние пробелы
+
+[webobsidian.source-922acd]
+original=Source:
+translation=Источник:
+
+[webobsidian.source-behavior-8eaffb]
+original=Source / behavior
+translation=Источник / поведение
+
+[webobsidian.space-separated-globs-tracked-via-lfs-70f162]
+original=Space-separated globs tracked via LFS
+translation=Шаблоны glob для отслеживания через LFS, разделённые пробелами
+
+[webobsidian.split-lines-3fe82f]
+original=Split lines
+translation=Разбить на строки
+
+[webobsidian.standard-2dfa66]
+original=Standard
+translation=Стандартный
+
+[webobsidian.start-952f37]
+original=Start
+translation=Начало
+
+[webobsidian.start-string-988405]
+original=Start string
+translation=Начальная строка
+
+[webobsidian.status-bae7d5]
+original=Status
+translation=Статус
+
+[webobsidian.step-dc416e]
+original=Step
+translation=Шаг
+
+[webobsidian.stored-server-side-leave-masked-to-keep-current-9f8f57]
+original=Stored server-side; leave masked to keep current
+translation=Хранится на сервере; оставьте замаскированным, чтобы сохранить текущее значение
+
+[webobsidian.strikethrough-a93b9a]
+original=Strikethrough
+translation=Зачёркнутый
+
+[webobsidian.subscript-b1bd6e]
+original=Subscript
+translation=Подстрочный индекс
+
+[webobsidian.suffix-885db9]
+original=Suffix
+translation=Суффикс
+
+[webobsidian.superscript-cea3f5]
+original=Superscript
+translation=Надстрочный индекс
+
+[webobsidian.sync-failed-value0-914bf4]
+original=Sync failed: {{value0}}
+translation=Ошибка синхронизации: {{value0}}
+
+[webobsidian.sync-now-2b7d93]
+original=Sync now
+translation=Синхронизировать сейчас
+
+[webobsidian.sync-value0-9b1512]
+original=Sync: {{value0}}
+translation=Синхронизация: {{value0}}
+
+[webobsidian.synced-d21218]
+original=Synced ✓
+translation=Синхронизировано ✓
+
+[webobsidian.syncing-221ca6]
+original=Syncing…
+translation=Синхронизация…
+
+[webobsidian.table-0424f6]
+original=Table
+translation=Таблица
+
+[webobsidian.table-to-list-b40500]
+original=Table to list
+translation=Преобразовать таблицу в список
+
+[webobsidian.tag-982963]
+original=Tag
+translation=Тег
+
+[webobsidian.tags-848eed]
+original=Tags
+translation=Теги
+
+[webobsidian.task-7bb0dd]
+original=Task
+translation=Задача
+
+[webobsidian.task-7fbb72]
+original=task
+translation=задача
+
+[webobsidian.task-count]
+original={{count}} task
+translation=Задач — {{count}}
+
+[webobsidian.task-count_plural]
+original={{count}} tasks
+translation=Задач — {{count}}
+
+[webobsidian.tasks-090ec5]
+original=Tasks
+translation=Задачи
+
+[webobsidian.template-3ec1ae]
+original=Template
+translation=Шаблон
+
+[webobsidian.templates-7981a4]
+original=templates
+translation=templates
+
+[webobsidian.text-color-1c7a30]
+original=Text color
+translation=Цвет текста
+
+[webobsidian.text-color-palette-6ba93d]
+original=Text color palette
+translation=Палитра цветов текста
+
+[webobsidian.text-operation-failed-748567]
+original=Text operation failed
+translation=Не удалось обработать текст
+
+[webobsidian.text-operation-timed-out-47384c]
+original=Text operation timed out
+translation=Превышено время обработки текста
+
+[webobsidian.text-tools-afee29]
+original=Text tools
+translation=Инструменты для текста
+
+[webobsidian.that-file-is-in-a-hidden-attachments-folder-turn-f05280]
+original=That file is in a hidden attachments folder — turn on Settings → Vault & Files → Show attachment folders.
+translation=Файл находится в скрытой папке вложений. Включите Настройки → Хранилище и файлы → Показывать папки вложений.
+
+[webobsidian.the-document-changed-repeat-the-action-c47f48]
+original=The document changed. Repeat the action.
+translation=Документ изменился. Повторите действие.
+
+[webobsidian.the-index-is-updating-try-opening-the-daily-note-e18576]
+original=The index is updating. Try opening the daily note again shortly.
+translation=Индекс обновляется. Попробуйте открыть ежедневную заметку чуть позже.
+
+[webobsidian.the-index-is-updating-try-opening-this-link-agai-9c9232]
+original=The index is updating. Try opening this link again shortly.
+translation=Индекс обновляется. Попробуйте открыть ссылку чуть позже.
+
+[webobsidian.theme-default-or-rrggbbaa-c23648]
+original=Theme default or #RRGGBBAA
+translation=Цвет темы или #RRGGBBAA
+
+[webobsidian.these-browser-copies-may-contain-text-that-was-n-1fa7df]
+original=These browser copies may contain text that was not saved to your vault. You do not need to manage this list during normal editing.
+translation=Эти копии в браузере могут содержать текст, который не был сохранён в хранилище. При обычном редактировании работать с этим списком не требуется.
+
+[webobsidian.this-copy-changed-while-you-were-reviewing-it-re-33e030]
+original=This copy changed while you were reviewing it. Review the latest text before removing it.
+translation=Эта копия изменилась во время просмотра. Перед удалением просмотрите актуальный текст.
+
+[webobsidian.this-copy-could-not-be-saved-because-the-file-ch-f260e3]
+original=This copy could not be saved because the file changed. Review both versions.
+translation=Не удалось сохранить эту копию, так как файл изменился. Проверьте обе версии.
+
+[webobsidian.this-copy-was-kept-for-recovery-review-it-before-88ae08]
+original=This copy was kept for recovery. Review it before deciding whether to keep the text.
+translation=Эта копия сохранена для восстановления. Просмотрите её, прежде чем решать, нужно ли сохранить текст.
+
+[webobsidian.this-does-not-delete-or-change-the-file-in-your-be4caa]
+original=This does not delete or change the file in your vault. Only this recovery copy will be removed.
+translation=Файл в хранилище не будет удалён или изменён. Будет удалена только эта копия для восстановления.
+
+[webobsidian.this-file-contains-binary-data-23c5d8]
+original=This file contains binary data.
+translation=Этот файл содержит двоичные данные.
+
+[webobsidian.this-file-is-not-valid-utf-8-text-fbd6c9]
+original=This file is not valid UTF-8 text.
+translation=Этот файл не содержит корректный текст в кодировке UTF-8.
+
+[webobsidian.this-folder-is-empty-60db81]
+original=This folder is empty.
+translation=Эта папка пуста.
+
+[webobsidian.this-note-is-maintained-by-the-agent-edf7ea]
+original=This note is maintained by the agent.
+translation=Эту заметку ведёт агент.
+
+[webobsidian.timeline-018514]
+original=Timeline
+translation=Временная шкала
+
+[webobsidian.timeline-view-gantt-d83347]
+original=Timeline view (Gantt)
+translation=Временная шкала (диаграмма Ганта)
+
+[webobsidian.to-a-note-s-frontmatter-to-see-it-on-this-board-a40980]
+original=to a note's frontmatter to see it on this board.
+translation=в свойства заметки, чтобы увидеть её на этой доске.
+
+[webobsidian.to-create-1c4810]
+original=to create
+translation=для создания
+
+[webobsidian.to-dismiss-df901e]
+original=to dismiss
+translation=для закрытия
+
+[webobsidian.to-navigate-130c10]
+original=to navigate
+translation=для навигации
+
+[webobsidian.today-24345a]
+original=Today
+translation=Сегодня
+
+[webobsidian.today-value0-b429f3]
+original=Today — {{value0}}
+translation=Сегодня — {{value0}}
+
+[webobsidian.toggle-checklist-ee1ae3]
+original=Toggle checklist
+translation=Включить или отключить список задач
+
+[webobsidian.toggle-left-sidebar-e0b102]
+original=Toggle left sidebar (⌘\)
+translation=Показать / скрыть левую панель (⌘\)
+
+[webobsidian.toggle-public-link-70590f]
+original=Toggle public link
+translation=Включить или отключить публичную ссылку
+
+[webobsidian.toggle-theme-9b0eaf]
+original=Toggle theme
+translation=Переключить тему
+
+[webobsidian.too-many-toolbar-items-3a86c2]
+original=Too many toolbar items
+translation=Слишком много элементов панели инструментов
+
+[webobsidian.toolbar-configuration-must-be-smaller-than-1-mb-521071]
+original=Toolbar configuration must be smaller than 1 MB.
+translation=Размер настроек панели инструментов должен быть меньше 1 МБ.
+
+[webobsidian.toolbar-e5bd72]
+original=toolbar
+translation=панель инструментов
+
+[webobsidian.trash-emptied-c4e119]
+original=Trash emptied
+translation=Корзина очищена
+
+[webobsidian.trash-is-empty-cffa18]
+original=Trash is empty.
+translation=Корзина пуста.
+
+[webobsidian.trash-retention-days-06522e]
+original=Trash retention (days)
+translation=Срок хранения в корзине (дни)
+
+[webobsidian.trim-line-ends-803fd4]
+original=Trim line ends
+translation=Удалить пробелы в конце строк
+
+[webobsidian.type-3deb74]
+original=Type
+translation=Тип
+
+[webobsidian.type-a-title-to-name-the-note-da32c9]
+original=Type a title to name the note
+translation=Введите заголовок для названия заметки
+
+[webobsidian.type-task-73a19f]
+original=type: task
+translation=type: task
+
+[webobsidian.unable-to-save-toolbar-settings-7a1226]
+original=Unable to save toolbar settings.
+translation=Не удалось сохранить настройки панели инструментов.
+
+[webobsidian.unavailable-commands-3d529b]
+original=unavailable commands
+translation=недоступных команд
+
+[webobsidian.underline-39773a]
+original=Underline
+translation=Подчёркнутый
+
+[webobsidian.undo-39fc72]
+original=Undo
+translation=Отменить
+
+[webobsidian.undo-z-b35df2]
+original=Undo (⌘Z)
+translation=Отменить (⌘Z)
+
+[webobsidian.unfold-all-headings-and-lists-c0322c]
+original=Unfold all headings and lists
+translation=Развернуть все заголовки и списки
+
+[webobsidian.unindent-b1edfc]
+original=Unindent
+translation=Уменьшить отступ
+
+[webobsidian.unlinked-mentions-89b3dd]
+original=Unlinked mentions
+translation=Упоминания без ссылок
+
+[webobsidian.unlock-1526a1]
+original=Unlock
+translation=Разблокировать
+
+[webobsidian.unlock-password-b418b3]
+original=unlock password
+translation=пароль для разблокировки
+
+[webobsidian.unlocked-for-this-session-the-agent-still-mainta-267fac]
+original=Unlocked for this session — the agent still maintains this note
+translation=Разблокировано для этого сеанса. Агент продолжает работать с этой заметкой
+
+[webobsidian.unresolved-eeccd8]
+original=Unresolved
+translation=Неразрешённые
+
+[webobsidian.unsaved-text-recovery-222d50]
+original=Unsaved text recovery
+translation=Восстановление несохранённого текста
+
+[webobsidian.unsupported-fb52c1]
+original=Unsupported
+translation=Не поддерживается
+
+[webobsidian.up-to-date-82fb1d]
+original=Up to date
+translation=Актуален
+
+[webobsidian.upload-failed-ad0d06]
+original=Upload failed
+translation=Не удалось загрузить
+
+[webobsidian.uploaded-07ff78]
+original=Uploaded 
+translation=Загружено 
+
+[webobsidian.url-0e2d9b]
+original=URL
+translation=URL
+
+[webobsidian.url-copied-73a9be]
+original=URL copied
+translation=URL скопирован
+
+[webobsidian.use-one-selection-d6bdca]
+original=Use one selection
+translation=Оставьте одну область выделения
+
+[webobsidian.use-server-text-ad99fc]
+original=Use server text
+translation=Использовать текст с сервера
+
+[webobsidian.value-8dce17]
+original=Value
+translation=Значение
+
+[webobsidian.vault-changed-local-drafts-remain-scoped-to-the-256e2e]
+original=Vault changed. Local drafts remain scoped to the previous vault.
+translation=Хранилище изменено. Локальные черновики остаются привязаны к предыдущему хранилищу.
+
+[webobsidian.vault-files-8abe8d]
+original=Vault & Files
+translation=Хранилище и файлы
+
+[webobsidian.vault-is-empty-85d4ac]
+original=Vault is empty.
+translation=Хранилище пусто.
+
+[webobsidian.vault-path-3b447b]
+original=Vault path
+translation=Путь к хранилищу
+
+[webobsidian.vault-path-must-not-be-blank-cdca47]
+original=Vault path must not be blank.
+translation=Путь к хранилищу не может быть пустым.
+
+[webobsidian.view-live-edit-cd7b9e]
+original=View: Live edit
+translation=Вид: интерактивное редактирование
+
+[webobsidian.view-reading-mode-379465]
+original=View: Reading mode
+translation=Вид: режим чтения
+
+[webobsidian.view-source-044962]
+original=View: Source
+translation=Вид: исходный текст
+
+[webobsidian.visible-toolbars-965908]
+original=Visible toolbars
+translation=Видимые панели
+
+[webobsidian.visitors-must-enter-a-password-715c79]
+original=Visitors must enter a password
+translation=Посетителям потребуется ввести пароль
+
+[webobsidian.webobsidian-6d54ee]
+original=WebObsidian
+translation=WebObsidian
+
+[webobsidian.webobsidian-command-e97f31]
+original=WebObsidian command
+translation=Команда WebObsidian
+
+[webobsidian.webobsidian-password-d6fc29]
+original=WEBOBSIDIAN_PASSWORD
+translation=WEBOBSIDIAN_PASSWORD
+
+[webobsidian.weeks-ahead-b56ae0]
+original=weeks ahead
+translation=недель вперёд
+
+[webobsidian.what-this-note-is-about-5a5561]
+original=what this note is about
+translation=о чём эта заметка
+
+[webobsidian.when-deleting-a-file-35fa56]
+original=When deleting a file
+translation=При удалении файла
+
+[webobsidian.whole-document-editor-for-canvas-choose-a-comple-e4b816]
+original=Whole-document editor. For Canvas, choose a complete valid document or save a copy.
+translation=Редактор всего документа. Для холста выберите полный документ в корректном формате или сохраните копию.
+
+[webobsidian.whole-vault-ad9800]
+original=Whole vault
+translation=Всё хранилище
+
+[webobsidian.wikilink-cf9d34]
+original=Wikilink
+translation=Вики-ссылка
+
+[webobsidian.words-efb893]
+original=words
+translation=слов
+
+[webobsidian.workspace-fullscreen-e8b018]
+original=Workspace fullscreen
+translation=Рабочая область на весь экран
+
+[webobsidian.wrap-c3447e]
+original=Wrap
+translation=Перенос строк
+
+[webobsidian.you-are-signed-in-with-the-default-password-4ec7dd]
+original=You are signed in with the default password (
+translation=Вы вошли с паролем по умолчанию (
+
+[webobsidian.you-left-a-recovery-in-progress-review-it-to-con-6bc1d3]
+original=You left a recovery in progress. Review it to continue.
+translation=Осталось незавершённое восстановление. Проверьте его, чтобы продолжить.
+
+[webobsidian.you-re-using-the-883cda]
+original=You’re using the
+translation=Вы используете
+
+[webobsidian.your-webobsidian-login-password-5aa6d5]
+original=Your WebObsidian login password.
+translation=Ваш пароль для входа в WebObsidian.

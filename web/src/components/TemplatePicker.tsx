@@ -1,3 +1,4 @@
+import {t as uiText, useLanguage} from "../lib/i18n/runtime";
 import { useMemo, useState } from 'react';
 import { useStore } from '../lib/store';
 import { findNode } from '../lib/tree';
@@ -23,6 +24,8 @@ import {
  * note will land on is shown before that.
  */
 export default function TemplatePicker() {
+  const languageRevision = useLanguage().revision;
+
   const open = useStore((s) => s.templatePicker);
   // Mounted only while open, so every opening starts from a clean form without
   // a reset effect that could also fire on an unrelated tree refresh.
@@ -31,6 +34,8 @@ export default function TemplatePicker() {
 }
 
 function Picker() {
+  const languageRevision = useLanguage().revision;
+
   const setOpen = useStore((s) => s.setTemplatePicker);
   const tree = useStore((s) => s.tree);
   const newFromTemplate = useStore((s) => s.newFromTemplate);
@@ -45,8 +50,8 @@ function Picker() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const templatesFolder = useMemo(() => findTemplatesFolder(tree), [tree]);
-  const templates = useMemo(() => listTemplates(tree, templatesFolder), [tree, templatesFolder]);
+  const templatesFolder = useMemo(() => findTemplatesFolder(tree), [tree, languageRevision]);
+  const templates = useMemo(() => listTemplates(tree, templatesFolder), [tree, templatesFolder, languageRevision]);
 
   const sel = chosen;
   const folder = typedFolder ?? (sel ? resolveTargetFolder(tree, sel) : '');
@@ -56,7 +61,7 @@ function Picker() {
       <div className="modal-bg" onClick={() => setOpen(false)}>
         <div className="modal" onClick={(e) => e.stopPropagation()}>
           <div className="palette-item" data-testid="templates-missing">
-            No templates folder in this vault — expected a folder named <b>templates</b>.
+            {uiText("webobsidian.no-templates-folder-in-this-vault-expected-a-fol-50c0ea")} <b>Templates</b>.
           </div>
         </div>
       </div>
@@ -74,9 +79,9 @@ function Picker() {
 
   /** Why the note cannot be created yet — shown instead of a dead button. */
   const blocked = !sel
-    ? 'Pick a template above'
+    ? uiText("webobsidian.pick-a-template-above-6f2f3f")
     : !slug
-      ? 'Type a title to name the note'
+      ? uiText("webobsidian.type-a-title-to-name-the-note-da32c9")
       : !dir
         ? 'No folder for this template — type one, e.g. Wiki/meetings'
         : '';
@@ -89,7 +94,7 @@ function Picker() {
       await newFromTemplate(sel, title, dir);
       setOpen(false);
     } catch (e: any) {
-      setError(e?.message || 'Could not create the note');
+      setError(e?.message || uiText("webobsidian.could-not-create-the-note-2bf964"));
       setBusy(false);
     }
   };
@@ -109,7 +114,7 @@ function Picker() {
       <div className="modal" onClick={(e) => e.stopPropagation()} onKeyDown={onKey}>
         <input
           className="palette-input"
-          placeholder="Choose a template…"
+          placeholder={uiText("webobsidian.choose-a-template-25c120")}
           autoFocus
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -134,31 +139,31 @@ function Picker() {
               <span className="kbd">{t.path}</span>
             </button>
           ))}
-          {shown.length === 0 && <div className="palette-item">No matching template</div>}
+          {shown.length === 0 && <div className="palette-item">{uiText("webobsidian.no-matching-template-2670da")}</div>}
         </div>
         <div className="tpl-form">
           <div className="tpl-row">
-            <span className="tpl-label">Template</span>
+            <span className="tpl-label">{uiText("webobsidian.template-3ec1ae")}</span>
             <span className="tpl-chosen" data-testid="template-chosen">
-              {sel || 'none chosen'}
+              {sel || uiText("webobsidian.none-chosen-917493")}
             </span>
           </div>
           <label className="tpl-row">
-            <span className="tpl-label">Title</span>
+            <span className="tpl-label">{uiText("plugins.bookmarks.option-title")}</span>
             <input
               className="text-input"
               data-testid="template-title"
-              placeholder="what this note is about"
+              placeholder={uiText("webobsidian.what-this-note-is-about-5a5561")}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
           </label>
           <label className="tpl-row">
-            <span className="tpl-label">Folder</span>
+            <span className="tpl-label">{uiText("properties.types.option-folder")}</span>
             <input
               className="text-input"
               data-testid="template-folder"
-              placeholder="e.g. Wiki/meetings"
+              placeholder={uiText("webobsidian.e-g-wiki-meetings-a0cb52")}
               value={folder}
               onChange={(e) => setTypedFolder(e.target.value)}
             />
@@ -166,7 +171,7 @@ function Picker() {
           <div className="tpl-path" data-testid="template-path">
             {targetPath ? (
               <>
-                Creates <code>{targetPath}</code>
+                {uiText("webobsidian.creates-4e852e")} <code>{targetPath}</code>
               </>
             ) : (
               blocked
@@ -179,7 +184,7 @@ function Picker() {
           )}
           <div className="tpl-actions">
             <button className="btn" data-testid="template-create" disabled={!canCreate} onClick={create}>
-              {busy ? 'Creating…' : 'Create note'}
+              {busy ? uiText("webobsidian.creating-94d7d8") : uiText("webobsidian.create-note-4fd52d")}
             </button>
           </div>
         </div>

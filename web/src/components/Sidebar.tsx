@@ -1,3 +1,5 @@
+import {translateLabel as uiLabel} from "../lib/i18n/runtime";
+import {t as uiText, useLanguage} from "../lib/i18n/runtime";
 import { useEffect } from 'react';
 import { useStore } from '../lib/store';
 import FileTree, { collectFolderPaths } from './FileTree';
@@ -7,13 +9,15 @@ import BookmarksPanel from './BookmarksPanel';
 import Icon from './Icon';
 
 const TITLES: Record<string, string> = {
-  files: 'Files',
-  search: 'Search',
-  tags: 'Tags',
-  bookmarks: 'Bookmarks',
+  get files() {return uiText("plugins.file-explorer.name");},
+  get search() {return uiText("webobsidian.search-bce064");},
+  get tags() {return uiText("webobsidian.tags-848eed");},
+  get bookmarks() {return uiText("webobsidian.bookmarks-ca3cdd");},
 };
 
 export default function Sidebar() {
+  const languageRevision = useLanguage().revision;
+
   const leftPanel = useStore((s) => s.leftPanel);
   const newNote = useStore((s) => s.newNote);
   const newCanvas = useStore((s) => s.newCanvas);
@@ -72,16 +76,16 @@ export default function Sidebar() {
       x: r.left,
       y: r.bottom + 4,
       items: [
-        { label: 'File name (A to Z)', icon: treeSort === 'name-asc' ? 'check' : undefined, onClick: () => setTreeSort('name-asc') },
-        { label: 'File name (Z to A)', icon: treeSort === 'name-desc' ? 'check' : undefined, onClick: () => setTreeSort('name-desc') },
+        { get label() {return uiText("plugins.file-explorer.label-sort-a-to-z");}, icon: treeSort === 'name-asc' ? 'check' : undefined, onClick: () => setTreeSort('name-asc') },
+        { get label() {return uiText("plugins.file-explorer.label-sort-z-to-a");}, icon: treeSort === 'name-desc' ? 'check' : undefined, onClick: () => setTreeSort('name-desc') },
         { label: '', separator: true },
-        { label: 'Modified time (new to old)', icon: treeSort === 'mtime-desc' ? 'check' : undefined, onClick: () => setTreeSort('mtime-desc') },
-        { label: 'Modified time (old to new)', icon: treeSort === 'mtime-asc' ? 'check' : undefined, onClick: () => setTreeSort('mtime-asc') },
+        { get label() {return uiText("plugins.file-explorer.label-sort-new-to-old");}, icon: treeSort === 'mtime-desc' ? 'check' : undefined, onClick: () => setTreeSort('mtime-desc') },
+        { get label() {return uiText("plugins.file-explorer.label-sort-old-to-new");}, icon: treeSort === 'mtime-asc' ? 'check' : undefined, onClick: () => setTreeSort('mtime-asc') },
         { label: '', separator: true },
-        { label: 'Created time (new to old)', icon: treeSort === 'ctime-desc' ? 'check' : undefined, onClick: () => setTreeSort('ctime-desc') },
-        { label: 'Created time (old to new)', icon: treeSort === 'ctime-asc' ? 'check' : undefined, onClick: () => setTreeSort('ctime-asc') },
+        { get label() {return uiText("plugins.file-explorer.label-sort-created-new-to-old");}, icon: treeSort === 'ctime-desc' ? 'check' : undefined, onClick: () => setTreeSort('ctime-desc') },
+        { get label() {return uiText("plugins.file-explorer.label-sort-created-old-to-new");}, icon: treeSort === 'ctime-asc' ? 'check' : undefined, onClick: () => setTreeSort('ctime-asc') },
         { label: '', separator: true },
-        { label: 'Manual', icon: treeSort === 'manual' ? 'check' : undefined, onClick: () => setTreeSort('manual') },
+        { get label() {return uiText("plugins.bases.label-sort-manual");}, icon: treeSort === 'manual' ? 'check' : undefined, onClick: () => setTreeSort('manual') },
       ],
     });
   };
@@ -89,46 +93,46 @@ export default function Sidebar() {
   return (
     <div className="sidebar">
       <div className="nav-header">
-        <span className="nav-title">{TITLES[leftPanel]}</span>
-        {leftPanel === 'files' && (
+        <span className="nav-title">{uiLabel(TITLES[leftPanel])}</span>
+        {leftPanel === "files" && (
           <>
-            <button className="nav-action" title="New note" onClick={() => newNote()}>
+            <button className="nav-action" title={uiText("plugins.file-explorer.action-new-note")} onClick={() => newNote()}>
               <Icon name="square-pen" size={16} />
             </button>
-            <button className="nav-action" title="New canvas" onClick={() => newCanvas()}>
+            <button className="nav-action" title={uiText("plugins.canvas.action-new-canvas")} onClick={() => newCanvas()}>
               <Icon name="layout-dashboard" size={16} />
             </button>
-            <button className="nav-action" title="New folder" onClick={() => newFolder()}>
+            <button className="nav-action" title={uiText("plugins.file-explorer.action-new-folder")} onClick={() => newFolder()}>
               <Icon name="folder-plus" size={16} />
             </button>
-            <button className="nav-action" title="Change sort order" onClick={openSortMenu}>
+            <button className="nav-action" title={uiText("plugins.file-explorer.action-change-sort")} onClick={openSortMenu}>
               <Icon name="arrow-up-narrow-wide" size={16} />
             </button>
             <button
               className={`nav-action ${autoReveal ? 'active' : ''}`}
-              title="Reveal active file in explorer"
+              title={uiText("webobsidian.reveal-active-file-in-explorer-d789fe")}
               onClick={() => toggleAutoReveal()}
             >
               <Icon name="crosshair" size={16} />
             </button>
             <button
               className="nav-action"
-              title={allCollapsed ? 'Expand all' : 'Collapse all'}
+              title={allCollapsed ? uiText("plugins.file-explorer.action-expand-all") : uiText("plugins.file-explorer.action-collapse-all")}
               onClick={toggleCollapseAll}
             >
               <Icon name={allCollapsed ? 'chevrons-up-down' : 'chevrons-down-up'} size={16} />
             </button>
-            <button className="nav-action" title="Trash" onClick={() => setTrash(true)}>
+            <button className="nav-action" title={uiText("setting.file.option-trash")} onClick={() => setTrash(true)}>
               <Icon name="trash" size={16} />
             </button>
           </>
         )}
       </div>
       <div className="sidebar-body">
-        {leftPanel === 'files' && <FileTree />}
-        {leftPanel === 'search' && <SearchPanel />}
-        {leftPanel === 'tags' && <TagsPanel />}
-        {leftPanel === 'bookmarks' && <BookmarksPanel />}
+        {leftPanel === "files" && <FileTree />}
+        {leftPanel === "search" && <SearchPanel />}
+        {leftPanel === "tags" && <TagsPanel />}
+        {leftPanel === "bookmarks" && <BookmarksPanel />}
       </div>
       <div className="vault-footer">
         <span className="vault-name">
@@ -136,7 +140,7 @@ export default function Sidebar() {
         </span>
         <span className="grow" />
       </div>
-      <div className="sidebar-resizer" title="Drag to resize" onPointerDown={onResizeDown} />
+      <div className="sidebar-resizer" title={uiText("plugins.bases.table.tooltip-drag-to-resize")} onPointerDown={onResizeDown} />
     </div>
   );
 }

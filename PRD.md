@@ -7,6 +7,25 @@
 
 # PRD — WebObsidian
 
+## Browser language packs — 2026-11-03
+
+The web client supports user-imported UTF-8 language files using Obsidian's
+`[key]`, `original=`, `translation=` format. Its own English catalog supplies
+fallback strings and a downloadable blank template. Users obtain external files
+themselves through the repository link in Settings → Language. One active pack
+is saved in the authenticated server settings and shared by browsers of this
+WebObsidian instance. A local cache supplies startup/offline labels. Imports validate parameters and preserve
+the current pack on failure. Compatible strings update React and existing editor
+widgets immediately. Document names, text, command IDs and saved custom labels
+retain their literal values. Existing browser-language editor messages and PDF
+defaults are supported until a pack is chosen. Public server-rendered pages,
+native Electron menus and third-party plugin strings are outside this first
+version. Users obtain official dictionaries themselves and explicitly upload
+their chosen file. Successful imports save only compatible strings on the server.
+Existing browser-local packs migrate when the server has no language setting.
+An explicit reset clears the server setting and local cache. Returning to a
+browser window or opening Language settings refreshes its active server pack.
+
 > FR-2 clarification 2026-10-29: literal angle identifiers containing underscores
 > (for example `<LS_BEN>`) must use the normal body text color, not HTML tag red.
 > Apply in Source/Live/Reading without editing the note. Earlier red-preservation
@@ -88,7 +107,8 @@
 > deployment is outside this integration task.
 
 > Product Requirements Document
-> Phiên bản: 1.23 · Cập nhật: 2026-09-30 · Trạng thái: Draft
+> Phiên bản: 1.24 · Cập nhật: 2026-11-02 · Trạng thái: Draft
+> Changelog 1.24 (FR-2, FR-12): fenced JavaScript, Python and YAML use the native editor token palette in Live, Reading and Source modes. Canvas uses compact native selection controls, height-dependent text padding and an initial fit capped at 100%. The browser tab uses the official Obsidian gradient icon.
 > Changelog 1.23 (FR-23 — chọn giá trị cho thuộc tính đóng: nút `▾` + danh sách giá trị, issue #61): trên
 > trang task, `status:` là **text tự do** nên đổi trạng thái phải gõ đúng id — mà gõ sai thì không vô hại:
 > board chỉ map id canonical (`open`/`in-progress`/`blocked`/`done`) + vài alias, mọi giá trị khác thành
@@ -672,9 +692,11 @@ chúng bằng đường có mũi tên, dùng cho brainstorm, moodboard, sơ đ�
   `ceil(15/scale)` đơn vị canvas). Giữ **Alt** (⌃ trên macOS) để kéo tự do (tắt snap); giữ **Shift** để khoá trục.
 - **Format trong text card**: phím tắt như editor chính (`obsidianKeymap`) — ⌘B đậm, ⌘I nghiêng, ⌘K thêm link,
   ⌘L task, `⌘/` comment (toggle marker); menu chuột phải mở **đúng tại con trỏ** và tự dịch vào trong màn hình.
-- **Căn lề text** (mở rộng ngoài JSON Canvas spec): `TextNode.textAlign` = `left|center|right`, chọn qua nút trong
-  selection menu (khi chọn text node) hoặc submenu "Align" menu chuột phải; áp cho cả textarea lẫn nội dung render.
+- **Căn lề text** (mở rộng ngoài JSON Canvas spec): `TextNode.textAlign` = `left|center|right`, chọn qua
+  submenu "Align" menu chuột phải; áp cho cả textarea lẫn nội dung render.
   *Lưu ý: Obsidian thật bỏ qua field này khi mở lại.*
+- **Selection toolbar parity (2026-11-02)**: a single text card shows Remove, Set color, Zoom to selection and Edit in a compact native-style toolbar. Text cards use readable 16px default typography, native neutral borders and no outer paragraph margins. Vertical padding shrinks with card height using the native Canvas rule so two lines fit a 250×60 card. Opening a small board fits at up to 100%. Zoom changes viewport state only.
+- **Canvas screenshot parity (2026-11-03)**: text cards use an explicit 16px render size to match the reference even when the vault note font preference differs. Flexible vertical spacers grow up to 16px and shrink with short cards. Arrowheads use a 13px base, 10.4px length and 1px rounded outline.
 - **Lưu**: autosave debounce (~900ms) như editor, ghi qua `PUT /api/files/content` (store `content`/`save`,
   `.canvas` đã nằm trong `TEXT_RE`). Không thêm endpoint mới.
 - **Tạo canvas mới**: context menu cây thư mục ("New canvas") + command palette; tên `Untitled.canvas` không
@@ -1262,11 +1284,9 @@ GET    /api/v1/tasks?folder=&status=&priority=&owner=&q=   # board tasks, scope 
 6. Cài & bật ít nhất 1 community plugin đơn giản.
 7. `docker compose up` chạy toàn bộ stack.
 
-
 ## 2026-10-30: adaptive toolbar, drafts and conflicts
 
 Status: in progress. Execution order: container-sized one-row toolbar with More menu, then persistent local drafts, then version-conflict resolution. Existing explicit scroll/wrap layouts remain supported. See `docs/superpowers/plans/2026-10-30-drafts-conflicts-adaptive-toolbar.md`.
-
 
 ### FR extension — local recovery and container-adaptive toolbar (2026-10-30)
 
@@ -1292,7 +1312,6 @@ Optional `/mcp` Streamable HTTP, disabled by default, alongside unchanged stdio.
 ### Built-in code file viewer (2026-11-01)
 
 Mapped source/text files open in a read-only CodeMirror view with syntax highlighting, line numbers, search and copy in main and split panes. Settings → Code files manages extension/language mappings. UTF-8 only; preview limit 10 MiB, highlighting limit 1,000,000 UTF-16 code units. Code files are never executed or indexed as Markdown notes. Existing mapped text formats become read-only while enabled; disabling/removing mappings restores the legacy editor. Draft recovery and failed saves must preserve local text.
-
 
 ### Native embeds and fragment compatibility — FR-2 / FR-10 / FR-21 (2026-11-01)
 

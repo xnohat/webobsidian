@@ -1,3 +1,4 @@
+import {t as uiText, useLanguage} from "../lib/i18n/runtime";
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { TaskRecord } from '../lib/api';
 import {
@@ -84,6 +85,8 @@ export default function GanttChart({
   onEditDue: (path: string | null) => void;
   onSetDue: (path: string, due: string) => void;
 }) {
+  const languageRevision = useLanguage().revision;
+
   const [zoom, setZoom] = useState<Zoom>('week');
   const [narrowViewport, setNarrowViewport] = useState(() => window.matchMedia(COMPACT_QUERY).matches);
   /** Width of the chart pane itself (the scroll container). */
@@ -97,19 +100,19 @@ export default function GanttChart({
   /** Set once the user scrolls/drags/taps the timeline, or changes the zoom. */
   const tookOverRef = useRef(false);
 
-  const todayDay = useMemo(() => parseDay(todayISO()) ?? 0, []);
-  const bars = useMemo(() => sortBars(barsFor(tasks, todayDay)), [tasks, todayDay]);
-  const range = useMemo(() => computeRange(bars, todayDay), [bars, todayDay]);
+  const todayDay = useMemo(() => parseDay(todayISO()) ?? 0, [languageRevision]);
+  const bars = useMemo(() => sortBars(barsFor(tasks, todayDay)), [tasks, todayDay, languageRevision]);
+  const range = useMemo(() => computeRange(bars, todayDay), [bars, todayDay, languageRevision]);
   // Week zoom is width-aware (issue #37): it fits eight weeks ahead of today into
   // whatever space the axis has, so a laptop or a phone is not limited to the two
   // to four weeks a fixed 16px/day would show. Day and Month keep fixed scales.
   const pxPerDay = zoom === 'week' ? weekZoomPxPerDay(usableW) : zoomLevel(zoom).pxPerDay;
   const axisPx = axisWidth(range, pxPerDay);
-  const ticks = useMemo(() => ticksFor(range, zoom, pxPerDay), [range, zoom, pxPerDay]);
-  const months = useMemo(() => monthSpans(range, pxPerDay), [range, pxPerDay]);
+  const ticks = useMemo(() => ticksFor(range, zoom, pxPerDay), [range, zoom, pxPerDay, languageRevision]);
+  const months = useMemo(() => monthSpans(range, pxPerDay), [range, pxPerDay, languageRevision]);
   const weekends = useMemo(
     () => (pxPerDay >= 8 ? weekendSpans(range, pxPerDay) : []),
-    [range, pxPerDay],
+    [range, pxPerDay, languageRevision],
   );
   const lineX = todayX(range, pxPerDay, todayDay);
 
@@ -199,7 +202,7 @@ export default function GanttChart({
             <button
               key={z.id}
               className={`gantt-zoom-btn ${zoom === z.id ? 'active' : ''}`}
-              title={`${z.label} zoom`}
+              title={uiText("webobsidian.-value0-zoom-483765", {value0: z.label})}
               aria-pressed={zoom === z.id}
               onClick={() => {
                 tookOverRef.current = true;
@@ -211,20 +214,19 @@ export default function GanttChart({
           ))}
         </div>
         <span className="grow" />
-        {zoom === 'week' && usableW > 0 && (
+        {zoom === "week" && usableW > 0 && (
           <span
             className="gantt-horizon"
-            title="Days ahead of today that are on screen at this width"
+            title={uiText("webobsidian.days-ahead-of-today-that-are-on-screen-at-this-w-bc886f")}
           >
-            {(daysAheadVisible(usableW, pxPerDay) / 7).toFixed(1)} weeks ahead
-          </span>
+            {(daysAheadVisible(usableW, pxPerDay) / 7).toFixed(1)} {uiText("webobsidian.weeks-ahead-b56ae0")} </span>
         )}
         <span className="gantt-count">
-          {bars.length} task{bars.length === 1 ? '' : 's'}
+          {uiText('webobsidian.task-count',{count:bars.length})}
         </span>
-        <button className="gantt-today-btn" title="Scroll to today" onClick={scrollToToday}>
+        <button className="gantt-today-btn" title={uiText("webobsidian.scroll-to-today-a05eee")} onClick={scrollToToday}>
           <Icon name="calendar" size={14} />
-          <span>Today</span>
+          <span>{uiText("webobsidian.today-24345a")}</span>
         </button>
       </div>
 
@@ -243,7 +245,7 @@ export default function GanttChart({
         >
           <div className="gantt-axis">
             <div className="gantt-axis-spacer">
-              <span className="gantt-axis-corner">Task</span>
+              <span className="gantt-axis-corner">{uiText("webobsidian.task-7bb0dd")}</span>
             </div>
             <div className="gantt-axis-track" style={{ width: axisPx }}>
               <div className="gantt-months">
@@ -252,9 +254,8 @@ export default function GanttChart({
                     {m.width >= 60 && <span className="gantt-month-label">{m.label}</span>}
                   </div>
                 ))}
-                <div className="gantt-today-flag" style={{ left: lineX }} title={`Today — ${dayToISO(todayDay)}`}>
-                  Today
-                </div>
+                <div className="gantt-today-flag" style={{ left: lineX }} title={uiText("webobsidian.today-value0-b429f3", {value0: dayToISO(todayDay)})}>
+                  {uiText("webobsidian.today-24345a")} </div>
               </div>
               <div className="gantt-ticks">
                 {ticks.map((t) => (
@@ -315,10 +316,10 @@ export default function GanttChart({
                       <button
                         type="button"
                         className={`gantt-due ${b.overdue ? 'overdue' : ''} ${b.openEnded ? 'undated' : ''}`}
-                        title={b.openEnded ? 'No due date — click to set one' : `Due ${dayToISO(b.endDay)} — click to change`}
+                        title={b.openEnded ? uiText("webobsidian.no-due-date-click-to-set-one-fb5f0e") : uiText("webobsidian.due-value0-click-to-change-96a896", {value0: dayToISO(b.endDay)})}
                         onClick={() => onEditDue(b.path)}
                       >
-                        {b.openEnded ? 'no due' : dayToShort(b.endDay)}
+                        {b.openEnded ? uiText("webobsidian.no-due-63bded") : dayToShort(b.endDay)}
                       </button>
                     )}
                   </div>
@@ -332,16 +333,16 @@ export default function GanttChart({
                     >
                       {b.priority && <span className="gantt-bar-prio">{b.priority}</span>}
                       {!compact && g.width >= TITLE_IN_BAR_MIN_PX && <span className="gantt-bar-text">{b.title}</span>}
-                      {b.openEnded && <span className="gantt-bar-nodue">no due</span>}
+                      {b.openEnded && <span className="gantt-bar-nodue">{uiText("webobsidian.no-due-63bded")}</span>}
                     </button>
                   </div>
                 </div>
               );
             })}
-            {bars.length === 0 && <div className="gantt-empty">No tasks to place on the timeline.</div>}
+            {bars.length === 0 && <div className="gantt-empty">{uiText("webobsidian.no-tasks-to-place-on-the-timeline-bad6f5")}</div>}
           </div>
 
-          <div className="gantt-today" style={{ left: LABEL_W + lineX }} title={`Today — ${dayToISO(todayDay)}`} />
+          <div className="gantt-today" style={{ left: LABEL_W + lineX }} title={uiText("webobsidian.today-value0-b429f3", {value0: dayToISO(todayDay)})} />
         </div>
       </div>
     </div>

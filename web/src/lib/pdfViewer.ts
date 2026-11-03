@@ -1,3 +1,6 @@
+import {pdfLabel,bindPdfLabel} from './i18n/pdfLabels';
+import {setLocalizedText} from './i18n/runtime';
+import {t as uiText} from "./i18n/runtime";
 /** Shared embedded PDF viewer. Documents and workers stay on this application's origin. */
 import {pdfAssetBase as assets} from './pdfAssets';
 import {openPdfMenu,type PdfMenuItem} from './pdfMenu';
@@ -11,7 +14,7 @@ const disposers = new WeakMap<HTMLElement,()=>void>();
 function loadLibrary(){
   stylesheet ??= new Promise<void>((resolve,reject)=>{
     const link=document.createElement('link');link.rel='stylesheet';link.href=assets+'pdf_viewer.css';
-    link.onload=()=>resolve();link.onerror=()=>reject(Error('PDF stylesheet could not be loaded'));document.head.append(link);
+    link.onload=()=>resolve();link.onerror=()=>reject(Error(uiText("webobsidian.pdf-stylesheet-could-not-be-loaded-05aaba")));document.head.append(link);
   });
   library ??= (async()=>{
     const core=await import('pdfjs-dist');
@@ -38,32 +41,32 @@ export function createPdfViewer(src:string,name:string,onOpen?:()=>void,onEdit?:
   const fixedHeight=/^\d+$/.test(requestedHeight)?Number(requestedHeight):0;
   if(Number.isFinite(fixedHeight)&&fixedHeight>0)root.style.height=fixedHeight+'px';
   root.setAttribute('aria-label',name);if(options.fillContainer){root.classList.add('pdf-fill-container');root.style.height='100%'}
-  const toolbar=document.createElement('div');toolbar.className='pdf-toolbar';toolbar.setAttribute('role','toolbar');toolbar.setAttribute('aria-label','Управление PDF');
+  const toolbar=document.createElement('div');toolbar.className='pdf-toolbar';toolbar.setAttribute('role','toolbar');toolbar.setAttribute('aria-label',pdfLabel("Управление PDF"));
   const button=(label:string,icon:string)=>{
-    const el=document.createElement('button');el.type='button';el.title=label;el.setAttribute('aria-label',label);el.disabled=true;
+    const el=document.createElement('button');el.type='button';bindPdfLabel(el,label,'title');bindPdfLabel(el,label,'aria-label');el.disabled=true;
     el.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${icon}</svg>`;
     toolbar.append(el);return el;
   };
-  const thumbs=button('Свернуть/развернуть боковую панель',icons.thumbnails);thumbs.setAttribute('aria-expanded','false');
-  const sidebarOptions=button('Параметры боковой панели','<path d="m6 9 6 6 6-6"/>');sidebarOptions.dataset.pdfAction='sidebar-options';
-  const minus=button('Уменьшить',icons.minus),plus=button('Увеличить',icons.plus);
+  const thumbs=button(pdfLabel("Свернуть/развернуть боковую панель"),icons.thumbnails);thumbs.setAttribute('aria-expanded','false');
+  const sidebarOptions=button(pdfLabel("Параметры боковой панели"),'<path d="m6 9 6 6 6-6"/>');sidebarOptions.dataset.pdfAction='sidebar-options';
+  const minus=button(pdfLabel("Уменьшить"),icons.minus),plus=button(pdfLabel("Увеличить"),icons.plus);
   thumbs.dataset.pdfAction='sidebar-toggle';minus.dataset.pdfAction='zoom-out';plus.dataset.pdfAction='zoom-in';
-  const displayOptions=button('Параметры отображения','<path d="m6 9 6 6 6-6"/>');displayOptions.dataset.pdfAction='display-options';
-  const page=document.createElement('input');page.type='text';page.inputMode='numeric';page.value='1';page.setAttribute('aria-label','Номер страницы');page.disabled=true;
-  const count=document.createElement('span');count.className='pdf-page-count';count.textContent='из …';toolbar.append(page,count);
-  const fileMenu=button('Открыть','<circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>');fileMenu.dataset.pdfAction='file-menu';fileMenu.className='pdf-file-menu';fileMenu.disabled=false;
+  const displayOptions=button(pdfLabel("Параметры отображения"),'<path d="m6 9 6 6 6-6"/>');displayOptions.dataset.pdfAction='display-options';
+  const page=document.createElement('input');page.type='text';page.inputMode='numeric';page.value='1';page.setAttribute('aria-label',pdfLabel("Номер страницы"));page.disabled=true;
+  const count=document.createElement('span');count.className='pdf-page-count';count.textContent=pdfLabel("из …");toolbar.append(page,count);
+  const fileMenu=button(pdfLabel("Открыть"),'<circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>');fileMenu.dataset.pdfAction='file-menu';fileMenu.className='pdf-file-menu';fileMenu.disabled=false;
   if(onEdit){
-    const edit=button('Редактировать блок',icons.code);edit.disabled=false;
+    const edit=button(pdfLabel("Редактировать блок"),icons.code);edit.disabled=false;
     edit.onclick=e=>{e.preventDefault();e.stopPropagation();onEdit()};
   }
   const body=document.createElement('div');body.className='pdf-reader-body';
-  const sidebar=document.createElement('div');sidebar.className='pdf-thumbnails';sidebar.hidden=true;sidebar.setAttribute('aria-label','Миниатюры PDF');
+  const sidebar=document.createElement('div');sidebar.className='pdf-thumbnails';sidebar.hidden=true;sidebar.setAttribute('aria-label',pdfLabel("Миниатюры PDF"));
   const container=document.createElement('div');container.className='pdf-reader-scroll';container.tabIndex=0;
-  const pages=document.createElement('div');pages.className='pdfViewer';container.append(pages);const outline=document.createElement('div');outline.className='pdf-outline';outline.hidden=true;outline.setAttribute('aria-label','Оглавление PDF');
+  const pages=document.createElement('div');pages.className='pdfViewer';container.append(pages);const outline=document.createElement('div');outline.className='pdf-outline';outline.hidden=true;outline.setAttribute('aria-label',pdfLabel("Оглавление PDF"));
   body.append(sidebar,outline,container);root.append(toolbar,body);
-  const status=document.createElement('div');status.className='pdf-reader-status';status.textContent='Загрузка PDF…';body.append(status);
+  const status=document.createElement('div');status.className='pdf-reader-status';setLocalizedText(status, "webobsidian.-pdf-698ba2", {}, "textContent");body.append(status);
   let destroyed=false,cleanup=()=>{},closeMenu=()=>{},cancelPendingMenu=()=>{},menuRequest=0;
-  const menuError=(error:unknown)=>{if(!destroyed){const notice=document.createElement('div');notice.className='pdf-reader-notice';notice.textContent=error instanceof Error?error.message:'Не удалось выполнить команду';root.append(notice);setTimeout(()=>notice.remove(),4000)}};
+  const menuError=(error:unknown)=>{if(!destroyed){const notice=document.createElement('div');notice.className='pdf-reader-notice';notice.textContent=error instanceof Error?error.message:pdfLabel("Не удалось выполнить команду");root.append(notice);setTimeout(()=>notice.remove(),4000)}};
   const showMenu=(anchor:HTMLButtonElement,label:string,items:PdfMenuItem[])=>{menuRequest++;cancelPendingMenu();const wasOpen=anchor.getAttribute('aria-expanded')==='true';closeMenu();if(!wasOpen)closeMenu=openPdfMenu(anchor,label,items,menuError)};
   fileMenu.onclick=async()=>{
    cancelPendingMenu();if(fileMenu.getAttribute('aria-expanded')==='true'){menuRequest++;closeMenu();return}
@@ -76,10 +79,10 @@ export function createPdfViewer(src:string,name:string,onOpen?:()=>void,onEdit?:
    };
    cancelPendingMenu=clearPending;document.addEventListener('keydown',cancel,true);document.addEventListener('pointerdown',cancel,true);
    try{const items=options.fileActions?await options.fileActions():[
-    {label:'Открыть в новой вкладке',run:()=>{if(onOpen)onOpen();else window.open(src,'_blank','noopener,noreferrer')}},
-    {label:'Открыть в новом окне',run:()=>{window.open(src,'_blank','popup,noopener,noreferrer')}},
-    {label:'Копировать ссылку',run:()=>navigator.clipboard.writeText(new URL(src,location.href).href)},
-  ];if(!destroyed&&request===menuRequest&&document.activeElement===fileMenu)showMenu(fileMenu,'Открыть',items)}catch(error){if(request===menuRequest)menuError(error)}finally{clearPending()}};
+    {label:pdfLabel("Открыть в новой вкладке"),run:()=>{if(onOpen)onOpen();else window.open(src,'_blank','noopener,noreferrer')}},
+    {label:pdfLabel("Открыть в новом окне"),run:()=>{window.open(src,'_blank','popup,noopener,noreferrer')}},
+    {label:pdfLabel("Копировать ссылку"),run:()=>navigator.clipboard.writeText(new URL(src,location.href).href)},
+  ];if(!destroyed&&request===menuRequest&&document.activeElement===fileMenu)showMenu(fileMenu,pdfLabel("Открыть"),items)}catch(error){if(request===menuRequest)menuError(error)}finally{clearPending()}};
   disposers.set(root,()=>{destroyed=true;menuRequest++;cancelPendingMenu();closeMenu();cleanup()});
   void loadLibrary().then(async({core,viewer})=>{
     if(destroyed)return;
@@ -97,10 +100,10 @@ export function createPdfViewer(src:string,name:string,onOpen?:()=>void,onEdit?:
     task.onPassword=(updatePassword:(password:string)=>void,reason:number)=>{
       if(destroyed)return;
       const form=document.createElement('form'),label=document.createElement('label'),input=document.createElement('input'),submit=document.createElement('button');
-      label.textContent=reason===core.PasswordResponses.INCORRECT_PASSWORD?'Неверный пароль PDF. Попробуйте ещё раз: ':'Пароль PDF: ';
-      input.type='password';input.autocomplete='current-password';input.setAttribute('aria-label','Пароль PDF');submit.type='submit';submit.textContent='Открыть PDF';
+      label.textContent=reason===core.PasswordResponses.INCORRECT_PASSWORD?pdfLabel("Неверный пароль PDF. Попробуйте ещё раз: "):uiText("webobsidian.-pdf-7bf10a");
+      input.type='password';input.autocomplete='current-password';input.setAttribute('aria-label',pdfLabel("Пароль PDF"));submit.type='submit';setLocalizedText(submit, "webobsidian.-pdf-3f9328", {}, "textContent");
       label.append(input);form.append(label,submit);status.replaceChildren(form);
-      form.onsubmit=e=>{e.preventDefault();const password=input.value;input.value='';status.textContent='Загрузка PDF…';updatePassword(password)};
+      form.onsubmit=e=>{e.preventDefault();const password=input.value;input.value='';setLocalizedText(status, "webobsidian.-pdf-698ba2", {}, "textContent");updatePassword(password)};
     };
     const thumbnailTasks=new Set<{cancel:()=>void}>();
     const size=()=>{
@@ -139,7 +142,7 @@ export function createPdfViewer(src:string,name:string,onOpen?:()=>void,onEdit?:
       if(destroyed)return;
       if(pageLabels)pdf.setPageLabels(pageLabels);
       page.value=pdf.currentPageLabel??String(pdf.currentPageNumber);
-      count.textContent=pdf.currentPageLabel?`(${pdf.currentPageNumber} из ${pdf.pagesCount})`:'из '+pdf.pagesCount;
+      count.textContent=pdf.currentPageLabel?uiText("webobsidian.-value0-value1-49127b", {value0: pdf.currentPageNumber, value1: pdf.pagesCount}):pdfLabel("из ")+pdf.pagesCount;
       pdf.currentScaleValue='page-width';
       if(fragment)links.setHash(fragment);
       if(fragmentTarget.offset&&fragmentTarget.page&&fragmentTarget.page<=pdf.pagesCount){
@@ -148,7 +151,7 @@ export function createPdfViewer(src:string,name:string,onOpen?:()=>void,onEdit?:
       }
       size();root.dataset.ready='true';status.remove();
     });
-    events.on('pagechanging',({pageNumber}:{pageNumber:number})=>{page.value=pdf.currentPageLabel??String(pageNumber);count.textContent=pdf.currentPageLabel?`(${pageNumber} из ${pdf.pagesCount})`:'из '+pdf.pagesCount;size()});
+    events.on('pagechanging',({pageNumber}:{pageNumber:number})=>{page.value=pdf.currentPageLabel??String(pageNumber);count.textContent=pdf.currentPageLabel?uiText("webobsidian.-value0-value1-49127b", {value0: pageNumber, value1: pdf.pagesCount}):pdfLabel("из ")+pdf.pagesCount;size()});
     events.on('pagerendered',({pageNumber}:{pageNumber:number})=>{if(pageNumber===pdf.currentPageNumber)size()});
     events.on('scalechanging',({scale,presetValue}:{scale:number;presetValue?:string})=>{
       root.dataset.scale=presetValue||String(scale);size();
@@ -160,25 +163,25 @@ export function createPdfViewer(src:string,name:string,onOpen?:()=>void,onEdit?:
     const doc=await task.promise;
     if(destroyed){await task.destroy();return}
     const pageLabels=await doc.getPageLabels();if(destroyed)return;
-    count.textContent='из '+doc.numPages;
+    count.textContent=pdfLabel("из ")+doc.numPages;
     for(let n=1;n<=doc.numPages;n++){
-      const item=document.createElement('button');item.type='button';item.dataset.page=String(n);item.textContent=String(n);item.title='Страница '+n;
+      const item=document.createElement('button');item.type='button';item.dataset.page=String(n);item.textContent=String(n);item.title=pdfLabel("Страница ")+n;
       item.onclick=()=>{pdf.currentPageNumber=n};sidebar.append(item);thumbnailObserver.observe(item);
     }
     let outlineItems:{button:HTMLButtonElement;page:number}[]=[];
     const setSidebar=(mode:'thumbnails'|'outline')=>{sidebar.hidden=mode!=='thumbnails';outline.hidden=mode!=='outline';root.classList.add('pdf-sidebar-open');thumbs.setAttribute('aria-expanded','true');root.dataset.sidebar=mode};
     thumbs.onclick=()=>{const opened=!root.classList.contains('pdf-sidebar-open');sidebar.hidden=!opened||root.dataset.sidebar==='outline';outline.hidden=!opened||root.dataset.sidebar!=='outline';root.classList.toggle('pdf-sidebar-open',opened);thumbs.setAttribute('aria-expanded',String(opened))};
     const revealOutline=()=>{const entry=outlineItems.filter(i=>i.page<=pdf.currentPageNumber).sort((a,b)=>b.page-a.page)[0]??outlineItems[0];if(entry){setSidebar('outline');entry.button.focus();entry.button.scrollIntoView({block:'nearest'})}};
-    sidebarOptions.onclick=()=>showMenu(sidebarOptions,'Параметры боковой панели',[
-      {label:'Миниатюры',icon:'thumbnails',run:()=>setSidebar('thumbnails')},
-      {label:'Оглавление',icon:'outline',disabled:!outlineItems.length,run:()=>setSidebar('outline')},
-      {label:'Показать страницу в оглавлении',icon:'reveal',disabled:!outlineItems.length,run:revealOutline},
+    sidebarOptions.onclick=()=>showMenu(sidebarOptions,pdfLabel("Параметры боковой панели"),[
+      {label:pdfLabel("Миниатюры"),icon:'thumbnails',run:()=>setSidebar('thumbnails')},
+      {label:pdfLabel("Оглавление"),icon:'outline',disabled:!outlineItems.length,run:()=>setSidebar('outline')},
+      {label:pdfLabel("Показать страницу в оглавлении"),icon:'reveal',disabled:!outlineItems.length,run:revealOutline},
     ]);
-    displayOptions.onclick=()=>showMenu(displayOptions,'Параметры отображения',[
-      {label:'Подогнать по ширине',icon:'width',run:()=>{pdf.currentScaleValue='page-width';size()}},
-      {label:'Подогнать по высоте',icon:'height',run:()=>{pdf.currentScaleValue='page-height';size()}},
-      ...(['Одна страница','Две страницы (нечётные)','Две страницы (чётные)'].map((label,index)=>({label,icon:index?'spread':'single',separatorBefore:index===0,radio:true,checked:pdf.spreadMode===index,run:()=>{pdf.spreadMode=index;if(root.dataset.scale?.startsWith('page-'))pdf.currentScaleValue=root.dataset.scale;size()}}))),
-      {label:'Адаптировать к теме',icon:'theme',separatorBefore:true,checked:root.classList.contains('pdf-adapt-theme'),run:()=>{root.classList.toggle('pdf-adapt-theme')}},
+    displayOptions.onclick=()=>showMenu(displayOptions,pdfLabel("Параметры отображения"),[
+      {label:pdfLabel("Подогнать по ширине"),icon:'width',run:()=>{pdf.currentScaleValue='page-width';size()}},
+      {label:pdfLabel("Подогнать по высоте"),icon:'height',run:()=>{pdf.currentScaleValue='page-height';size()}},
+      ...([pdfLabel("Одна страница"),pdfLabel("Две страницы (нечётные)"),pdfLabel("Две страницы (чётные)")].map((label,index)=>({label,icon:index?'spread':'single',separatorBefore:index===0,radio:true,checked:pdf.spreadMode===index,run:()=>{pdf.spreadMode=index;if(root.dataset.scale?.startsWith('page-'))pdf.currentScaleValue=root.dataset.scale;size()}}))),
+      {label:pdfLabel("Адаптировать к теме"),icon:'theme',separatorBefore:true,checked:root.classList.contains('pdf-adapt-theme'),run:()=>{root.classList.toggle('pdf-adapt-theme')}},
     ]);
     pdf.setDocument(doc);links.setDocument(doc);
     void doc.getOutline().then(async entries=>{
@@ -196,11 +199,11 @@ export function createPdfViewer(src:string,name:string,onOpen?:()=>void,onEdit?:
     if(destroyed)return;
     if(error?.status===404||error?.name==='MissingPDFException'){
       cleanup();root.classList.remove('pdf-fill-container');root.classList.add('pdf-missing');root.style.removeProperty('height');root.dataset.missing='true';root.setAttribute('role','note');
-      const label=options.missingLabel??name,ru=/^ru(?:-|$)/i.test(navigator.language);root.replaceChildren(document.createTextNode(ru?`«${label}» не может быть найдена.`:`“${label}” could not be found.`));
+      const label=options.missingLabel??name;setLocalizedText(root,"webobsidian.missing-file",{name:label},"textContent",`«${label}» не может быть найдена.`);
       if(onEdit){const edit=embedAction('Edit embed','source',onEdit);edit.classList.add('pdf-missing-edit');root.append(edit)}return;
     }
-    cleanup();status.textContent='Не удалось отобразить PDF. ';
-    const link=document.createElement('a');link.href=src;link.textContent='Открыть PDF';link.target='_blank';link.rel='noopener noreferrer';status.append(link);
+    cleanup();setLocalizedText(status, "webobsidian.-pdf-4dac1a", {}, "textContent");
+    const link=document.createElement('a');link.href=src;setLocalizedText(link, "webobsidian.-pdf-3f9328", {}, "textContent");link.target='_blank';link.rel='noopener noreferrer';status.append(link);
     console.warn('PDF viewer:',error);
   });
   return root;

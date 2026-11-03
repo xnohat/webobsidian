@@ -1,3 +1,5 @@
+import {translateLabel as uiLabel} from "../lib/i18n/runtime";
+import {t as uiText, useLanguage} from "../lib/i18n/runtime";
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../lib/store';
 import { api, type NoteMatches } from '../lib/api';
@@ -9,10 +11,10 @@ const MD_RE = /\.(md|markdown)$/i;
 const name = (p: string) => p.split('/').pop()?.replace(MD_RE, '') ?? p;
 
 const TABS = [
-  { id: 'backlinks', icon: 'link', title: 'Backlinks' },
-  { id: 'outgoing', icon: 'arrow-up-right', title: 'Outgoing links' },
-  { id: 'tags', icon: 'hash', title: 'Tags' },
-  { id: 'outline', icon: 'list', title: 'Outline' },
+  { id: 'backlinks', icon: 'link', get title() {return uiText("plugins.backlinks.name");} },
+  { id: 'outgoing', icon: 'arrow-up-right', get title() {return uiText("webobsidian.outgoing-links-f4ba79");} },
+  { id: 'tags', icon: 'hash', get title() {return uiText("webobsidian.tags-848eed");} },
+  { id: 'outline', icon: 'list', get title() {return uiText("plugins.outline.name");} },
 ] as const;
 
 function Section({
@@ -28,11 +30,13 @@ function Section({
   onToggle: () => void;
   children: React.ReactNode;
 }) {
+  const languageRevision = useLanguage().revision;
+
   return (
     <>
       <div className="section-head" onClick={onToggle}>
         <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
-        <span>{title}</span>
+        <span>{uiLabel(title)}</span>
         <span className="count">{count}</span>
       </div>
       {open && children}
@@ -42,6 +46,8 @@ function Section({
 
 /** Linked mentions (backlinks index) + Unlinked mentions (plain-text title hits). */
 function BacklinksPanel() {
+  const languageRevision = useLanguage().revision;
+
   const activePath = useStore((s) => s.activePath);
   const content = useStore((s) => s.content);
   const openFile = useStore((s) => s.openFile);
@@ -92,28 +98,28 @@ function BacklinksPanel() {
     <>
       <div className="nav-header">
         <span className="nav-title">
-          {activePath && MD_RE.test(activePath) ? `Backlinks for ${name(activePath)}` : 'Backlinks'}
+          {activePath && MD_RE.test(activePath) ? uiText("webobsidian.backlinks-for-value0-35ec2b", {value0: name(activePath)}) : uiText("plugins.backlinks.name")}
         </span>
       </div>
       <div className="sidebar-body">
-        <Section title="Linked mentions" count={linked.length} open={openLinked} onToggle={() => setOpenLinked(!openLinked)}>
-          {linked.length === 0 && <div className="panel-item">No backlinks found.</div>}
+        <Section title={uiText("plugins.backlinks.label-linked-mentions")} count={linked.length} open={openLinked} onToggle={() => setOpenLinked(!openLinked)}>
+          {linked.length === 0 && <div className="panel-item">{uiText("plugins.backlinks.label-no-backlinks")}</div>}
           {linked.map((b) => (
             <div key={b} className="mention-box">
               <div className="mention-src" onClick={() => openFile(b)}>
                 {name(b)}
               </div>
-              <div style={{ color: 'var(--text-faint)' }}>links to {name(activePath ?? '')}</div>
+              <div style={{ color: 'var(--text-faint)' }}>{uiText("webobsidian.links-to-d5c72a")} {name(activePath ?? '')}</div>
             </div>
           ))}
         </Section>
         <Section
-          title="Unlinked mentions"
+          title={uiText("webobsidian.unlinked-mentions-89b3dd")}
           count={unlinked.length}
           open={openUnlinked}
           onToggle={() => setOpenUnlinked(!openUnlinked)}
         >
-          {unlinked.length === 0 && <div className="panel-item">No unlinked mentions found.</div>}
+          {unlinked.length === 0 && <div className="panel-item">{uiText("plugins.backlinks.label-no-unlinked-mentions")}</div>}
           {unlinked.map((m) => (
             <div key={m.path} className="mention-box">
               <div className="mention-src" onClick={() => openFile(m.path)}>
@@ -136,6 +142,8 @@ function BacklinksPanel() {
 
 /** Every wikilink in the active note, resolved (exists) or not (click creates). */
 function OutgoingPanel() {
+  const languageRevision = useLanguage().revision;
+
   const activePath = useStore((s) => s.activePath);
   const content = useStore((s) => s.content);
   const openWikilink = useStore((s) => s.openWikilink);
@@ -152,7 +160,7 @@ function OutgoingPanel() {
       }
     }
     return out.slice(0, 200);
-  }, [content]);
+  }, [content, languageRevision]);
 
   useEffect(() => {
     let stale = false;
@@ -182,15 +190,15 @@ function OutgoingPanel() {
     <>
       <div className="nav-header">
         <span className="nav-title">
-          {activePath && MD_RE.test(activePath) ? `Outgoing links from ${name(activePath)}` : 'Outgoing links'}
+          {activePath && MD_RE.test(activePath) ? uiText("webobsidian.outgoing-links-from-value0-118524", {value0: name(activePath)}) : uiText("webobsidian.outgoing-links-f4ba79")}
         </span>
       </div>
       <div className="sidebar-body">
         <div className="section-head" style={{ cursor: 'default' }}>
-          <span>Links</span>
+          <span>{uiText("webobsidian.links-014bcd")}</span>
           <span className="count">{links.length}</span>
         </div>
-        {links.length === 0 && <div className="panel-item">No outgoing links.</div>}
+        {links.length === 0 && <div className="panel-item">{uiText("webobsidian.no-outgoing-links-ecad85")}</div>}
         {links.map((t) => (
           <div key={t} className="outgoing-item" onClick={() => openWikilink(t)} title={resolved[t] ?? t}>
             <Icon name="file-text" size={14} />
@@ -199,12 +207,12 @@ function OutgoingPanel() {
         ))}
         {unresolved.length > 0 && (
           <div className="section-head" style={{ cursor: 'default' }}>
-            <span>Unresolved</span>
+            <span>{uiText("webobsidian.unresolved-eeccd8")}</span>
             <span className="count">{unresolved.length}</span>
           </div>
         )}
         {unresolved.map((t) => (
-          <div key={t} className="outgoing-item unresolved" onClick={() => openWikilink(t)} title="Not created yet — click to create">
+          <div key={t} className="outgoing-item unresolved" onClick={() => openWikilink(t)} title={uiText("webobsidian.not-created-yet-click-to-create-d86f92")}>
             <Icon name="file-plus" size={14} />
             <span>{t}</span>
           </div>
@@ -215,15 +223,17 @@ function OutgoingPanel() {
 }
 
 function OutlinePanel() {
+  const languageRevision = useLanguage().revision;
+
   const content = useStore((s) => s.content);
   const heads = outline(content);
   return (
     <>
       <div className="nav-header">
-        <span className="nav-title">Outline</span>
+        <span className="nav-title">{uiText("plugins.outline.name")}</span>
       </div>
       <div className="sidebar-body">
-        {heads.length === 0 && <div className="panel-item">No headings</div>}
+        {heads.length === 0 && <div className="panel-item">{uiText("webobsidian.no-headings-3c425f")}</div>}
         {heads.map((h, i) => (
           <div key={i} className="outline-item" style={{ paddingLeft: 10 + (h.level - 1) * 12 }}>
             {h.text}
@@ -235,6 +245,8 @@ function OutlinePanel() {
 }
 
 export default function RightSidebar() {
+  const languageRevision = useLanguage().revision;
+
   const rightPanel = useStore((s) => s.rightPanel);
   const setRightPanel = useStore((s) => s.setRightPanel);
 
@@ -252,19 +264,19 @@ export default function RightSidebar() {
           </button>
         ))}
       </div>
-      {rightPanel === 'backlinks' && <BacklinksPanel />}
-      {rightPanel === 'outgoing' && <OutgoingPanel />}
-      {rightPanel === 'tags' && (
+      {rightPanel === "backlinks" && <BacklinksPanel />}
+      {rightPanel === "outgoing" && <OutgoingPanel />}
+      {rightPanel === "tags" && (
         <>
           <div className="nav-header">
-            <span className="nav-title">Tags</span>
+            <span className="nav-title">{uiText("webobsidian.tags-848eed")}</span>
           </div>
           <div className="sidebar-body">
             <TagsPanel />
           </div>
         </>
       )}
-      {rightPanel === 'outline' && <OutlinePanel />}
+      {rightPanel === "outline" && <OutlinePanel />}
     </div>
   );
 }

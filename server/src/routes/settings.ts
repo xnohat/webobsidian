@@ -9,6 +9,7 @@ import { CodeFileViewerSchema, getSettings, updateSettings, redactSettings, ensu
 import { config } from '../config.js';
 import { purgeExpiredTrash } from '../services/trashretention.js';
 import {getVaultPreferences} from '../services/vaultPreferences.js';
+import {LanguagePackSchema} from '../services/settings.js';
 
 export const settingsRouter = Router();
 settingsRouter.use(requireAuth);
@@ -26,6 +27,11 @@ settingsRouter.put(
   '/',
   asyncHandler(async (req, res) => {
     const body = req.body ?? {};
+    if (body.ui?.languagePack !== undefined && body.ui.languagePack !== null) {
+      const parsed = LanguagePackSchema.safeParse(body.ui.languagePack);
+      if (!parsed.success) throw Object.assign(new Error('Invalid language pack'), {status:400});
+      body.ui.languagePack = parsed.data;
+    }
     if(body.ui?.codeFileViewer!==undefined){const parsed=CodeFileViewerSchema.safeParse(body.ui.codeFileViewer);if(!parsed.success)throw Object.assign(new Error('Invalid code viewer settings'),{status:400});body.ui.codeFileViewer=parsed.data;}
     const previousVault = (await getSettings()).vault;
     // A changed vault.path turns the whole files API into read/write over that

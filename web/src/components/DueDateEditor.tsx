@@ -1,3 +1,4 @@
+import {t as uiText, useLanguage} from "../lib/i18n/runtime";
 import { useEffect, useRef, useState } from 'react';
 
 /**
@@ -16,6 +17,8 @@ export default function DueDateEditor({
   onCommit: (due: string) => void;
   onCancel: () => void;
 }) {
+  const languageRevision = useLanguage().revision;
+
   const isDate = !!value && /^\d{4}-\d{2}-\d{2}$/.test(value);
   const [draft, setDraft] = useState(isDate ? value : '');
   const settled = useRef(false);
@@ -59,7 +62,7 @@ export default function DueDateEditor({
         className="due-editor-input"
         type="date"
         value={draft}
-        aria-label="Due date"
+        aria-label={uiText("webobsidian.due-date-4c1aee")}
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter') commit();
@@ -69,14 +72,13 @@ export default function DueDateEditor({
       <button
         type="button"
         className="due-editor-clear"
-        title="Clear the due date (due: none)"
+        title={uiText("webobsidian.clear-the-due-date-due-none-252ff6")}
         onClick={() => {
           settled.current = true;
           onCommit('none');
         }}
       >
-        Clear
-      </button>
+        {uiText("plugins.file-recovery.button-clear-history")} </button>
     </span>
   );
 }

@@ -34,7 +34,17 @@ test('browser zoom and keyboard viewport keep toolbar, draft status, menus and p
  window.checkDesktop=async(sidebar=220)=>{
  document.querySelector('#pane').style.width='calc(100vw - '+(sidebar+12)+'px)';document.querySelector('#pane').style.marginLeft=sidebar+'px';
  const bar=document.querySelector('.format-toolbar > .toolbar-surface');
- await settle(()=>Array.from(bar.children).filter(n=>!n.classList.contains('toolbar-measure')).every(n=>n.getBoundingClientRect().right<=bar.getBoundingClientRect().right+1));
+ await document.fonts.ready;
+ // ResizeObserver can replace the overflow contents even while both the old
+ // and new rows fit. Wait for stable geometry and commands before opening More.
+ let previousLayout,stableSamples=0;
+ await settle(()=>{
+  const children=Array.from(bar.children).filter(n=>!n.classList.contains('toolbar-measure'));
+  const bounds=bar.getBoundingClientRect();
+  const layout=JSON.stringify([bounds.toJSON(),children.map(n=>[n.getAttribute('aria-label'),n.getBoundingClientRect().toJSON()])]);
+  stableSamples=layout===previousLayout?stableSamples+1:0;previousLayout=layout;
+  return stableSamples>=2&&children.every(n=>n.getBoundingClientRect().right<=bounds.right+1);
+ });
  check(inside(bar),'desktop toolbar bounds '+JSON.stringify({sidebar,viewport:[innerWidth,innerHeight],visual:{width:visualViewport.width,height:visualViewport.height},rect:bar.getBoundingClientRect().toJSON()}));
  const more=bar.querySelector('[aria-label="More"]');if(more){more.click();await settle(()=>!!document.querySelector('[role="menu"]'));check(inside(document.querySelector('[role="menu"]')),'zoom menu bounds');document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));}
  check(view.state.selection.main.to===5,'zoom keeps selection');

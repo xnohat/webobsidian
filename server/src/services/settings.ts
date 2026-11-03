@@ -7,6 +7,12 @@ import { isDefaultPasswordActive } from './password-policy.js';
 
 /** ---- Schema (PRD §6) ---------------------------------------------------- */
 
+export const LanguagePackSchema = z.object({
+  version: z.literal(1),
+  name: z.string().min(1).max(255),
+  text: z.string().max(5_000_000),
+});
+
 const ApiKeySchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -121,6 +127,7 @@ const SettingsSchema = z.object({
       showInlineTitle: z.boolean().default(true),
       codeFileViewer: CodeFileViewerSchema.optional().catch(undefined),
       editingToolbar: EditingToolbarSchema.optional().catch(undefined),
+      languagePack: LanguagePackSchema.nullable().optional().catch(undefined),
     })
     .prefault({}),
   plugins: z

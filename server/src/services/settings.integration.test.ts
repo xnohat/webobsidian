@@ -27,6 +27,19 @@ afterEach(async () => {
 });
 
 describe('community integration: preserve existing trash by default', () => {
+  it('persists a shared language pack, reloads it and supports clearing it', async () => {
+    const settings = await import('./settings.js');
+    const pack = {version:1 as const,name:'custom.txt',text:'[interface.settings]\ntranslation=Preferences'};
+    await settings.updateSettings(d => {d.ui.languagePack = pack;});
+    expect((await settings.getSettings()).ui.languagePack).toEqual(pack);
+    vi.resetModules();
+    const reloaded = await import('./settings.js');
+    expect((await reloaded.getSettings()).ui.languagePack).toEqual(pack);
+    await reloaded.updateSettings(d => {d.ui.languagePack = null;});
+    expect(JSON.parse(await fs.readFile(settingsFile,'utf8')).ui.languagePack).toBeNull();
+    expect(reloaded.LanguagePackSchema.safeParse({...pack,text:'x'.repeat(5_000_001)}).success).toBe(false);
+    expect(reloaded.LanguagePackSchema.safeParse({...pack,version:2}).success).toBe(false);
+  });
   it('keeps disk and cache unchanged when persistence fails',async()=>{
     const {getSettings,updateSettings}=await import('./settings.js');const before=await getSettings();
     const rename=vi.spyOn(fs,'rename').mockRejectedValueOnce(new Error('fixture disk failure'));

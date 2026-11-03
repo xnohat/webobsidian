@@ -1,3 +1,4 @@
+import {t as uiText, useLanguage} from "../lib/i18n/runtime";
 import { useEffect, useRef, useState } from 'react';
 import { useStore, type TreeSort } from '../lib/store';
 import { api, type TreeNode } from '../lib/api';
@@ -10,6 +11,8 @@ import { useVaultPreferences } from '../lib/vaultPreferences';
 
 /** Inline rename box shown in place of a tree row's name (Obsidian-style). */
 function RenameInput({ node, onDone }: { node: TreeNode; onDone: () => void }) {
+  const languageRevision = useLanguage().revision;
+
   const loadTree = useStore((s) => s.loadTree);
   const renamePath = useStore((s) => s.renamePath);
   const notify = useStore((s) => s.notify);
@@ -41,7 +44,7 @@ function RenameInput({ node, onDone }: { node: TreeNode; onDone: () => void }) {
         await renamePath(node.path, to);
         finalPath = to;
       } catch (e: any) {
-        notify(e?.message ?? 'Rename failed');
+        notify(e?.message ?? uiText("webobsidian.rename-failed-85aa47"));
       }
     }
     await loadTree();
@@ -120,12 +123,12 @@ async function moveItemsTo(paths: string[], targetDir: string): Promise<void> {
       await renamePath(from, to);
       moved++;
     } catch (err: any) {
-      notify(err?.message ?? 'Move failed');
+      notify(err?.message ?? uiText("webobsidian.move-failed-795434"));
     }
   }
   setSelected([]);
   await loadTree();
-  if (moved > 1) notify(`Moved ${moved} items`);
+  if (moved > 1) notify(uiText("webobsidian.moved-value0-items-576aa1", {value0: moved}));
 }
 
 /** Visible tree rows in display order — used to resolve a Shift-click range. */
@@ -152,6 +155,8 @@ function uniqueChildName(tree: TreeNode | null, targetDir: string, base: string)
 }
 
 function Node({ node, depth }: { node: TreeNode; depth: number }) {
+  const languageRevision = useLanguage().revision;
+
   const expanded = useStore((s) => s.expanded);
   const toggleFolder = useStore((s) => s.toggleFolder);
   const open = expanded.includes(node.path); // persisted across reloads
@@ -224,8 +229,8 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
     const {values:deletePreferences}=await api.vaultPreferences();
     const rootNode = useStore.getState().tree;
     const hasFolder = paths.some((p) => findNode(rootNode, p)?.type === 'folder');
-    const detail = hasFolder ? 'Folders and everything inside them will be removed.' : undefined;
-    if (!(await confirmDialog(`Delete ${paths.length} item${paths.length > 1 ? 's' : ''}?`, { confirmLabel: 'Delete', danger: true, detail }))) return;
+    const detail = hasFolder ? uiText('webobsidian.delete-folders') : undefined;
+    if (!(await confirmDialog(uiText('webobsidian.confirm-delete-items',{count:paths.length}), { confirmLabel: uiText('dialogue.button-delete'), danger: true, detail }))) return;
     let n = 0;
     for (const p of paths) {
       const r = await deletePath(p,false,deletePreferences.deleteMode).catch(() => null);
@@ -233,7 +238,7 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
     }
     setSelected([]);
     await loadTree();
-    notify(`Deleted ${n} item${n > 1 ? 's' : ''}`);
+    notify(uiText("webobsidian.deleted-items", {count: n}));
   };
   const doMoveMany = () => setMovePath(useStore.getState().selected);
 
@@ -244,14 +249,14 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
       // count from the raw tree: the rendered node omits hidden attachment folders
       const n = countDescendants(findNode(useStore.getState().tree, node.path) ?? node);
       detail = n
-        ? `The folder and its contents (${n} item${n === 1 ? '' : 's'}) will be removed.`
-        : 'The empty folder will be removed.';
+        ? uiText('webobsidian.delete-folder-contents',{count:n})
+        : uiText('webobsidian.delete-empty-folder');
     }
     const {values:preferences}=await api.vaultPreferences();
-    if ((!preferences.promptDelete&&preferences.deleteMode!=='permanent'&&node.type==='file')||await confirmDialog(`Delete "${node.name}"?`, { confirmLabel: 'Delete', danger: true, detail })) {
+    if ((!preferences.promptDelete&&preferences.deleteMode!=='permanent'&&node.type==='file')||await confirmDialog(uiText('webobsidian.confirm-delete-file',{name:node.name}), { confirmLabel: uiText('dialogue.button-delete'), danger: true, detail })) {
       const r = await deletePath(node.path,false,preferences.deleteMode);
       await loadTree();
-      notify(r.deleted ? 'Deleted permanently' : 'Moved to trash');
+      notify(r.deleted ? uiText("webobsidian.deleted-permanently-ca75d5") : uiText("webobsidian.moved-to-trash-0987dd"));
     }
   };
 
@@ -263,13 +268,13 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
     const copyPath = dot > 0 ? `${node.path.slice(0, dot)} copy${node.path.slice(dot)}` : `${node.path} copy`;
     await api.write(copyPath, content);
     await loadTree();
-    notify('Made a copy');
+    notify(uiText("webobsidian.made-a-copy-7728ff"));
   };
   const doMove = () => setMovePath(node.path);
 
   const doClipboard = (mode: 'copy' | 'cut') => () => {
     setClipboard({ path: node.path, mode });
-    notify(mode === 'cut' ? 'Cut' : 'Copied');
+    notify(mode === "cut" ? uiText("interface.menu.cut") : uiText("webobsidian.copied-8e3df4"));
   };
   const doPaste = async () => {
     const clip = useStore.getState().clipboard;
@@ -277,7 +282,7 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
     const targetDir = isFolder ? node.path : parentDir(node.path);
     // Never paste a folder into itself or one of its own descendants.
     if (clip.path === targetDir || targetDir === clip.path || targetDir.startsWith(`${clip.path}/`)) {
-      notify('Cannot paste into itself');
+      notify(uiText("webobsidian.cannot-paste-into-itself-c7da78"));
       return;
     }
     const base = clip.path.split('/').pop()!;
@@ -289,9 +294,9 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
         await renamePath(clip.path, to);
         setClipboard(null);
         await loadTree();
-        notify('Moved');
+        notify(uiText("webobsidian.moved-0fc28d"));
       } catch (e: any) {
-        notify(e?.message ?? 'Paste failed');
+        notify(e?.message ?? uiText("webobsidian.paste-failed-18bdc4"));
       }
       return;
     }
@@ -301,19 +306,19 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
     try {
       await api.copy(clip.path, to);
       await loadTree();
-      notify('Pasted');
+      notify(uiText("webobsidian.pasted-a3a089"));
     } catch (e: any) {
-      notify(e?.message ?? 'Paste failed');
+      notify(e?.message ?? uiText("webobsidian.paste-failed-18bdc4"));
     }
   };
 
   const copyPath = () => {
     navigator.clipboard?.writeText(node.path).catch(() => {});
-    notify('Path copied');
+    notify(uiText("webobsidian.path-copied-12ec0d"));
   };
   const copyUrl = () => {
     navigator.clipboard?.writeText(`${location.origin}${pathToUrl(node.path)}`).catch(() => {});
-    notify('URL copied');
+    notify(uiText("webobsidian.url-copied-73a9be"));
   };
 
   const onContext = (e: React.MouseEvent) => {
@@ -326,9 +331,9 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
         x: e.clientX,
         y: e.clientY,
         items: [
-          { label: `Move ${sel.length} items to…`, onClick: doMoveMany },
+          { get label() {return uiText("webobsidian.move-value0-items-to-72feb2", {value0: sel.length});}, onClick: doMoveMany },
           { label: '', separator: true },
-          { label: `Delete ${sel.length} items`, danger: true, onClick: doDeleteMany },
+          { get label() {return uiText("webobsidian.delete-value0-items-f93b00", {value0: sel.length});}, danger: true, onClick: doDeleteMany },
         ],
       });
       return;
@@ -337,40 +342,40 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
     if (!sel.includes(node.path)) { setSelected([node.path]); setSelectAnchor(node.path); }
     const items = isFolder
       ? [
-          { label: 'New note', onClick: () => newNote(node.path) },
-          { label: 'New canvas', onClick: () => newCanvas(node.path) },
-          { label: 'New folder', onClick: () => newFolder(node.path) },
+          { get label() {return uiText("plugins.file-explorer.menu-opt-new-note");}, onClick: () => newNote(node.path) },
+          { get label() {return uiText("plugins.canvas.action-new-canvas");}, onClick: () => newCanvas(node.path) },
+          { get label() {return uiText("plugins.file-explorer.menu-opt-new-folder");}, onClick: () => newFolder(node.path) },
           { label: '', separator: true },
-          { label: 'Copy', onClick: doClipboard('copy') },
-          { label: 'Cut', onClick: doClipboard('cut') },
-          ...(clipboard ? [{ label: 'Paste', onClick: doPaste }] : []),
+          { get label() {return uiText("interface.menu.copy");}, onClick: doClipboard('copy') },
+          { get label() {return uiText("interface.menu.cut");}, onClick: doClipboard('cut') },
+          ...(clipboard ? [{ get label() {return uiText("interface.menu.paste");}, onClick: doPaste }] : []),
           { label: '', separator: true },
-          { label: 'Rename…', onClick: doRename },
-          { label: 'Move folder to…', onClick: doMove },
-          { label: 'Copy path', onClick: copyPath },
-          { label: 'Copy URL path', onClick: copyUrl },
+          { get label() {return uiText("webobsidian.rename-94ac9a");}, onClick: doRename },
+          { get label() {return uiText("webobsidian.move-folder-to-84c68b");}, onClick: doMove },
+          { get label() {return uiText("interface.menu.copy-path");}, onClick: copyPath },
+          { get label() {return uiText("webobsidian.copy-url-path-1d4a42");}, onClick: copyUrl },
           { label: '', separator: true },
-          { label: 'Delete', danger: true, onClick: doDelete },
+          { get label() {return uiText("dialogue.button-delete");}, danger: true, onClick: doDelete },
         ]
       : [
-          { label: 'Open', onClick: () => openFile(node.path) },
-          { label: 'Open to the right', onClick: () => openToSide(node.path) },
+          { get label() {return uiText("webobsidian.open-cf9b77");}, onClick: () => openFile(node.path) },
+          { get label() {return uiText("interface.menu.open-to-the-right");}, onClick: () => openToSide(node.path) },
           { label: '', separator: true },
-          { label: bookmarks.includes(node.path) ? 'Remove bookmark' : 'Bookmark', onClick: () => toggleBookmark(node.path) },
+          { label: bookmarks.includes(node.path) ? uiText("webobsidian.remove-bookmark-7da720") : uiText("plugins.bookmarks.label-bookmark"), onClick: () => toggleBookmark(node.path) },
           ...(/\.(md|markdown|canvas)$/i.test(node.path)
-            ? [{ label: 'Share…', icon: 'globe', onClick: () => setShareDialog(node.path) }]
+            ? [{ get label() {return uiText("webobsidian.share-24897b");}, icon: 'globe', onClick: () => setShareDialog(node.path) }]
             : []),
-          { label: 'Make a copy', onClick: doCopy },
+          { get label() {return uiText("plugins.file-explorer.menu-opt-make-copy");}, onClick: doCopy },
           { label: '', separator: true },
-          { label: 'Copy', onClick: doClipboard('copy') },
-          { label: 'Cut', onClick: doClipboard('cut') },
-          ...(clipboard ? [{ label: 'Paste', onClick: doPaste }] : []),
+          { get label() {return uiText("interface.menu.copy");}, onClick: doClipboard('copy') },
+          { get label() {return uiText("interface.menu.cut");}, onClick: doClipboard('cut') },
+          ...(clipboard ? [{ get label() {return uiText("interface.menu.paste");}, onClick: doPaste }] : []),
           { label: '', separator: true },
-          { label: 'Rename…', onClick: doRename },
-          { label: 'Move file to…', onClick: doMove },
-          { label: 'Copy URL path', onClick: copyUrl },
+          { get label() {return uiText("webobsidian.rename-94ac9a");}, onClick: doRename },
+          { get label() {return uiText("webobsidian.move-file-to-ffc312");}, onClick: doMove },
+          { get label() {return uiText("webobsidian.copy-url-path-1d4a42");}, onClick: copyUrl },
           { label: '', separator: true },
-          { label: 'Delete', danger: true, onClick: doDelete },
+          { get label() {return uiText("dialogue.button-delete");}, danger: true, onClick: doDelete },
         ];
     openContextMenu({ x: e.clientX, y: e.clientY, items });
   };
@@ -466,8 +471,8 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
           {!editing && (
             <button
               className="tree-del tree-add"
-              title="New note"
-              aria-label={`New note in ${node.name}`}
+              title={uiText("plugins.file-explorer.menu-opt-new-note")}
+              aria-label={uiText("webobsidian.new-note-in-value0-bb6245", {value0: node.name})}
               draggable={false}
               onClick={(e) => { e.stopPropagation(); void newNote(node.path); }}
               onDoubleClick={(e) => e.stopPropagation()}
@@ -479,8 +484,8 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
           {!editing && (
             <button
               className="tree-del tree-add"
-              title="New canvas"
-              aria-label={`New canvas in ${node.name}`}
+              title={uiText("plugins.canvas.action-new-canvas")}
+              aria-label={uiText("webobsidian.new-canvas-in-value0-ef9429", {value0: node.name})}
               draggable={false}
               onClick={(e) => { e.stopPropagation(); void newCanvas(node.path); }}
               onDoubleClick={(e) => e.stopPropagation()}
@@ -492,10 +497,10 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
           {!editing && (
             <button
               className="tree-del"
-              title="Delete"
-              aria-label={`Delete ${node.name}`}
+              title={uiText("dialogue.button-delete")}
+              aria-label={uiText("webobsidian.delete-value0-ea5388", {value0: node.name})}
               draggable={false}
-              onClick={(e) => { e.stopPropagation(); void doDelete().catch((error: unknown) => notify(error instanceof Error ? error.message : 'Delete failed')); }}
+              onClick={(e) => { e.stopPropagation(); void doDelete().catch((error: unknown) => notify(error instanceof Error ? error.message : uiText("webobsidian.delete-failed-64513b"))); }}
               onDoubleClick={(e) => e.stopPropagation()}
               onContextMenu={(e) => e.stopPropagation()}
             >
@@ -550,17 +555,17 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
         )}
         {bookmarks.includes(node.path) && <Icon name="bookmark" size={12} className="bm-star" />}
         {node.locked && (
-          <span className="lock-badge" title={node.lockReason ?? 'Read-only — maintained by the agent'}>
+          <span className="lock-badge" title={node.lockReason ?? uiText("webobsidian.read-only-maintained-by-the-agent-b93b79")}>
             <Icon name="lock" size={11} />
           </span>
         )}
         {!editing && (
           <button
           className="tree-del"
-          title="Delete"
-          aria-label={`Delete ${node.name}`}
+          title={uiText("dialogue.button-delete")}
+          aria-label={uiText("webobsidian.delete-value0-ea5388", {value0: node.name})}
           draggable={false}
-          onClick={(e) => { e.stopPropagation(); void doDelete().catch((error: unknown) => notify(error instanceof Error ? error.message : 'Delete failed')); }}
+          onClick={(e) => { e.stopPropagation(); void doDelete().catch((error: unknown) => notify(error instanceof Error ? error.message : uiText("webobsidian.delete-failed-64513b"))); }}
           onDoubleClick={(e) => e.stopPropagation()}
           onContextMenu={(e) => e.stopPropagation()}
           >
@@ -634,6 +639,8 @@ function sortTree(
 }
 
 export default function FileTree() {
+  const languageRevision = useLanguage().revision;
+
   const { values: preferences } = useVaultPreferences();
   const rawTree = useStore((s) => s.tree);
   const treeSort = useStore((s) => s.treeSort);
@@ -717,9 +724,9 @@ export default function FileTree() {
         await renamePath(clip.path, base);
         setClipboard(null);
         await loadTree();
-        notify('Moved');
+        notify(uiText("webobsidian.moved-0fc28d"));
       } catch (e: any) {
-        notify(e?.message ?? 'Paste failed');
+        notify(e?.message ?? uiText("webobsidian.paste-failed-18bdc4"));
       }
       return;
     }
@@ -727,9 +734,9 @@ export default function FileTree() {
     try {
       await api.copy(clip.path, name);
       await loadTree();
-      notify('Pasted');
+      notify(uiText("webobsidian.pasted-a3a089"));
     } catch (e: any) {
-      notify(e?.message ?? 'Paste failed');
+      notify(e?.message ?? uiText("webobsidian.paste-failed-18bdc4"));
     }
   };
 
@@ -739,25 +746,24 @@ export default function FileTree() {
       x: e.clientX,
       y: e.clientY,
       items: [
-        { label: 'New note', onClick: () => newNote('') },
-        { label: 'New canvas', onClick: () => newCanvas('') },
-        { label: 'New folder', onClick: () => newFolder('') },
+        { get label() {return uiText("plugins.file-explorer.menu-opt-new-note");}, onClick: () => newNote('') },
+        { get label() {return uiText("plugins.canvas.action-new-canvas");}, onClick: () => newCanvas('') },
+        { get label() {return uiText("plugins.file-explorer.menu-opt-new-folder");}, onClick: () => newFolder('') },
         ...(clipboard
-          ? [{ label: '', separator: true }, { label: 'Paste', onClick: pasteToRoot }]
+          ? [{ label: '', separator: true }, { get label() {return uiText("interface.menu.paste");}, onClick: pasteToRoot }]
           : []),
       ],
     });
   };
 
-  if (!tree) return <div style={{ padding: 12, color: 'var(--text-faint)' }}>Loading…</div>;
+  if (!tree) return <div style={{ padding: 12, color: 'var(--text-faint)' }}>{uiText("webobsidian.loading-33ce41")}</div>;
   if (!tree.children?.length)
     return (
       <div
         onContextMenu={onRootContext}
         style={{ padding: 12, color: 'var(--text-faint)', minHeight: '100%' }}
       >
-        Vault is empty.
-      </div>
+        {uiText("webobsidian.vault-is-empty-85d4ac")} </div>
     );
   return (
     <div

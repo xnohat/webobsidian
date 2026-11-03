@@ -1,3 +1,5 @@
+import {setLocalizedText} from './i18n/runtime';
+import {t as uiText} from "./i18n/runtime";
 import {
   Decoration,
   DecorationSet,
@@ -6,7 +8,7 @@ import {
   ViewUpdate,
   WidgetType,
 } from '@codemirror/view';
-import {mermaidConfig} from './mermaidConfig';
+import {mountDiagram,mountDiagramBlocks} from './diagram';
 import { frontmatterTitle } from './title';
 import {propertyIconSvg} from './propertyPresentation';
 import {createPdfViewer,destroyPdfViewer} from './pdfViewer';
@@ -355,7 +357,7 @@ class ImageWidget extends WidgetType {
     // uses the file, the attachment itself (decided by the delete handler).
     const del = document.createElement('span');
     del.className = 'cm-image-delete';
-    del.title = 'Delete image';
+    setLocalizedText(del, "editor.menu.delete-image", {}, "title");
     del.setAttribute('role', 'button');
     del.innerHTML = TRASH_SVG;
     del.addEventListener('mousedown', (e) => {
@@ -633,7 +635,7 @@ export function setLivePreviewNoteEmbedProvider(fn: (target: string,kind?:'wiki'
 
 function embedNotFound(el: HTMLElement, target: string) {
   el.classList.add('cm-embed-missing');
-  el.textContent = /^ru(?:-|$)/i.test(navigator.language)?`«${target}» не может быть найдена.`:`“${target}” could not be found.`;
+  setLocalizedText(el, "webobsidian.missing-file", {name:target}, "textContent", `«${target}» не может быть найдена.`);
 }
 
 class CanvasEmbedWidget extends WidgetType{
@@ -669,14 +671,14 @@ class NoteEmbedWidget extends WidgetType {
     if (!this.target.includes('#')) box.append(title);
     box.append(content);
     const origin=notePath;
-    let destroyed=false,disposePdfs=()=>{},disposeCanvases=()=>{};
-    noteEmbedCleanups.set(box,()=>{destroyed=true;disposePdfs();disposeCanvases()});
+    let destroyed=false,disposePdfs=()=>{},disposeCanvases=()=>{},disposeDiagrams=()=>{};
+    noteEmbedCleanups.set(box,()=>{destroyed=true;disposePdfs();disposeCanvases();disposeDiagrams()});
     void noteEmbedProvider(this.target,this.kind).then((res) => {
       if(destroyed)return;
       if (!res) {
         content.remove();
         const at=this.target.indexOf('#'),fragment=at<0?'':this.target.slice(at+1),name=title.textContent||notePath.replace(/\.(md|markdown)$/i,'').split('/').pop()||'';
-        if(fragment){const ru=/^ru(?:-|$)/i.test(navigator.language);title.textContent=ru?`Не удалось найти «${fragment}» в ${name}`:`Could not find “${fragment}” in ${name}`;box.append(title)}
+        if(fragment){setLocalizedText(title,"webobsidian.missing-fragment",{fragment,name},"textContent",`Не удалось найти «${fragment}» в ${name}`);box.append(title)}
         box.classList.add('is-unresolved');return;
       }
       content.innerHTML = res.html; // sanitized upstream (rehype-sanitize)
@@ -684,6 +686,7 @@ class NoteEmbedWidget extends WidgetType {
       addNoteEmbedOpenButtons(content,openLink);
       disposePdfs=mountPdfEmbeds(content,origin,(target,from,kind)=>{void (kind==='markdown'?useStore.getState().openWikilink(target,kind,from):useStore.getState().openAttachment(target,from))},(target,origin,kind)=>pdfFileActions(target,origin,{linkKind:kind}));
       disposeCanvases=mountCanvasEmbeds(content,origin,(target,from,kind)=>openLink(target,kind,from));
+      disposeDiagrams=mountDiagramBlocks(content,res.path??origin);
       mountImageActions(content);
       content.addEventListener('mousedown', (e) => {
         const a = (e.target as HTMLElement).closest('[data-wikilink],a[data-link-kind="markdown"]') as HTMLAnchorElement | null;
@@ -710,17 +713,7 @@ class NoteEmbedWidget extends WidgetType {
 
 /* ---------------- mermaid (lazy, like Obsidian) ---------------- */
 
-let mermaidPromise: Promise<typeof import('mermaid')['default']> | null = null;
-function ensureMermaid() {
-  if (!mermaidPromise) {
-    mermaidPromise = import('mermaid').then((m) => {
-      m.default.initialize(mermaidConfig);
-      return m.default;
-    });
-  }
-  return mermaidPromise;
-}
-let mermaidSeq = 0;
+const diagramCleanups=new WeakMap<HTMLElement,()=>void>();
 
 class MermaidWidget extends WidgetType {
   constructor(readonly code: string,readonly source:SourceRange,readonly canEditSource:boolean) {
@@ -735,20 +728,11 @@ class MermaidWidget extends WidgetType {
   toDOM(view:EditorView) {
     const div = document.createElement('div');
     div.className = 'mermaid cm-mermaid';
-    div.textContent = '…';
-    void ensureMermaid()
-      .then((mermaid) => mermaid.render(`cm-mmd-${++mermaidSeq}`, this.code))
-      .then(({ svg }) => {
-        div.innerHTML = svg;if(this.canEditSource)addBlockSourceAction(div,view,this.source);if(div.isConnected)view.requestMeasure();
-      })
-      .catch((err) => {
-        div.classList.add('mod-error');
-        div.textContent = String(err?.message ?? err);
-        // mermaid leaves an orphaned error element in <body> on parse failure
-        document.getElementById(`dcm-mmd-${mermaidSeq}`)?.remove();
-      });
+    diagramCleanups.set(div,mountDiagram(div,this.code,{sourcePath:notePath,onRender:()=>{if(div.isConnected)view.requestMeasure()}}));
+    if(this.canEditSource)addBlockSourceAction(div,view,this.source);
     return div;
   }
+  destroy(dom:HTMLElement){diagramCleanups.get(dom)?.();diagramCleanups.delete(dom)}
 }
 
 function buildMermaid(state: EditorState): DecorationSet {
@@ -840,7 +824,7 @@ class HtmlPreviewWidget extends WidgetType {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'cm-html-render-btn';
-    btn.textContent = this.rendered ? 'Hide HTML' : 'Render HTML';
+    btn.textContent = this.rendered ? uiText("webobsidian.hide-html-0fab51") : uiText("webobsidian.render-html-e2fc37");
     btn.addEventListener('mousedown', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -1294,32 +1278,32 @@ class TableWidget extends WidgetType {
 
     // rowIdx: -1 for header row, otherwise body row index.
     const cellMenu = (col: number, rowIdx: number): LpMenuItem[] => [
-      { label: 'Insert column left', icon: 'plus', onClick: () => insertColumn(col) },
-      { label: 'Insert column right', icon: 'plus', onClick: () => insertColumn(col + 1) },
-      { label: 'Insert row above', icon: 'plus', onClick: () => insertRow(Math.max(0, rowIdx)) },
-      { label: 'Insert row below', icon: 'plus', onClick: () => insertRow(rowIdx + 1) },
+      { get label() {return uiText("webobsidian.insert-column-left-ef42ff");}, icon: 'plus', onClick: () => insertColumn(col) },
+      { get label() {return uiText("webobsidian.insert-column-right-d39b92");}, icon: 'plus', onClick: () => insertColumn(col + 1) },
+      { get label() {return uiText("webobsidian.insert-row-above-506ad5");}, icon: 'plus', onClick: () => insertRow(Math.max(0, rowIdx)) },
+      { get label() {return uiText("webobsidian.insert-row-below-168f7d");}, icon: 'plus', onClick: () => insertRow(rowIdx + 1) },
       { label: '', separator: true },
-      { label: 'Move column left', onClick: () => moveColumn(col, col - 1) },
-      { label: 'Move column right', onClick: () => moveColumn(col, col + 1) },
+      { get label() {return uiText("table.action-column-left");}, onClick: () => moveColumn(col, col - 1) },
+      { get label() {return uiText("table.action-column-right");}, onClick: () => moveColumn(col, col + 1) },
       ...(rowIdx >= 0
         ? [
-            { label: 'Move row up', onClick: () => moveRow(rowIdx, rowIdx - 1) },
-            { label: 'Move row down', onClick: () => moveRow(rowIdx, rowIdx + 1) },
+            { get label() {return uiText("table.action-row-up");}, onClick: () => moveRow(rowIdx, rowIdx - 1) },
+            { get label() {return uiText("table.action-row-down");}, onClick: () => moveRow(rowIdx, rowIdx + 1) },
           ]
         : []),
       { label: '', separator: true },
       {
-        label: 'Align column',
+        get label() {return uiText("webobsidian.align-column-a52f38");},
         icon: 'align-left',
         submenu: [
-          { label: 'Left', icon: 'align-left', onClick: () => setAlign(col, 'left') },
-          { label: 'Center', icon: 'align-center', onClick: () => setAlign(col, 'center') },
-          { label: 'Right', icon: 'align-right', onClick: () => setAlign(col, 'right') },
+          { get label() {return uiText("webobsidian.left-8ae1c3");}, icon: 'align-left', onClick: () => setAlign(col, 'left') },
+          { get label() {return uiText("webobsidian.center-a23911");}, icon: 'align-center', onClick: () => setAlign(col, 'center') },
+          { get label() {return uiText("webobsidian.right-954daa");}, icon: 'align-right', onClick: () => setAlign(col, 'right') },
         ],
       },
       { label: '', separator: true },
-      { label: 'Delete column', icon: 'trash-2', onClick: () => deleteColumn(col) },
-      ...(rowIdx >= 0 ? [{ label: 'Delete row', icon: 'trash-2', onClick: () => deleteRow(rowIdx) }] : []),
+      { get label() {return uiText("table.action-delete-column");}, icon: 'trash-2', onClick: () => deleteColumn(col) },
+      ...(rowIdx >= 0 ? [{ get label() {return uiText("table.action-delete-row");}, icon: 'trash-2', onClick: () => deleteRow(rowIdx) }] : []),
     ];
 
     // ---- build header + body ----
@@ -1359,7 +1343,7 @@ class TableWidget extends WidgetType {
       const h = document.createElement('div');
       h.className = 'cm-col-handle';
       h.contentEditable = 'false';
-      h.title = 'Select / format column';
+      setLocalizedText(h, "webobsidian.select-format-column-b6b1d2", {}, "title");
       h.addEventListener('mouseenter', () => highlightCol(c, true));
       h.addEventListener('mouseleave', () => highlightCol(c, false));
       h.addEventListener('mousedown', (e) => {
@@ -1375,7 +1359,7 @@ class TableWidget extends WidgetType {
       const h = document.createElement('div');
       h.className = 'cm-row-handle';
       h.contentEditable = 'false';
-      h.title = 'Select / format row';
+      setLocalizedText(h, "webobsidian.select-format-row-9d74cf", {}, "title");
       h.addEventListener('mouseenter', () => highlightRow(tr, true));
       h.addEventListener('mouseleave', () => highlightRow(tr, false));
       h.addEventListener('mousedown', (e) => {
@@ -1389,7 +1373,7 @@ class TableWidget extends WidgetType {
     // ---- hover +column / +row buttons (mousedown so a focused cell flushes) ----
     const addCol = document.createElement('div');
     addCol.className = 'cm-table-addcol';
-    addCol.title = 'Add column';
+    setLocalizedText(addCol, "webobsidian.add-column-e77ea6", {}, "title");
     addCol.textContent = '+';
     addCol.addEventListener('mousedown', (e) => {
       e.preventDefault();
@@ -1397,7 +1381,7 @@ class TableWidget extends WidgetType {
     });
     const addRow = document.createElement('div');
     addRow.className = 'cm-table-addrow';
-    addRow.title = 'Add row';
+    setLocalizedText(addRow, "webobsidian.add-row-f648af", {}, "title");
     addRow.textContent = '+';
     addRow.addEventListener('mousedown', (e) => {
       e.preventDefault();
@@ -1620,12 +1604,12 @@ function displayTypeOf(p: Prop): string {
 }
 // The six selectable types shown in the right-click "Property type" submenu.
 const PROP_TYPE_OPTIONS: { label: string; dt: string }[] = [
-  { label: 'Text', dt: 'text' },
-  { label: 'List', dt: 'list' },
-  { label: 'Number', dt: 'number' },
-  { label: 'Checkbox', dt: 'checkbox' },
-  { label: 'Date', dt: 'date' },
-  { label: 'Date & time', dt: 'datetime' },
+  { get label() {return uiText("properties.types.option-text");}, dt: 'text' },
+  { get label() {return uiText("webobsidian.list-a1fffa");}, dt: 'list' },
+  { get label() {return uiText("webobsidian.number-b7baa1");}, dt: 'number' },
+  { get label() {return uiText("properties.types.option-checkbox");}, dt: 'checkbox' },
+  { get label() {return uiText("properties.types.option-date");}, dt: 'date' },
+  { get label() {return uiText("properties.types.option-datetime");}, dt: 'datetime' },
 ];
 
 class FrontmatterWidget extends WidgetType {
@@ -1747,7 +1731,7 @@ class FrontmatterWidget extends WidgetType {
 
     const propMenu = (key: string, idx: number, curDt: string): LpMenuItem[] => [
       {
-        label: 'Property type',
+        get label() {return uiText("webobsidian.property-type-8ad7ea");},
         icon: 'list',
         submenu: PROP_TYPE_OPTIONS.map((o) => ({
           label: (o.dt === curDt ? '✓  ' : '  ') + o.label,
@@ -1756,7 +1740,7 @@ class FrontmatterWidget extends WidgetType {
       },
       { label: '', separator: true },
       {
-        label: 'Copy value',
+        get label() {return uiText("webobsidian.copy-value-4c924d");},
         icon: 'file-text',
         onClick: () => {
           const p = readProps()[idx];
@@ -1764,7 +1748,7 @@ class FrontmatterWidget extends WidgetType {
         },
       },
       { label: '', separator: true },
-      { label: 'Remove', icon: 'trash-2', onClick: () => mutate((ps) => ps.splice(idx, 1)) },
+      { get label() {return uiText("webobsidian.remove-e96390");}, icon: 'trash-2', onClick: () => mutate((ps) => ps.splice(idx, 1)) },
     ];
 
     const props = parseFrontmatter(this.yaml);
@@ -1772,7 +1756,7 @@ class FrontmatterWidget extends WidgetType {
     const header = document.createElement('div');
     header.className = 'cm-props-header';
     const ru=/^ru(?:-|$)/i.test(navigator.language);
-    header.textContent = ru?'Свойства':'Properties';
+    setLocalizedText(header,"webobsidian.properties-bc6c88",{},"textContent","Свойства");
     header.setAttribute('role','button');header.tabIndex=0;header.setAttribute('aria-expanded','true');
     const toggleProperties=()=>{const collapsed=box.classList.toggle('is-collapsed');header.setAttribute('aria-expanded',String(!collapsed));view.requestMeasure()};
     header.onclick=toggleProperties;header.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleProperties()}};
@@ -1798,7 +1782,7 @@ class FrontmatterWidget extends WidgetType {
       const btn = document.createElement('span');
       btn.className = 'prop-pick-btn';
       btn.textContent = '▾';
-      btn.title = `Choose a ${key}`;
+      setLocalizedText(btn, "webobsidian.choose-a-value0-7f4d9e", {value0: key}, "title");
       btn.setAttribute('role', 'button');
       btn.setAttribute('aria-label', `Choose a ${key} value`);
       btn.setAttribute('aria-haspopup', 'listbox');
@@ -1859,7 +1843,7 @@ class FrontmatterWidget extends WidgetType {
           // In the note but not in SCHEMA: shown, never rewritten, and labelled as such.
           const hint = document.createElement('span');
           hint.className = 'prop-val-offlist';
-          hint.textContent = 'in this note';
+          setLocalizedText(hint, "webobsidian.in-this-note-daf5dc", {}, "textContent");
           it.appendChild(hint);
         }
         it.addEventListener('mousedown', (e) => {
@@ -1915,9 +1899,9 @@ class FrontmatterWidget extends WidgetType {
           commitChange();
         });
         const wrap=document.createElement('span');wrap.className='prop-date-wrap';
-        const calendar=document.createElement('button');calendar.type='button';calendar.className='prop-date-calendar';calendar.innerHTML=propertyIconSvg(dt);calendar.setAttribute('aria-label',ru?'Выбрать дату':'Choose date');calendar.disabled=this.ro;
+        const calendar=document.createElement('button');calendar.type='button';calendar.className='prop-date-calendar';calendar.innerHTML=propertyIconSvg(dt);setLocalizedText(calendar,'webobsidian.choose-date',{},'aria-label','Выбрать дату');calendar.disabled=this.ro;
         calendar.onclick=e=>{e.preventDefault();try{inp.showPicker()}catch{inp.focus()}};
-        const link=document.createElement('button');link.type='button';link.className='prop-date-link';link.innerHTML=propertyIconSvg('link');link.setAttribute('aria-label',ru?'Открыть заметку даты':'Open date note');link.onclick=e=>{e.preventDefault();if(inp.value)openLink(inp.value.slice(0,10))};
+        const link=document.createElement('button');link.type='button';link.className='prop-date-link';link.innerHTML=propertyIconSvg('link');setLocalizedText(link,'webobsidian.open-date-note',{},'aria-label','Открыть заметку даты');link.onclick=e=>{e.preventDefault();if(inp.value)openLink(inp.value.slice(0,10))};
         wrap.append(calendar,inp,link);return wrap;
       }
       // text (default)
@@ -2037,7 +2021,7 @@ class FrontmatterWidget extends WidgetType {
       icon.className = 'prop-icon';
       icon.innerHTML = propertyIconSvg(renderAsList ? 'list' : dt,p.key);
       row.dataset.propertyKey=p.key;row.dataset.propType=renderAsList?'list':dt;
-      icon.title = renderAsList ? 'list' : dt;
+      icon.title = renderAsList ? uiText("webobsidian.list-38b62b") : dt;
 
       const k = document.createElement('span');
       k.className = 'prop-key';
@@ -2090,7 +2074,7 @@ class FrontmatterWidget extends WidgetType {
           });
           const x = document.createElement('span');
           x.className = 'prop-pill-x';
-          x.innerHTML=propertyIconSvg('close');x.setAttribute('role','button');x.setAttribute('aria-label',ru?'Удалить значение':'Remove value');
+          x.innerHTML=propertyIconSvg('close');x.setAttribute('role','button');setLocalizedText(x,'webobsidian.remove-value',{},'aria-label','Удалить значение');
           x.addEventListener('mousedown', (e) => {
             e.preventDefault();
             mutate((ps) => {
@@ -2105,8 +2089,8 @@ class FrontmatterWidget extends WidgetType {
         }
         const add = document.createElement('span');
         add.className = 'prop-pill-add';
-        add.textContent = '';add.tabIndex=0;add.setAttribute('role','button');add.setAttribute('aria-label',ru?'Добавить значение':'Add item');
-        add.title = 'Add item';
+        add.textContent = '';add.tabIndex=0;add.setAttribute('role','button');setLocalizedText(add,'webobsidian.add-item',{},'aria-label','Добавить значение');
+        setLocalizedText(add, "plugins.bases.command-add-item", {}, "title");
         add.addEventListener('mousedown', (e) => {
           e.preventDefault();
           void startAddItem(p.key, idx, v, add);
@@ -2120,7 +2104,7 @@ class FrontmatterWidget extends WidgetType {
       const del = document.createElement('span');
       del.className = 'prop-del';
       del.textContent = '×';
-      del.title = 'Delete property';
+      setLocalizedText(del, "plugins.properties.opt-delete-properties", {}, "title");
       del.addEventListener('mousedown', (e) => {
         e.preventDefault();
         mutate((ps) => ps.splice(idx, 1));
@@ -2132,7 +2116,7 @@ class FrontmatterWidget extends WidgetType {
 
     const addBtn = document.createElement('div');
     addBtn.className = 'cm-props-add';
-    addBtn.textContent = ru?'+ Добавить свойство':'+ Add property';
+    setLocalizedText(addBtn,"webobsidian.-add-property-e2852e",{},"textContent","+ Добавить свойство");
 
     // Add a property with a name-suggester dropdown (existing vault keys), like Obsidian.
     const startAdd = async () => {

@@ -1,8 +1,11 @@
+import {t as uiText, useLanguage} from "../lib/i18n/runtime";
 import { useEffect, useState } from 'react';
 import { useStore, type ContextMenuItem } from '../lib/store';
 import Icon from './Icon';
 
 function MenuList({ items, onClose }: { items: ContextMenuItem[]; onClose: () => void }) {
+  const languageRevision = useLanguage().revision;
+
   const [openSub, setOpenSub] = useState<number | null>(null);
   return (
     <>
@@ -20,7 +23,7 @@ function MenuList({ items, onClose }: { items: ContextMenuItem[]; onClose: () =>
                 return;
               }
               void Promise.resolve().then(() => it.onClick?.()).catch((error: unknown) => {
-                useStore.getState().notify(error instanceof Error ? error.message : 'Action failed');
+                useStore.getState().notify(error instanceof Error ? error.message : uiText("webobsidian.action-failed-57af94"));
               });
               onClose();
             }}
@@ -41,6 +44,8 @@ function MenuList({ items, onClose }: { items: ContextMenuItem[]; onClose: () =>
 }
 
 export default function ContextMenu() {
+  const languageRevision = useLanguage().revision;
+
   const menu = useStore((s) => s.contextMenu);
   const close = useStore((s) => s.closeContextMenu);
 

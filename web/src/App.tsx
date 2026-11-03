@@ -1,4 +1,6 @@
+import {t as uiText, useLanguage} from "./lib/i18n/runtime";
 import DraftRecovery from './components/DraftRecovery';
+import {loadServerLanguage} from './lib/i18n/server';
 import { useEffect, useState } from 'react';
 import { api, ApiError } from './lib/api';
 import { useStore,resetDraftScope } from './lib/store';
@@ -24,7 +26,16 @@ import { themeClass } from './lib/theme';
 import {applyIndexStatus,refreshIndexStatus,resetIndexStatus,useIndexStatus,indexStatusMessage} from './lib/indexStatus';
 
 export default function App() {
+  const languageRevision = useLanguage().revision;
+
   const authed = useStore((s) => s.authed);
+  useEffect(() => {
+    if (!authed) return;
+    const load = () => {void loadServerLanguage().catch(() => useStore.getState().notify('Could not load the server language. Open Language settings to retry.'));};
+    load();
+    window.addEventListener('focus',load);
+    return () => window.removeEventListener('focus',load);
+  },[authed]);
   const setAuthed = useStore((s) => s.setAuthed);
   const mustChangePassword = useStore((s) => s.mustChangePassword);
   const setMustChangePassword = useStore((s) => s.setMustChangePassword);
@@ -60,7 +71,7 @@ export default function App() {
     if (!authed) {resetDraftScope();resetIndexStatus();return;}
     const treeReady=loadTree();
     // Deep link (/note/<path>) wins over the restored workspace's active note.
-    const codeSettingsReady=api.getSettings().then(s=>{useStore.setState({codeFileViewer:s.ui.codeFileViewer??useStore.getInitialState().codeFileViewer});}).catch(()=>{useStore.setState({codeFileViewer:{...useStore.getInitialState().codeFileViewer,enabled:false}});useStore.getState().notify('Could not load code viewer settings. Reload to retry.',10000);});
+    const codeSettingsReady=api.getSettings().then(s=>{useStore.setState({codeFileViewer:s.ui.codeFileViewer??useStore.getInitialState().codeFileViewer});}).catch(()=>{useStore.setState({codeFileViewer:{...useStore.getInitialState().codeFileViewer,enabled:false}});useStore.getState().notify(uiText("webobsidian.could-not-load-code-viewer-settings-reload-to-re-f53504"),10000);});
     const workspaceReady=restoreWorkspaceFromUrl(async()=>{
       await codeSettingsReady;
       await useStore.getState().loadUiState(true);

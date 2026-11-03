@@ -1,3 +1,4 @@
+import {t as uiText} from "./i18n/runtime";
 import { useSyncExternalStore } from 'react';
 import { api, type IndexStatus } from './api';
 
@@ -34,10 +35,10 @@ export function useIndexStatus() {
 }
 export function indexStatusMessage(status: IndexStatus | null): string {
   if (!status) return '';
-  if (status.phase === 'degraded') return 'Index updates are delayed. Results may be outdated.';
-  if (!status.initialScanComplete) return status.available ? 'Checking changes. Cached results are preliminary.' : 'Indexing notes…';
-  if (status.phase === 'rebuilding') return 'Rebuilding index. Showing the previous results.';
-  if (status.phase === 'reconciling') return 'Checking changes…';
-  if (status.persistenceError) return 'Index is current, but its cache could not be saved.';
+  if (status.phase === 'degraded') return uiText("webobsidian.index-updates-are-delayed-results-may-be-outdate-7e121c");
+  if (!status.initialScanComplete) return status.available ? uiText("webobsidian.checking-changes-cached-results-are-preliminary-543f34") : uiText("webobsidian.indexing-notes-1f3004");
+  if (status.phase === 'rebuilding') return uiText("webobsidian.rebuilding-index-showing-the-previous-results-9c544d");
+  if (status.phase === 'reconciling') return uiText("webobsidian.checking-changes-326126");
+  if (status.persistenceError) return uiText("webobsidian.index-is-current-but-its-cache-could-not-be-save-d752e4");
   return '';
 }
