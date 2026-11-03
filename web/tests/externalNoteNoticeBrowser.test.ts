@@ -42,7 +42,7 @@ test('external note indicator detects remote edits and safely refreshes or compa
     remote={content:'external',version:'v2'};fs('other.md');await wait(450);check(!notice(),'unrelated file ignored');
     fs('a.md');await wait(450);check(notice(),'external edit shows indicator');
     check(useStore.getState().content==='base','notification never replaces visible text');
-    remote={content:'latest external',version:'v3'};button('Обновить статью').click();await wait(200);
+    remote={content:'latest external',version:'v3'};button('Reload note').click();await wait(200);
     check(useStore.getState().content==='latest external','refresh re-reads latest server content');
     check(a.baseVersion==='v3'&&!notice(),'refresh updates acknowledged version and clears banner');
     check(writes===0,'refresh does not write files');
@@ -50,14 +50,14 @@ test('external note indicator detects remote edits and safely refreshes or compa
     check(!notice(),'own successful save does not show indicator');
     remote={content:'changed while away',version:'v4'};window.dispatchEvent(new Event('focus'));await wait(450);
     check(notice(),'returning to tab checks missed filesystem events');
-    fail=true;button('Обновить статью').click();await wait(150);
+    fail=true;button('Reload note').click();await wait(150);
     check(document.querySelector('[role="alert"]'),'refresh failure is visible');
     check(useStore.getState().content==='my save'&&notice(),'failed refresh preserves text and indicator');fail=false;
-    let resolve;pending=new Promise(r=>{resolve=r;});button('Обновить статью').click();await wait(50);
+    let resolve;pending=new Promise(r=>{resolve=r;});button('Reload note').click();await wait(50);
     useStore.getState().setContent('typed during refresh');resolve({...remote});pending=null;await wait(180);
     check(useStore.getState().content==='typed during refresh','typing during refresh is never overwritten');
-    check(button('Сравнить изменения'),'local changes switch refresh to comparison');
-    button('Сравнить изменения').click();await wait(250);
+    check(button('Compare changes'),'local changes switch refresh to comparison');
+    button('Compare changes').click();await wait(250);
     check(document.querySelector('[role="dialog"]'),'existing comparison dialog opens');
     check(useStore.getState().content==='typed during refresh'&&writes===1,'comparison does not write or discard local text');
     check((await listDrafts('external-scope')).some(r=>r.content==='typed during refresh'),'local edits backed up before comparison');
@@ -81,7 +81,7 @@ test('external note indicator detects remote edits and safely refreshes or compa
     remote={content:'updated in real editor',version:'wired2'};poll();await wait(450);
     check(notice(),'real workspace shows notice even without a filesystem event');
     check(document.querySelector('.cm-content').textContent.includes('base'),'real editor retains open text before refresh');
-    button('Обновить статью').click();await wait(250);
+    button('Reload note').click();await wait(250);
     check(document.querySelector('.cm-content').textContent.includes('updated in real editor'),'real editor displays refreshed article');
     check(!notice()&&writes===1,'real refresh clears notice without server write');
     root3.unmount();for(const s of documentSessions.values())s.dispose();return true;

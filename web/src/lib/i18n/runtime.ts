@@ -64,7 +64,7 @@ export function t(key: string, params: Record<string, string | number | undefine
   return text.replace(/\{\{\s*([^{}]+?)\s*\}\}/g, (match, name) =>
     Object.hasOwn(params, name) ? String(params[name]) : match);
 }
-export function setLocalizedText(node: Node, key: string, params: Record<string, string | number | undefined | null> = {}, field = 'textContent', russian?: string, preserveDefault = false) {
+export function setLocalizedText(node: Node, key: string, params: Record<string, string | number | undefined | null> = {}, field = 'textContent') {
   // Bind the text leaf so subsequent updates preserve controls appended by widgets.
   if (field === 'textContent' && node.nodeType !== 3 && node.ownerDocument) {
     const text = node.ownerDocument.createTextNode('');
@@ -78,7 +78,7 @@ export function setLocalizedText(node: Node, key: string, params: Record<string,
   const update = () => {
     const target = ref.deref();
     if (!target) return;
-    const value = russian && !state.name && (preserveDefault || typeof navigator !== 'undefined' && /^ru(?:-|$)/i.test(navigator.language)) ? russian : t(key, params);
+    const value = t(key, params);
     if (field !== 'textContent' && target instanceof Element) target.setAttribute(field, value);
     else target.textContent = value;
   };

@@ -56,7 +56,7 @@ test('standard Markdown embeds have native widgets, paths and source actions in 
      check(!document.querySelector('img:not(.cm-widgetBuffer)'),mode+': binary embeds are not images');
      check(document.querySelector('.file-embed').textContent==='config#one.yaml',mode+': generic file title decoded once');
      check(useStore.getState().content===assets,mode+': rendering preserves source');
-     if(mode==='live'){document.querySelector('.pdf-reader [aria-label="Редактировать блок"]').click();await wait();const v=getActiveEditor(),selection=v.state.selection.main;check(v.state.doc.sliceString(selection.from,selection.to)==='![doc](doc%20%23one.pdf#page=2&height=160)','PDF source action selects complete Markdown token')}
+     if(mode==='live'){document.querySelector('.pdf-reader [aria-label="Edit block"]').click();await wait();const v=getActiveEditor(),selection=v.state.selection.main;check(v.state.doc.sliceString(selection.from,selection.to)==='![doc](doc%20%23one.pdf#page=2&height=160)','PDF source action selects complete Markdown token')}
      window.debugStage=mode+': images';const pictures='# Images\\n\\n![ref][img]\\n\\n![literal|100](photo%2520one.svg)\\n\\n[img]: <photo (1)%23one.svg>';await mount(mode,pictures);
      await until(()=>document.querySelectorAll('img:not(.cm-widgetBuffer)').length===2&&[...document.querySelectorAll('img:not(.cm-widgetBuffer)')].every(i=>i.complete&&i.naturalWidth>0),mode+': reference and percent-literal images loaded');
      const images=[...document.querySelectorAll('img:not(.cm-widgetBuffer)')];check(new URL(images[0].src).searchParams.get('path')==='photo (1)#one.svg'&&new URL(images[1].src).searchParams.get('path')==='photo%20one.svg',mode+': image filenames not confused');

@@ -1,4 +1,4 @@
-import {getLanguageState,t,setLocalizedText} from './runtime';
+import {t,setLocalizedText} from './runtime';
 const keys: Record<string,string> = {
   "Управление PDF": "webobsidian.pdf-fcf7c01b99",
   "Свернуть/развернуть боковую панель": "webobsidian.pdf-8b9b1bbd66",
@@ -30,10 +30,10 @@ const keys: Record<string,string> = {
   "Две страницы (чётные)": "webobsidian.pdf-012f37de0b",
   "Адаптировать к теме": "webobsidian.pdf-229344e7a2"
 };
-export function pdfLabel(source: string) {return getLanguageState().name && keys[source] ? t(keys[source]) : source;}
+export function pdfLabel(source: string) {return keys[source] ? t(keys[source]) : source;}
 export function bindPdfLabel(node: Node, source: string, field: string) {
  const original = Object.hasOwn(keys,source) ? source : Object.keys(keys).find(label => t(keys[label]) === source);
- if (original) setLocalizedText(node,keys[original],{},field,original,true);
+ if (original) setLocalizedText(node,keys[original],{},field);
  else if (field === 'textContent') node.textContent=source;
  else if (node instanceof Element) node.setAttribute(field,source);
 }

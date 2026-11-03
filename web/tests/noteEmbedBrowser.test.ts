@@ -17,6 +17,7 @@ test('embedded notes expose an accessible open button in live, reading and HTML 
    import Editor from './src/components/Editor';import Preview from './src/components/Preview';
    import {useStore} from './src/lib/store';import {api} from './src/lib/api';
    import './src/styles/obsidian.css';
+   Object.defineProperty(navigator,'language',{configurable:true,value:'ru-RU'});
    api.tags=async()=>({tags:[]});api.propertyTypes=async()=>({types:{}});
    api.resolve=async target=>({path:target.endsWith('.md')?target:'Lab/'+target.split('#')[0]+'.md'});
    api.read=async path=>({content:path==='Lab/Parent.md'?'![[#Section]]\\n\\n# Section\\nNested note body':'# Section\\nEmbedded note body',version:'fixture'});
@@ -36,6 +37,7 @@ test('embedded notes expose an accessible open button in live, reading and HTML 
      const placeholders=[...document.querySelectorAll('.cm-note-embed.is-unresolved')];
      check(placeholders.every(e=>!!e.querySelector('button[aria-label="Open embedded note"]')),mode+': unresolved note and heading retain source buttons');
      check(placeholders[0].querySelector('.markdown-embed-title').textContent==='Missing'&&placeholders[1].textContent.includes('Section'),mode+': native missing-note and missing-heading labels');
+     check(placeholders[1].textContent.includes('Could not find “Section” in Missing'),mode+': missing headings use English even with a Russian browser');
      opened=[];placeholders[1].querySelector('button').click();await wait();check(JSON.stringify(opened)===JSON.stringify([['Missing#Section','wiki']]),mode+': unresolved heading opens its actual target');
      check(useStore.getState().content===missing,mode+': unresolved note display and actions preserve source');root.render(<div/>);await wait();
     }

@@ -199,7 +199,7 @@ export function createPdfViewer(src:string,name:string,onOpen?:()=>void,onEdit?:
     if(destroyed)return;
     if(error?.status===404||error?.name==='MissingPDFException'){
       cleanup();root.classList.remove('pdf-fill-container');root.classList.add('pdf-missing');root.style.removeProperty('height');root.dataset.missing='true';root.setAttribute('role','note');
-      const label=options.missingLabel??name;setLocalizedText(root,"webobsidian.missing-file",{name:label},"textContent",`«${label}» не может быть найдена.`);
+      const label=options.missingLabel??name;setLocalizedText(root,"webobsidian.missing-file",{name:label},"textContent");
       if(onEdit){const edit=embedAction('Edit embed','source',onEdit);edit.classList.add('pdf-missing-edit');root.append(edit)}return;
     }
     cleanup();setLocalizedText(status, "webobsidian.-pdf-4dac1a", {}, "textContent");

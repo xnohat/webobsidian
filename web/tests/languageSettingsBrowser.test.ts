@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp, rm, writeFile} from 'node:fs/promises';
+import {mkdtemp, rm, writeFile, readFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -12,6 +12,7 @@ import {build} from 'esbuild';
 test('browser: language file import, template, live labels and literal user titles', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'webo-language-'));
   try {
+    const russianPack = await readFile(new URL('../../translations/ru.txt',import.meta.url),'utf8');
     await build({stdin:{resolveDir:fileURLToPath(new URL('..',import.meta.url)),loader:'tsx',contents:`
       import React from 'react';import {createRoot} from 'react-dom/client';
       import LanguageSettings from './src/components/LanguageSettings';
@@ -25,6 +26,7 @@ test('browser: language file import, template, live labels and literal user titl
       import {pdfLabel,bindPdfLabel} from './src/lib/i18n/pdfLabels';
       import {initializeLanguage,t,useLanguage,setLocalizedText} from './src/lib/i18n/runtime';
       import {exportLanguageTemplate} from './src/lib/i18n/pack';
+      Object.defineProperty(navigator,'language',{configurable:true,value:'ru-RU'});
       initializeLanguage();localStorage.clear();
       let serverPack=null,failServer=false;
       api.getSettings=async()=>({ui:{languagePack:serverPack}});
@@ -42,6 +44,7 @@ test('browser: language file import, template, live labels and literal user titl
       const action=document.createElement('a');action.textContent='action';widget.append(action);
       const check=(value,message)=>{if(!value)throw Error(message)};
       window.run=async()=>{
+        check(pdfLabel('Увеличить')==='Zoom in','fresh install uses English PDF labels in a Russian browser');
         await wait();check(exportLanguageTemplate().includes('[plugins.file-explorer.action-new-folder]'),'template contains compatible keys');
         const title=document.querySelector('[data-testid=template-title]');
         Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(title,'Settings');title.dispatchEvent(new Event('input',{bubbles:true}));await wait();
@@ -81,7 +84,12 @@ test('browser: language file import, template, live labels and literal user titl
         check(document.querySelector('#folder').textContent==='New folder','reset restores English');
         check(!localStorage.getItem('webobsidian.language.v1'),'reset deletes saved pack');
         check(serverPack===null,'reset deletes server pack');
-        check(pdfButton.title==='Увеличить','PDF reset restores the original label for widgets created under a pack');
+        check(pdfButton.title==='Zoom in','PDF reset restores English for widgets created under a pack');
+        await load(${JSON.stringify(russianPack)});
+        check(document.querySelector('#folder').textContent==='Новая папка','Russian is applied after explicitly importing a pack');
+        check(pdfButton.title==='Увеличить масштаб','existing PDF widget follows the imported Russian pack');
+        [...document.querySelectorAll('button')].find(b=>b.textContent===t('webobsidian.restore-default-language-a41d48')).click();await wait();
+        check(pdfButton.title==='Zoom in'&&document.querySelector('#folder').textContent==='New folder','reset after Russian import restores English in a Russian browser');
         return 'LANGUAGE_PASS';
       };
     `},bundle:true,jsx:'automatic',format:'iife',platform:'browser',define:{'import.meta.env.DEV':'false'},outfile:join(dir,'fixture.js'),logLevel:'silent'});

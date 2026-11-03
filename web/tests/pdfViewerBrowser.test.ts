@@ -49,50 +49,50 @@ test('PDF embeds have working page, zoom and thumbnail controls in live, reading
      await until(()=>document.querySelector('.pdf-toolbar'),'own PDF toolbar mounted');
      await until(()=>document.querySelector('.pdf-reader[data-ready="true"]'),'PDF document loaded');
      check(auditSnapshot()===beforePdf,'PDF loading leaves outside tabs, titles, sidebar, selected items, inputs and buttons unchanged');
-     const reader=document.querySelector('.pdf-reader'),page=reader.querySelector('input[aria-label="Номер страницы"]');
+     const reader=document.querySelector('.pdf-reader'),page=reader.querySelector('input[aria-label="Page number"]');
      check(reader.querySelector('.pdf-page-count').textContent.includes('2'),'page count');
      check(reader.querySelector('.pdf-thumbnails').hidden,'thumbnails initially closed');
      await until(()=>reader.querySelector('.textLayer')?.textContent.includes('First PDF page'),'selectable first-page text');
      const visiblePage=reader.querySelector('.pdfViewer .page');
      check(Math.abs(reader.getBoundingClientRect().height-visiblePage.getBoundingClientRect().height-reader.querySelector('.pdf-toolbar').getBoundingClientRect().height)<20,'embed height fits exactly one page plus toolbar');
      reader.querySelector('[data-pdf-action="sidebar-options"]').click();
-     check([...document.querySelectorAll('.pdf-menu-panel button')].find(b=>b.dataset.label==='Оглавление').disabled,'PDF without outline disables outline command');
+     check([...document.querySelectorAll('.pdf-menu-panel button')].find(b=>b.dataset.label==='Outline').disabled,'PDF without outline disables outline command');
      document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
      const width=reader.querySelector('.pdfViewer .page').getBoundingClientRect().width;
      check(width>reader.getBoundingClientRect().width-60,'initially fit to width');
-     reader.querySelector('[aria-label="Увеличить"]').click();await wait();await wait();
+     reader.querySelector('[aria-label="Zoom in"]').click();await wait();await wait();
      check(reader.querySelector('.pdfViewer .page').getBoundingClientRect().width>width,'zoom in increases page width');
      check(Math.abs(reader.getBoundingClientRect().height-reader.querySelector('.pdfViewer .page').getBoundingClientRect().height-reader.querySelector('.pdf-toolbar').getBoundingClientRect().height)<20,'zoom updates height to one page');
-     reader.querySelector('[aria-label="Уменьшить"]').click();await wait();
+     reader.querySelector('[aria-label="Zoom out"]').click();await wait();
      page.value='2';page.dispatchEvent(new Event('change',{bubbles:true}));
      await until(()=>reader.querySelector('.page[data-page-number="2"] .textLayer')?.textContent.includes('Second PDF page'),'page navigation renders page two');
      await until(()=>Math.abs(reader.getBoundingClientRect().height-reader.querySelector('.page[data-page-number="2"]').getBoundingClientRect().height-reader.querySelector('.pdf-toolbar').getBoundingClientRect().height)<20,'height updates for a page with different dimensions');
-     reader.querySelector('[aria-label="Свернуть/развернуть боковую панель"]').click();
+     reader.querySelector('[aria-label="Toggle sidebar"]').click();
      await until(()=>!reader.querySelector('.pdf-thumbnails').hidden&&reader.querySelectorAll('.pdf-thumbnails button').length===2,'thumbnail panel');
      reader.querySelector('.pdf-thumbnails button').click();await until(()=>page.value==='1','thumbnail navigation');
-     reader.querySelector('[data-pdf-action="display-options"]').click();[...document.querySelectorAll('.pdf-menu-panel button')].find(b=>b.dataset.label==='Подогнать по ширине').click();await wait();
+     reader.querySelector('[data-pdf-action="display-options"]').click();[...document.querySelectorAll('.pdf-menu-panel button')].find(b=>b.dataset.label==='Fit width').click();await wait();
      check(!reader.querySelector('iframe'),'native PDF UI replaced');
      if(mode==='live'){
-       check(reader.querySelector('[aria-label="Редактировать блок"]'),'PDF has edit-source button');
-       useStore.setState({locked:true});await until(()=>!document.querySelector('[aria-label="Редактировать блок"]'),'locked PDF hides edit-source button');
-       useStore.setState({locked:false});await until(()=>!!document.querySelector('[aria-label="Редактировать блок"]'),'unlock restores edit-source button');
-       const edit=document.querySelector('[aria-label="Редактировать блок"]');
+       check(reader.querySelector('[aria-label="Edit block"]'),'PDF has edit-source button');
+       useStore.setState({locked:true});await until(()=>!document.querySelector('[aria-label="Edit block"]'),'locked PDF hides edit-source button');
+       useStore.setState({locked:false});await until(()=>!!document.querySelector('[aria-label="Edit block"]'),'unlock restores edit-source button');
+       const edit=document.querySelector('[aria-label="Edit block"]');
        const before=useStore.getState().content;edit.click();
        await until(()=>document.querySelector('.cm-content')?.textContent.includes('![[sample.pdf]]'),'edit button reveals exact embed source');
        check(useStore.getState().content===before,'revealing source does not modify note');
        await until(()=>document.querySelector('.pdf-reader[data-ready="true"] .textLayer')?.textContent.includes('First PDF page'),'PDF remains rendered while its embed source is selected');
        check(document.querySelectorAll('.pdf-reader').length===1,'only one PDF viewer while editing source');
-     }else check(!reader.querySelector('[aria-label="Редактировать блок"]'),'readonly views do not offer edit-source control');
+     }else check(!reader.querySelector('[aria-label="Edit block"]'),'readonly views do not offer edit-source control');
      root.render(<div/>);await wait();
     }
     for(const mode of ['live','reading','preview']){
      useStore.setState({activePath:mode+'.md',content:'# PDF\\n\\n![[sample.pdf#page=2&height=400]]',viewMode:mode==='preview'?'reading':mode,locked:false});
      root.render(mode==='preview'?<Preview/>:<Editor/>);await wait();await wait();
      await until(()=>document.querySelector('.pdf-reader[data-ready="true"]'),'fragment PDF loaded');
-     await until(()=>document.querySelector('.pdf-reader [aria-label="Номер страницы"]')?.value==='2',mode+': PDF opens requested page');
+     await until(()=>document.querySelector('.pdf-reader [aria-label="Page number"]')?.value==='2',mode+': PDF opens requested page');
      const expectedHeight=mode==='live'?400:400+document.querySelector('.pdf-reader .pdf-toolbar').getBoundingClientRect().height;
      check(Math.abs(document.querySelector('.pdf-reader').getBoundingClientRect().height-expectedHeight)<2,mode+': native explicit PDF height respected');
-     document.querySelector('.pdf-reader [aria-label="Увеличить"]').click();await wait();
+     document.querySelector('.pdf-reader [aria-label="Zoom in"]').click();await wait();
      check(Math.abs(document.querySelector('.pdf-reader').getBoundingClientRect().height-expectedHeight)<2,mode+': explicit height survives zoom');
      root.render(<div/>);await wait();
     }
@@ -100,7 +100,7 @@ test('PDF embeds have working page, zoom and thumbnail controls in live, reading
      let opened;useStore.setState({activePath:'Host.md',content:'# Host\\n\\n![[Child]]',viewMode:mode==='preview'?'reading':mode,locked:false,openFile:async(path)=>{opened={path}}});
      root.render(mode==='preview'?<Preview/>:<Editor/>);await wait();await wait();
      await until(()=>document.querySelector('.pdf-reader[data-ready="true"]'),mode+': PDF inside embedded note has a viewer');
-     await until(()=>document.querySelector('.pdf-reader [aria-label="Номер страницы"]')?.value==='2',mode+': nested PDF keeps page option');
+     await until(()=>document.querySelector('.pdf-reader [aria-label="Page number"]')?.value==='2',mode+': nested PDF keeps page option');
      document.querySelector('.pdf-reader [data-pdf-action="file-menu"]').click();await until(()=>document.querySelector('.pdf-menu-panel'),'nested PDF file menu');document.querySelector('.pdf-menu-panel button').click();await wait();
      check(opened?.path==='Lab/sample.pdf'&&attachmentLookups.at(-1)?.from==='Lab/Child.md',mode+': nested PDF opens relative to its own note');
      root.render(<div/>);await wait();
@@ -109,17 +109,17 @@ test('PDF embeds have working page, zoom and thumbnail controls in live, reading
     await until(()=>document.querySelectorAll('.pdf-reader[data-ready="true"]').length===3,'three instances of the same PDF loaded');
     const sameFile=[...document.querySelectorAll('.pdf-reader')];
     for(const [index,reader] of sameFile.entries()){
-     const expected=index===0?'1':'2';await until(()=>reader.querySelector('[aria-label="Номер страницы"]').value===expected,'same file instance '+index+' keeps its own page');
+     const expected=index===0?'1':'2';await until(()=>reader.querySelector('[aria-label="Page number"]').value===expected,'same file instance '+index+' keeps its own page');
      await until(()=>reader.querySelector('.page[data-page-number="'+expected+'"] .textLayer')?.textContent.includes(index===0?'First PDF page':'Second PDF page'),'same file instance '+index+' actually renders the requested page');
     }
     root.render(<div/>);await wait();
     useStore.setState({activePath:'adjacent.md',content:'# PDFs\\n\\n![[one.pdf]]![[two.pdf]]',viewMode:'live',locked:false});root.render(<Editor/>);
     await until(()=>document.querySelectorAll('.pdf-reader[data-ready="true"]').length===2,'adjacent PDF viewers loaded');
-    document.querySelectorAll('[aria-label="Редактировать блок"]')[1].click();await wait();
+    document.querySelectorAll('[aria-label="Edit block"]')[1].click();await wait();
     let selected=getActiveEditor().state.selection.main;
     check(getActiveEditor().state.doc.sliceString(selected.from,selected.to)==='![[two.pdf]]','second PDF button selects second source, not adjacent first');
     await until(()=>document.querySelectorAll('.pdf-reader[data-ready="true"]').length===2,'adjacent previews remain visible');
-    document.querySelectorAll('[aria-label="Редактировать блок"]')[1].click();await wait();
+    document.querySelectorAll('[aria-label="Edit block"]')[1].click();await wait();
     selected=getActiveEditor().state.selection.main;
     check(getActiveEditor().state.doc.sliceString(selected.from,selected.to)==='![[two.pdf]]','editing already-visible PDF source selects same source');
     document.querySelector('#root').style.width='100%';

@@ -1,3 +1,4 @@
+import {t as uiText,useLanguage} from '../lib/i18n/runtime';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { acceptResolvedDocument, documentSessions, draftScopeEpoch, isDraftScopeCurrent, useStore } from '../lib/store';
@@ -6,6 +7,7 @@ import ConflictResolver from './ConflictResolver';
 
 /** Notify about a new server version without replacing the reader's open text. */
 export default function ExternalNoteNotice() {
+  useLanguage();
   const path = useStore(s => s.activePath);
   const dirty = useStore(s => s.dirty);
   const [changedPath, setChangedPath] = useState<string | null>(null);
@@ -79,7 +81,7 @@ export default function ExternalNoteNotice() {
         const comparison = await loadConflict(session.record());
         if (!current()) return;
         if (session.revision !== revision || session.baseVersion !== version) {
-          setError('Текст изменился во время проверки. Нажмите «Сравнить изменения» ещё раз.');
+          setError(uiText("webobsidian.external-text-changed"));
           return;
         }
         setConflict(comparison);
@@ -90,7 +92,7 @@ export default function ExternalNoteNotice() {
         if (!current()) return;
         if (session.revision !== revision || session.baseVersion !== version || useStore.getState().dirty ||
             session.state !== 'saved') {
-          setError('Появились локальные правки. Сравните изменения перед обновлением.');
+          setError(uiText("webobsidian.external-local-edits"));
           return;
         }
         if (!remote.version) throw new Error('Missing content version');
@@ -98,7 +100,7 @@ export default function ExternalNoteNotice() {
         setChangedPath(null);
       }
     } catch {
-      if (current()) setError('Не удалось загрузить статью. Проверьте соединение и повторите попытку.');
+      if (current()) setError(uiText("webobsidian.external-reload-failed"));
     } finally {
       busyRef.current = false; setBusy(false);
     }
@@ -107,9 +109,9 @@ export default function ExternalNoteNotice() {
   if (!path || changedPath !== path) return null;
   return <>
     <div className="external-note-notice" role="status">
-      <span>Файл изменён вне браузера.{localChanges ? ' У вас есть локальные правки — сравните версии.' : ' Обновите статью, чтобы увидеть изменения.'}</span>
+      <span>{uiText("webobsidian.external-file-changed")}{localChanges ? uiText("webobsidian.external-compare-versions") : uiText("webobsidian.external-reload-hint")}</span>
       <button className="btn secondary" disabled={busy} onClick={() => void refresh()}>
-        {busy ? 'Проверка…' : localChanges ? 'Сравнить изменения' : 'Обновить статью'}
+        {busy ? uiText("webobsidian.external-checking") : localChanges ? uiText("webobsidian.external-compare") : uiText("webobsidian.external-reload")}
       </button>
       {error && <span role="alert">{error}</span>}
     </div>

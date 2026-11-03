@@ -3809,3 +3809,95 @@ translation=Вы используете
 [webobsidian.your-webobsidian-login-password-5aa6d5]
 original=Your WebObsidian login password.
 translation=Ваш пароль для входа в WebObsidian.
+
+[webobsidian.rename-pdf]
+original=Rename PDF
+translation=Переименовать PDF
+
+[webobsidian.new-name]
+original=New name
+translation=Новое имя
+
+[webobsidian.rename]
+original=Rename
+translation=Переименовать
+
+[webobsidian.file-name-without-path]
+original=Enter a file name without a path
+translation=Введите имя файла без пути
+
+[webobsidian.rename-file-failed]
+original=Could not rename file
+translation=Не удалось переименовать
+
+[webobsidian.pdf-not-found]
+original=PDF not found
+translation=PDF не найден
+
+[webobsidian.add-bookmark]
+original=Add bookmark…
+translation=Добавить в закладки...
+
+[webobsidian.vault-relative-path]
+original=Vault-relative path
+translation=Путь от корня хранилища
+
+[webobsidian.browser-url]
+original=Browser URL
+translation=Ссылка в браузере
+
+[webobsidian.open-default-application]
+original=Open in default application
+translation=Открыть в приложении по умолчанию
+
+[webobsidian.os-command-unavailable]
+original=This operating-system command is unavailable in the browser
+translation=Команда операционной системы недоступна из браузера
+
+[webobsidian.show-system-explorer]
+original=Show in system file explorer
+translation=Показать в Проводнике
+
+[webobsidian.server-file-unavailable-in-explorer]
+original=Your computer’s file explorer cannot access a server file
+translation=Проводник на вашем компьютере недоступен для серверного файла
+
+[webobsidian.reveal-file]
+original=Reveal in file explorer
+translation=Показать в файловом менеджере
+
+[webobsidian.external-text-changed]
+original=The text changed during the check. Select “Compare changes” again.
+translation=Текст изменился во время проверки. Нажмите «Сравнить изменения» ещё раз.
+
+[webobsidian.external-local-edits]
+original=Local edits were made. Compare changes before reloading.
+translation=Появились локальные правки. Сравните изменения перед обновлением.
+
+[webobsidian.external-reload-failed]
+original=Could not load the note. Check the connection and try again.
+translation=Не удалось загрузить статью. Проверьте соединение и повторите попытку.
+
+[webobsidian.external-file-changed]
+original=The file changed outside this browser.
+translation=Файл изменён вне браузера.
+
+[webobsidian.external-compare-versions]
+original= You have local edits. Compare the versions.
+translation= У вас есть локальные правки — сравните версии.
+
+[webobsidian.external-reload-hint]
+original= Reload the note to see the changes.
+translation= Обновите статью, чтобы увидеть изменения.
+
+[webobsidian.external-checking]
+original=Checking…
+translation=Проверка…
+
+[webobsidian.external-compare]
+original=Compare changes
+translation=Сравнить изменения
+
+[webobsidian.external-reload]
+original=Reload note
+translation=Обновить статью

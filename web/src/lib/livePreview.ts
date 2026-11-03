@@ -635,7 +635,7 @@ export function setLivePreviewNoteEmbedProvider(fn: (target: string,kind?:'wiki'
 
 function embedNotFound(el: HTMLElement, target: string) {
   el.classList.add('cm-embed-missing');
-  setLocalizedText(el, "webobsidian.missing-file", {name:target}, "textContent", `«${target}» не может быть найдена.`);
+  setLocalizedText(el, "webobsidian.missing-file", {name:target}, "textContent");
 }
 
 class CanvasEmbedWidget extends WidgetType{
@@ -678,7 +678,7 @@ class NoteEmbedWidget extends WidgetType {
       if (!res) {
         content.remove();
         const at=this.target.indexOf('#'),fragment=at<0?'':this.target.slice(at+1),name=title.textContent||notePath.replace(/\.(md|markdown)$/i,'').split('/').pop()||'';
-        if(fragment){setLocalizedText(title,"webobsidian.missing-fragment",{fragment,name},"textContent",`Не удалось найти «${fragment}» в ${name}`);box.append(title)}
+        if(fragment){setLocalizedText(title,"webobsidian.missing-fragment",{fragment,name},"textContent");box.append(title)}
         box.classList.add('is-unresolved');return;
       }
       content.innerHTML = res.html; // sanitized upstream (rehype-sanitize)
@@ -1755,8 +1755,7 @@ class FrontmatterWidget extends WidgetType {
 
     const header = document.createElement('div');
     header.className = 'cm-props-header';
-    const ru=/^ru(?:-|$)/i.test(navigator.language);
-    setLocalizedText(header,"webobsidian.properties-bc6c88",{},"textContent","Свойства");
+    setLocalizedText(header,"webobsidian.properties-bc6c88",{},"textContent");
     header.setAttribute('role','button');header.tabIndex=0;header.setAttribute('aria-expanded','true');
     const toggleProperties=()=>{const collapsed=box.classList.toggle('is-collapsed');header.setAttribute('aria-expanded',String(!collapsed));view.requestMeasure()};
     header.onclick=toggleProperties;header.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleProperties()}};
@@ -1899,9 +1898,9 @@ class FrontmatterWidget extends WidgetType {
           commitChange();
         });
         const wrap=document.createElement('span');wrap.className='prop-date-wrap';
-        const calendar=document.createElement('button');calendar.type='button';calendar.className='prop-date-calendar';calendar.innerHTML=propertyIconSvg(dt);setLocalizedText(calendar,'webobsidian.choose-date',{},'aria-label','Выбрать дату');calendar.disabled=this.ro;
+        const calendar=document.createElement('button');calendar.type='button';calendar.className='prop-date-calendar';calendar.innerHTML=propertyIconSvg(dt);setLocalizedText(calendar,'webobsidian.choose-date',{},'aria-label');calendar.disabled=this.ro;
         calendar.onclick=e=>{e.preventDefault();try{inp.showPicker()}catch{inp.focus()}};
-        const link=document.createElement('button');link.type='button';link.className='prop-date-link';link.innerHTML=propertyIconSvg('link');setLocalizedText(link,'webobsidian.open-date-note',{},'aria-label','Открыть заметку даты');link.onclick=e=>{e.preventDefault();if(inp.value)openLink(inp.value.slice(0,10))};
+        const link=document.createElement('button');link.type='button';link.className='prop-date-link';link.innerHTML=propertyIconSvg('link');setLocalizedText(link,'webobsidian.open-date-note',{},'aria-label');link.onclick=e=>{e.preventDefault();if(inp.value)openLink(inp.value.slice(0,10))};
         wrap.append(calendar,inp,link);return wrap;
       }
       // text (default)
@@ -2074,7 +2073,7 @@ class FrontmatterWidget extends WidgetType {
           });
           const x = document.createElement('span');
           x.className = 'prop-pill-x';
-          x.innerHTML=propertyIconSvg('close');x.setAttribute('role','button');setLocalizedText(x,'webobsidian.remove-value',{},'aria-label','Удалить значение');
+          x.innerHTML=propertyIconSvg('close');x.setAttribute('role','button');setLocalizedText(x,'webobsidian.remove-value',{},'aria-label');
           x.addEventListener('mousedown', (e) => {
             e.preventDefault();
             mutate((ps) => {
@@ -2089,7 +2088,7 @@ class FrontmatterWidget extends WidgetType {
         }
         const add = document.createElement('span');
         add.className = 'prop-pill-add';
-        add.textContent = '';add.tabIndex=0;add.setAttribute('role','button');setLocalizedText(add,'webobsidian.add-item',{},'aria-label','Добавить значение');
+        add.textContent = '';add.tabIndex=0;add.setAttribute('role','button');setLocalizedText(add,'webobsidian.add-item',{},'aria-label');
         setLocalizedText(add, "plugins.bases.command-add-item", {}, "title");
         add.addEventListener('mousedown', (e) => {
           e.preventDefault();
@@ -2116,7 +2115,7 @@ class FrontmatterWidget extends WidgetType {
 
     const addBtn = document.createElement('div');
     addBtn.className = 'cm-props-add';
-    setLocalizedText(addBtn,"webobsidian.-add-property-e2852e",{},"textContent","+ Добавить свойство");
+    setLocalizedText(addBtn,"webobsidian.-add-property-e2852e",{},"textContent");
 
     // Add a property with a name-suggester dropdown (existing vault keys), like Obsidian.
     const startAdd = async () => {

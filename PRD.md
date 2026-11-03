@@ -17,8 +17,11 @@ is saved in the authenticated server settings and shared by browsers of this
 WebObsidian instance. A local cache supplies startup/offline labels. Imports validate parameters and preserve
 the current pack on failure. Compatible strings update React and existing editor
 widgets immediately. Document names, text, command IDs and saved custom labels
-retain their literal values. Existing browser-language editor messages and PDF
-defaults are supported until a pack is chosen. Public server-rendered pages,
+retain their literal values. A fresh installation and an explicit language reset
+use English throughout the application, including PDF controls, file menus,
+external-change notices and editor messages, regardless of browser language.
+Imported language packs provide translated strings with English fallbacks.
+Public server-rendered pages,
 native Electron menus and third-party plugin strings are outside this first
 version. Users obtain official dictionaries themselves and explicitly upload
 their chosen file. Successful imports save only compatible strings on the server.

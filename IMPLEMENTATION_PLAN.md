@@ -1,5 +1,17 @@
 # IMPLEMENTATION PLAN — WebObsidian
 
+## Consistent English defaults — 2026-11-03
+
+- [x] Remove Russian PDF defaults and browser-language editor fallbacks. Localize
+  remaining hardcoded PDF file actions and external-change notices. Verify fresh
+  startup/reset in a Russian browser, imported Russian text, and catalogue coverage.
+
+Verification — 2026-11-03. All 521 web tests and 391 server tests passed,
+along with full typecheck, production build and integration smoke. Fresh/reset
+PDF controls and missing-heading notices use English in a ru-RU browser.
+Explicit Russian import updates existing controls and reset restores English.
+The authored Russian import file now covers all 975 catalogue entries.
+
 ## Native colors, Canvas, diagrams and language packs — 2026-11-03
 
 - [x] Match fenced JavaScript/Python/YAML colors with lazy grammars, compact Canvas text/controls/borders, native arrowheads and capped initial zoom; add the fingerprinted Obsidian SVG favicon.
